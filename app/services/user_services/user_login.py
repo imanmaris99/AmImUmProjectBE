@@ -16,10 +16,12 @@ def user_login(db: Session, user: user_dtos.UserLoginPayloadDto) -> optional.Opt
     # Cek apakah email yang diberikan ada di database
     user_optional = get_user_by_email(db, user.email)
     
-    # Jika ada error pada pencarian user, kembalikan error
+    # Jika user tidak ditemukan (404 Not Found)
     if user_optional.error:
-        return user_optional
-
+        return optional.build(error=HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User with the provided email does not exist."
+        ))
     user_model = user_optional.data  # Mengambil data user dari Optional
     
     # Verifikasi password, jika tidak cocok kembalikan error 401
@@ -29,5 +31,13 @@ def user_login(db: Session, user: user_dtos.UserLoginPayloadDto) -> optional.Opt
             detail="Password does not match."
         ))
 
-    # Jika login berhasil, kembalikan data user
-    return optional.build(data=user_model)
+    # Jika terjadi error selama generate token atau hal lain yang tidak terduga
+    try:
+        # Proses selanjutnya misalnya generate access token
+        return optional.build(data=user_model)
+
+    except Exception as e:
+        return optional.build(error=HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An unexpected error occurred: {str(e)}"
+        ))

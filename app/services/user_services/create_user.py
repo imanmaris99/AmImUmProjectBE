@@ -19,6 +19,9 @@ def create_user(db: Session, user: user_dtos.UserCreateDto) -> optional.Optional
         # Hash password sebelum menyimpan
         user_model.hash_password = password_lib.get_password_hash(password=user.password)
 
+        # Mengisi role secara otomatis sebagai 'customer'
+        user_model.role = "customer"  # Atur role default sebagai 'customer'
+
         # Menambahkan user ke dalam database
         db.add(user_model)
         db.commit()
