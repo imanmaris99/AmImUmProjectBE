@@ -24,13 +24,17 @@ router = APIRouter(
             "content": {
                 "application/json": {
                     "example": {
-                        "id": "1",
-                        "email": "user@example.com",
-                        "username": "username",
-                        "phone": "123456789",
-                        "role": "customer",
-                        "created_at": "2024-09-21T14:28:23.382Z",
-                        "updated_at": "2024-09-21T14:28:23.382Z"
+                        "status_code": 201,
+                        "message": "User successfully created",
+                        "data": {
+                            "id": "1",
+                            "email": "user@example.com",
+                            "username": "username",
+                            "phone": "123456789",
+                            "role": "customer",
+                            "created_at": "2024-09-21T14:28:23.382Z",
+                            "updated_at": "2024-09-21T14:28:23.382Z"
+                        }
                     }
                 }
             }
@@ -40,7 +44,9 @@ router = APIRouter(
             "content": {
                 "application/json": {
                     "example": {
-                        "detail": "Email already exists. Please use a different email."
+                        "status_code": 400,
+                        "error": "Bad Request",
+                        "message": "Email already exists. Please use a different email."
                     }
                 }
             }
@@ -50,7 +56,9 @@ router = APIRouter(
             "content": {
                 "application/json": {
                     "example": {
-                        "detail": "An error occurred while creating the user. Please try again later."
+                        "status_code": 500,
+                        "error": "Database Error",
+                        "message": "An error occurred while creating the user. Please try again later."
                     }
                 }
             }
@@ -65,34 +73,50 @@ def create_user(user: user_dtos.UserCreateDto, db: Session = Depends(get_db)):
     """
     result = user_services.create_user(db, user)
     
-    if result.error:
-        raise result.error
+    # if result.error:
+    #     # Tangkap error dan kembalikan response yang lebih deskriptif
+    #     raise HTTPException(
+    #         status_code=result.error.status_code,
+    #         detail={
+    #             "status_code": result.error.status_code,
+    #             "error": result.error.error,
+    #             "message": result.error.message
+    #         }
+    #     )
 
-    return result.unwrap()
+    return {
+    "status_code": status.HTTP_201_CREATED,
+    "message": "User successfully created",
+    "data": result.unwrap()
+}
+
 
 ## == USER - LOGIN == ##
 @router.post(
     "/login",
-    response_model=jwt_dto.AccessTokenDto,
+    # response_model=jwt_dto.AccessTokenDto,
+    response_model= user_dtos.UserLoginResponseDto,
     responses={
-        status.HTTP_200_OK: {
-            "description": "Successful login",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "Your user account has been login successfully",
-                        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
-                        "token_type": "bearer"
-                    }
-                }
-            }
-        },
+        # status.HTTP_200_OK: {
+        #     "description": "Successful login",
+        #     "content": {
+        #         "application/json": {
+        #             "example": {
+        #                 "detail": "Your user account has been login successfully",
+        #                 "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+        #                 "token_type": "bearer"
+        #             }
+        #         }
+        #     }
+        # },
         status.HTTP_401_UNAUTHORIZED: {
             "description": "Unauthorized. Incorrect email or password.",
             "content": {
                 "application/json": {
                     "example": {
-                        "detail": "Password does not match."
+                        "status_code": 401,
+                        "error": "AnAuthorized",
+                        "message": "Password does not match."
                     }
                 }
             }
@@ -102,7 +126,9 @@ def create_user(user: user_dtos.UserCreateDto, db: Session = Depends(get_db)):
             "content": {
                 "application/json": {
                     "example": {
-                        "detail": "User with the provided email does not exist."
+                        "status_code": 404,
+                        "error": "Not Found",
+                        "message": "User with the provided email does not exist."
                     }
                 }
             }
@@ -112,7 +138,9 @@ def create_user(user: user_dtos.UserCreateDto, db: Session = Depends(get_db)):
             "content": {
                 "application/json": {
                     "example": {
-                        "detail": "An error occurred during login. Please try again later."
+                        "status_code": 500,
+                        "error": "Database Server Error",
+                        "message": "An error occurred during login. Please try again later."
                     }
                 }
             }
@@ -133,4 +161,8 @@ def user_login(user: user_dtos.UserLoginPayloadDto, db: Session = Depends(get_db
     
     access_token = user_services.service_access_token(user_optional.data.id)
     
-    return access_token
+    return {
+    "status_code": status.HTTP_200_OK,
+    "message": "Your user account has been login successfully",
+    "data": access_token  # Mengembalikan access_token yang benar
+    }

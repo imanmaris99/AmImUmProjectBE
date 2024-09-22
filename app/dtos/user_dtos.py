@@ -3,6 +3,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field, EmailStr
 
+from app.libs.jwt_lib import jwt_dto 
+
 
 class UserCreateDto(BaseModel):
     username: str = Field(default="username")
@@ -53,6 +55,10 @@ class UserLoginPayloadDto(BaseModel):
     email: EmailStr = Field(default="Example@Example.com")
     password: str = Field(default="somePassword")
 
+class UserLoginResponseDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="Your user account has been login successfully")
+    data: jwt_dto.AccessTokenDto  # Atau Anda bisa membuat model terpisah untuk data yang lebih terstruktur
 
 # DTO untuk menangkap data dari JSON
 class ChangePasswordDto(BaseModel):

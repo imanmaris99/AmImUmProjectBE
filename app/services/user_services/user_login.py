@@ -20,7 +20,8 @@ def user_login(db: Session, user: user_dtos.UserLoginPayloadDto) -> optional.Opt
     if user_optional.error:
         return optional.build(error=HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="User with the provided email does not exist."
+            error="Not Found",
+            message="User with the provided email does not exist."
         ))
     user_model = user_optional.data  # Mengambil data user dari Optional
     
@@ -28,7 +29,8 @@ def user_login(db: Session, user: user_dtos.UserLoginPayloadDto) -> optional.Opt
     if not password_lib.verify_password(plain_password=user.password, hashed_password=user_model.hash_password):
         return optional.build(error=HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Password does not match."
+            error="UnAuthorized",
+            message="Password does not match."
         ))
 
     # Jika terjadi error selama generate token atau hal lain yang tidak terduga
@@ -39,5 +41,6 @@ def user_login(db: Session, user: user_dtos.UserLoginPayloadDto) -> optional.Opt
     except Exception as e:
         return optional.build(error=HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An unexpected error occurred: {str(e)}"
+            error="Internal Server Error",
+            message=f"An unexpected error occurred: {str(e)}"
         ))

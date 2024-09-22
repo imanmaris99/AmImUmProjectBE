@@ -42,21 +42,24 @@ def create_user(db: Session, user: user_dtos.UserCreateDto) -> optional.Optional
 
         # Mengembalikan kesalahan dengan pesan yang jelas
         return optional.build(error=HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=message
+            status_code=status.HTTP_400_BAD_REQUEST,
+            error= "Bad Request",
+            message=message
         ))
 
     except SQLAlchemyError as e:
         db.rollback()  # Rollback untuk semua error SQLAlchemy umum lainnya
         return optional.build(error=HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An error occurred while creating the user. Please try again later."
+            error="Internal Server Error",
+            message="An error occurred while creating the user. Please try again later."
         ))
 
     except Exception as e:
         db.rollback()  # Rollback untuk error tak terduga
         return optional.build(error=HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Unexpected error: {str(e)}"
+            error="Internal Server Error",
+            message=f"Unexpected error: {str(e)}"
         ))
 

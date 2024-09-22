@@ -16,8 +16,7 @@ from app.libs.jwt_lib import jwt_dto, jwt_service
 from .get_user_by_property import get_user_by_property
 
 
-def get_user_by_email(db: Session, user_email: str) \
-        -> optional.Optional[Type[UserModel], HTTPException]:
+def get_user_by_email(db: Session, user_email: str) -> optional.Optional[Type[UserModel], HTTPException]:
     def user_filter(user_model: Type[UserModel]):
         return user_model.email.like(f"{user_email}")
 
@@ -28,5 +27,6 @@ def get_user_by_email(db: Session, user_email: str) \
 
     return optional.build(error=HTTPException(
         status_code=status.HTTP_404_NOT_FOUND,
-        detail="email is not register"
+        error="Not Found",
+        message="email is not register"
     ))
