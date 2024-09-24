@@ -1,6 +1,6 @@
 import uuid
 import re
-from sqlalchemy import Column, DateTime, String, Text, func
+from sqlalchemy import Column, Boolean, DateTime, String, Text, func
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import relationship, backref, Mapped
 
@@ -19,6 +19,7 @@ class UserModel(sql_alchemy_lib.Base):
     about_me = Column(Text)
     photo_url = Column(String(255))
     role = Column(String(50))
+    is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     

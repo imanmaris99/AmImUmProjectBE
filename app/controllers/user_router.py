@@ -27,7 +27,7 @@ router = APIRouter(
                         "status_code": 201,
                         "message": "User successfully created",
                         "data": {
-                            "id": "1",
+                            "id": "be65485e-167b-446b-9ce8-0dc11e87e06b",
                             "email": "user@example.com",
                             "username": "username",
                             "phone": "123456789",
@@ -39,7 +39,7 @@ router = APIRouter(
                 }
             }
         },
-        status.HTTP_409_CONFLICT: {
+        status.HTTP_400_BAD_REQUEST: {
             "description": "User already exists (email or username conflict)",
             "content": {
                 "application/json": {
@@ -115,8 +115,20 @@ def create_user(user: user_dtos.UserCreateDto, db: Session = Depends(get_db)):
                 "application/json": {
                     "example": {
                         "status_code": 401,
-                        "error": "AnAuthorized",
+                        "error": "UnAuthorized",
                         "message": "Password does not match."
+                    }
+                }
+            }
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "description": "Your account is not active",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 403,
+                        "error": "Forbiden Access",
+                        "message": "Your account is not active. Please contact support."
                     }
                 }
             }

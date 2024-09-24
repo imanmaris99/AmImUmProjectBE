@@ -13,6 +13,14 @@ from .get_by_user_email import get_user_by_email
 
 
 def user_login(db: Session, user: user_dtos.UserLoginPayloadDto) -> optional.Optional[Type[UserModel], Exception]:
+    # Validasi input user, jika email atau password kosong kembalikan 400 Bad Request
+    if not user.email or not user.password:
+        return optional.build(error=HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            error="Bad Request",
+            message="Email and password must be provided."
+        ))
+    
     # Cek apakah email yang diberikan ada di database
     user_optional = get_user_by_email(db, user.email)
     
@@ -25,6 +33,14 @@ def user_login(db: Session, user: user_dtos.UserLoginPayloadDto) -> optional.Opt
         ))
     user_model = user_optional.data  # Mengambil data user dari Optional
     
+    # Cek jika akun pengguna diblokir atau tidak aktif
+    if not user_model.is_active:  # Misalkan ada atribut is_active di model User
+        return optional.build(error=HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            error="Forbidden",
+            message="Your account is not active. Please contact support."
+        ))
+
     # Verifikasi password, jika tidak cocok kembalikan error 401
     if not password_lib.verify_password(plain_password=user.password, hashed_password=user_model.hash_password):
         return optional.build(error=HTTPException(
