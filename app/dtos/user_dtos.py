@@ -22,34 +22,30 @@ class UserCreateResponseDto(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-# class UserCreateResponseDto(BaseModel):
-#     id: str
-#     username: str
-#     email: str
-#     fullname: str
-#     phone: Optional[str] = None
-#     address: Optional[str] = None
-#     photo_url: Optional[str] = None
-#     about_me_list: list[str]
-#     created_at: datetime
-#     updated_at: datetime
+class UserResponseDto(BaseModel):
+    status_code: int = Field(default=201)
+    message: str = Field(default="Your user account has been create")
+    data: UserCreateResponseDto  # Atau Anda bisa membuat model terpisah untuk data yang lebih terstruktur
 
+class ForgotPasswordDto(BaseModel):
+    email: str
+
+class ResetPasswordDto(BaseModel):
+    token: str
+    new_password: str
 
 class UserEditProfileDto(BaseModel):
     phone: str
     address: str
     about_me: str
 
-
 class UserEditResponseDto(BaseModel):
     phone: str
     address: str
     about_me: str
 
-
 class UserEditPhotoProfileDto(BaseModel):
     photo_url: str
-
 
 class UserLoginPayloadDto(BaseModel):
     email: EmailStr = Field(default="Example@Example.com")

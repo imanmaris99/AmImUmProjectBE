@@ -16,7 +16,7 @@ router = APIRouter(
 ## == USER - REGISTER == ##
 @router.post(
     "/register",
-    response_model=user_dtos.UserCreateResponseDto,
+    response_model=user_dtos.UserResponseDto,
     status_code=status.HTTP_201_CREATED,
     responses={
         status.HTTP_201_CREATED: {
@@ -178,3 +178,23 @@ def user_login(user: user_dtos.UserLoginPayloadDto, db: Session = Depends(get_db
     "message": "Your user account has been login successfully",
     "data": access_token  # Mengembalikan access_token yang benar
     }
+
+@router.post("/forgot-password")
+def forgot_password(payload: user_dtos.ForgotPasswordDto, db: Session = Depends(get_db)):
+    """
+    Kirim permintaan reset password ke email.
+    """
+    # Implementasi send_reset_password_request yang mengirim email dengan token
+    return user_services.send_reset_password_request(db, email=payload.email)
+
+
+# @router.post("/reset-password")
+# def reset_password_endpoint(payload: user_dtos.ResetPasswordDto, db: Session = Depends(get_db)):
+#     """
+#     Reset password menggunakan token.
+#     """
+#     # Verifikasi token dari payload
+#     email = jwt_service.verify_reset_password_token(payload.token)
+    
+#     # Implementasi reset password dengan email dan password baru
+#     return user_services.reset_password(db, email=email, new_password=payload.new_password)
