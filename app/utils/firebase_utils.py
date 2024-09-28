@@ -1,45 +1,69 @@
 import firebase_admin
-from firebase_admin import credentials, auth
+from firebase_admin import credentials, auth, initialize_app
 from fastapi import HTTPException, status
 
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
+
 from dotenv import load_dotenv
 import json
 
+# Load environment variables from .env file
 load_dotenv()
 
-# Inisialisasi Firebase
-# cred = credentials.Certificate("path/to/serviceAccountKey.json")
-# if not firebase_admin._apps:
-#     firebase_admin.initialize_app(cred)
+# def initialize_firebase():
+#     try:
+#         # Replace literal '\n' with actual new lines
+#         private_key = os.getenv("FIREBASE_PRIVATE_KEY").replace("\\n", "\n")
 
-# Inisialisasi Firebase dengan service account dari environment variable
-def initialize_firebase():
-    firebase_service_account_key = os.getenv('FIREBASE_SERVICE_ACCOUNT_KEY')
-
-    if not firebase_service_account_key:
-        raise ValueError("FIREBASE_SERVICE_ACCOUNT_KEY is not set in the environment variables")
-    
-    try:
-        # Parse JSON dari string environment
-        cred_dict = json.loads(firebase_service_account_key)
-        cred = credentials.Certificate(cred_dict)
+#         cred = credentials.Certificate({
+#             "type": os.getenv("FIREBASE_TYPE"),
+#             "project_id": os.getenv("FIREBASE_PROJECT_ID"),
+#             "private_key_id": os.getenv("FIREBASE_PRIVATE_KEY_ID"),
+#             "private_key": private_key,
+#             "client_email": os.getenv("FIREBASE_CLIENT_EMAIL"),
+#             "client_id": os.getenv("FIREBASE_CLIENT_ID"),
+#             "auth_uri": os.getenv("FIREBASE_AUTH_URI"),
+#             "token_uri": os.getenv("FIREBASE_TOKEN_URI"),
+#             "auth_provider_x509_cert_url": os.getenv("FIREBASE_AUTH_PROVIDER_CERT_URL"),
+#             "client_x509_cert_url": os.getenv("FIREBASE_CLIENT_CERT_URL")
+#         })
         
-        # Inisialisasi Firebase
-        if not firebase_admin._apps:
-            firebase_admin.initialize_app(cred)
-    
-    except json.JSONDecodeError as e:
-        raise ValueError(f"Invalid JSON in FIREBASE_SERVICE_ACCOUNT_KEY: {str(e)}")
-    
-    except Exception as e:
-        raise ValueError(f"Error initializing Firebase: {str(e)}")
+#         # Initialize the Firebase app
+#         firebase_admin.initialize_app(cred)
+#         print("Firebase initialized successfully")
 
-# Memanggil fungsi inisialisasi
-initialize_firebase()
+#     except Exception as e:
+#         raise ValueError(f"Kesalahan saat menginisialisasi Firebase: {str(e)}")
+
+# def initialize_firebase():
+#     firebase_config_str = os.getenv("FIREBASE_CONFIG")
+    
+#     if not firebase_config_str:
+#         raise ValueError("Environment variable 'FIREBASE_CONFIG' tidak ditemukan atau kosong.")
+    
+#     print(f"FIREBASE_CONFIG (panjang: {len(firebase_config_str)}): {firebase_config_str}")  # Debug: lihat panjang dan nilai
+    
+#     try:
+#         firebase_config = json.loads(firebase_config_str)
+#     except json.JSONDecodeError as e:
+#         raise ValueError(f"FIREBASE_CONFIG tidak berisi JSON valid: {e}")
+
+#     # Inisialisasi Firebase
+#     cred = credentials.Certificate(firebase_config)
+#     if not firebase_admin._apps:
+#         firebase_admin.initialize_app(cred)
+#         print("Firebase initialized successfully.")
+
+
+
+# Inisialisasi Firebase
+cred = credentials.Certificate("path/to/serviceAccountKey.json")
+if not firebase_admin._apps:
+    firebase_admin.initialize_app(cred)
+
 
 # Fungsi untuk membuat user di Firebase
 def create_firebase_user(email: str, password: str):
@@ -116,14 +140,34 @@ def send_email(to_email: str, subject: str, body: str):
 def send_email_verification(to_email: str, verification_link: str):
     """Mengirim email verifikasi dengan tautan."""
     subject = "Email Verification"
-    body = f"Please verify your email by clicking on the following link: {verification_link}"
+    body = f"""
+    Hi,
+    
+    Please verify your email by clicking on the following link: 
+    
+    {verification_link}
+
+    Regards,
+    AmImUm Herbal Team
+    """
     send_email(to_email, subject, body)
 
 # Fungsi khusus untuk reset password
 def send_email_reset_password(to_email: str, reset_link: str):
     """Mengirim email reset password dengan tautan."""
     subject = "Reset Password"
-    body = f"Click the following link to reset your password: {reset_link}"
+    body = f"""
+    Hi,
+
+    You requested a password reset. Click the link below to reset your password:
+
+    {reset_link}
+
+    If you did not request this, please ignore this email.
+
+    Regards,
+    AmImUm Herbal Team
+    """
     send_email(to_email, subject, body)
 
 # Fungsi untuk mengirim email verifikasi pengguna Firebase

@@ -33,6 +33,7 @@ async def get_jwt_pyload(token: Annotated[HTTPAuthorizationCredentials, Depends(
     try:
         payload = jwt.decode(jwt=token.credentials, key=SECRET_KEY, algorithms=[ALGORITHM])
         return TokenPayLoad(id=payload.get("id"))
+    
     except InvalidTokenError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -53,9 +54,20 @@ def verify_reset_password_token(token: str) -> str:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email = payload.get("sub")  # Mengambil email dari token
         if email is None:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token.")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error="Bad Request", 
+                message="Invalid token.")
         return email
+    
     except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token has expired.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            error="Bad Request",
+            message="Token has expired.")
+    
     except jwt.InvalidTokenError:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            error="Bad Request",
+            message="Invalid token.")

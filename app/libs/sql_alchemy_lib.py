@@ -12,7 +12,10 @@ APP_DEVELOPMENT = os.getenv("APP_DEVELOPMENT", True)
 engine: Engine
 
 SQLALCHEMY_DATABASE_URL = os.getenv('DATABASE_URL')
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL,
+    pool_pre_ping=True
+    )
 
 """
 ######################Tis code use to make interact with database object###################################

@@ -73,17 +73,6 @@ def create_user(user: user_dtos.UserCreateDto, db: Session = Depends(get_db)):
     """
     result = user_services.create_user(db, user)
     
-    # if result.error:
-    #     # Tangkap error dan kembalikan response yang lebih deskriptif
-    #     raise HTTPException(
-    #         status_code=result.error.status_code,
-    #         detail={
-    #             "status_code": result.error.status_code,
-    #             "error": result.error.error,
-    #             "message": result.error.message
-    #         }
-    #     )
-
     return {
     "status_code": status.HTTP_201_CREATED,
     "message": "User successfully created",
@@ -179,22 +168,114 @@ def user_login(user: user_dtos.UserLoginPayloadDto, db: Session = Depends(get_db
     "data": access_token  # Mengembalikan access_token yang benar
     }
 
-@router.post("/forgot-password")
-def forgot_password(payload: user_dtos.ForgotPasswordDto, db: Session = Depends(get_db)):
+
+## == USER - FORGOT_PASSWORD == ##
+@router.post(
+    "/forgot-password",
+    # response_model=jwt_dto.AccessTokenDto,
+    response_model= user_dtos.ForgotPasswordResponseDto,
+    responses={
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Email not found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 404,
+                        "error": "Not Found",
+                        "message": "Email not found."
+                    }
+                }
+            }
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "description": "Failed to send reset password email",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 500,
+                        "error": "Internal Server Error",
+                        "message": "Failed to send reset password email: {error_message}"
+                    }
+                }
+            }
+        }
+    },
+    summary="Send password reset email"
+)
+def forgot_password(payload: user_dtos.ForgotPasswordDto, db: Session = Depends(get_db)):    
     """
     Kirim permintaan reset password ke email.
+
+    Kriteria Password:
+    - Password harus minimal 8 karakter.
+    - Password harus mengandung setidaknya satu huruf besar.
+    - Password harus mengandung setidaknya satu huruf kecil.
+    - Password harus mengandung setidaknya satu angka.
+    - Password harus mengandung setidaknya satu karakter spesial.
     """
     # Implementasi send_reset_password_request yang mengirim email dengan token
-    return user_services.send_reset_password_request(db, email=payload.email)
+    result = user_services.send_reset_password_request(db, payload)  # Pass the DTO directly
+    return result.unwrap()
 
 
-# @router.post("/reset-password")
-# def reset_password_endpoint(payload: user_dtos.ResetPasswordDto, db: Session = Depends(get_db)):
-#     """
-#     Reset password menggunakan token.
-#     """
-#     # Verifikasi token dari payload
-#     email = jwt_service.verify_reset_password_token(payload.token)
-    
-#     # Implementasi reset password dengan email dan password baru
-#     return user_services.reset_password(db, email=email, new_password=payload.new_password)
+## == USER - CONFIRM_NEW_PASSWORD == ##
+@router.post(
+    "/password-reset/confirm/",
+    response_model=user_dtos.ConfirmResetPasswordResponseDto,
+    responses={
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Email not found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 404,
+                        "error": "Not Found",
+                        "message": "Email not found."
+                    }
+                }
+            }
+        },
+        status.HTTP_400_BAD_REQUEST: {
+            "description": "Invalid password criteria",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 400,
+                        "error": "Bad Request",
+                        "message": "Password must meet the required criteria."
+                    }
+                }
+            }
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "description": "Failed to reset password",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 500,
+                        "error": "Internal Server Error",
+                        "message": "Failed to reset password: {error_message}"
+                    }
+                }
+            }
+        }
+    },
+    summary="Confirm password reset"
+)
+def confirm_reset_password(payload: user_dtos.ConfirmResetPasswordDto, db: Session = Depends(get_db)):
+    """
+    API untuk mengkonfirmasi reset password setelah pengguna melakukannya di client-side.
+
+    Kriteria Password:
+    - Password harus minimal 8 karakter.
+    - Password harus mengandung setidaknya satu huruf besar.
+    - Password harus mengandung setidaknya satu huruf kecil.
+    - Password harus mengandung setidaknya satu angka.
+    - Password harus mengandung setidaknya satu karakter spesial.
+
+    Returns:
+        dict: Pesan sukses jika password berhasil direset.
+    """
+    result = user_services.confirm_password_reset(payload=payload, db=db)
+
+    return result.unwrap()  # Return the success response if no error

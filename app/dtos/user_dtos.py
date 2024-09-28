@@ -27,12 +27,26 @@ class UserResponseDto(BaseModel):
     message: str = Field(default="Your user account has been create")
     data: UserCreateResponseDto  # Atau Anda bisa membuat model terpisah untuk data yang lebih terstruktur
 
-class ForgotPasswordDto(BaseModel):
-    email: str
-
 class ResetPasswordDto(BaseModel):
     token: str
     new_password: str
+
+class ForgotPasswordDto(BaseModel):
+    email: EmailStr = Field(default="myemail@gmail.com")
+class ForgotPasswordResponseDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="Password reset email has been sent.")
+    data: ForgotPasswordDto
+
+class ConfirmResetPasswordDto(BaseModel):
+    email: EmailStr = Field(default="myemail@gmail.com")
+    new_password: str = Field(default="Password@3")
+
+class ConfirmResetPasswordResponseDto(BaseModel):
+    status_code: int = Field(default=201)
+    message: str = Field(default="Your user account has been create")
+    data: ConfirmResetPasswordDto  # Atau Anda bisa membuat model terpisah untuk data yang lebih terstruktur
+
 
 class UserEditProfileDto(BaseModel):
     phone: str
@@ -55,6 +69,8 @@ class UserLoginResponseDto(BaseModel):
     status_code: int = Field(default=200)
     message: str = Field(default="Your user account has been login successfully")
     data: jwt_dto.AccessTokenDto  # Atau Anda bisa membuat model terpisah untuk data yang lebih terstruktur
+
+
 
 # DTO untuk menangkap data dari JSON
 class ChangePasswordDto(BaseModel):
