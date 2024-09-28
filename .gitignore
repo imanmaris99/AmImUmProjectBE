@@ -16,6 +16,7 @@ poetry.lock
 *\\d.*.py
 
 # Byte-compiled / optimized / DLL files
+test_json_parsing.py
 serviceAccountKey.json
 .env
 *.json
