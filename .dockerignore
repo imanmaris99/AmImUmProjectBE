@@ -1,0 +1,46 @@
+# Include any files or directories that you don't want to be copied to your
+# container here (e.g., local build artifacts, temporary files, etc.).
+#
+# For more help, visit the .dockerignore file reference guide at
+# https://docs.docker.com/go/build-context-dockerignore/
+
+# Ignore secret files
+serviceAccountKey.json
+.env
+
+# Ignore Python cache and virtual environments
+**/__pycache__
+**/.venv
+**/*.pyc
+**/*.pyo
+**/*.pyd
+
+# Ignore unnecessary system files
+**/.DS_Store
+**/.git
+**/.gitignore
+**/.dockerignore
+**/.project
+**/.settings
+**/.toolstarget
+**/.vs
+**/.vscode
+**/*.dbmdl
+**/*.jfm
+LICENSE
+README.md
+
+# Ignore development or build artifacts
+**/node_modules
+**/npm-debug.log
+**/bin
+**/obj
+test_app.db
+
+# Ignore Docker-related files
+Dockerfile*
+docker-compose*
+
+# Ignore test files and folders
+tests/
+poetry.lock
