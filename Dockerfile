@@ -25,7 +25,8 @@ RUN python3 -m venv .venv\
     &&pip install -U pip setuptools \
     &&pip install poetry==${POETRY_VERSION} \
     &&poetry install --without dev --no-root\
-    &&poetry add psycopg2
+    &&poetry add psycopg2\
+    &&poetry add python-dotenv
 
 # Final stage
 FROM base AS final

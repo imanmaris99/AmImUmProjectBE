@@ -6,7 +6,7 @@
 
 # Ignore secret files
 serviceAccountKey.json
-.env
+
 
 # Ignore Python cache and virtual environments
 **/__pycache__
