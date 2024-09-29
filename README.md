@@ -81,7 +81,7 @@ Jika menggunakan Alembic untuk migrasi database:
 poetry run uvicorn app.main:app --reload
 ```
 Aplikasi akan berjalan di http://127.0.0.1:8000.
-</br>
+
 
 ## Pengujian
 Untuk menjalankan pengujian unit dan integrasi, gunakan perintah berikut:
@@ -94,7 +94,7 @@ Pengujian juga mencakup cakupan kode dengan pytest-cov:
 ```bash
 poetry run pytest --cov=app
 ```
-</br>
+
 
 ## Pengembangan (Development)
 
