@@ -18,7 +18,21 @@ This user to auto create all table
 INIT ALL Database Here
 """
 
-app = FastAPI()
+app = FastAPI(
+    title="Dokumentasi API dari Proyek App. AmImUm Herbal",  
+    description="Media API untuk mengelola dan testing CRUD proyek App. AmImUm Herbal",
+    version="1.0.0",
+    terms_of_service="https://..../.../",
+    contact={
+        "name": "Developer API",
+        "url": "https://github.com/imanmaris99",
+        "email": "herbalamimum99@gmail.com",
+    },
+    license_info={
+        "name": "MIT License",
+        "url": "https://opensource.org/licenses/MIT",
+    },
+)
 
 
 app.include_router(controllers.user_router.router)
