@@ -26,7 +26,7 @@
 #         firebase_admin.initialize_app(cred)
 #         print("Firebase initialized successfully.")
 
-# # Inisialisasi Firebase
-# # cred = credentials.Certificate("path/to/serviceAccountKey.json")
-# # if not firebase_admin._apps:
-# #     firebase_admin.initialize_app(cred)
+# Inisialisasi Firebase
+# cred = credentials.Certificate("path/to/serviceAccountKey.json")
+# if not firebase_admin._apps:
+#     firebase_admin.initialize_app(cred)

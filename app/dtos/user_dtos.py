@@ -33,6 +33,7 @@ class ResetPasswordDto(BaseModel):
 
 class ForgotPasswordDto(BaseModel):
     email: EmailStr = Field(default="myemail@gmail.com")
+    
 class ForgotPasswordResponseDto(BaseModel):
     status_code: int = Field(default=200)
     message: str = Field(default="Password reset email has been sent.")

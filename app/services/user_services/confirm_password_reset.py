@@ -52,28 +52,3 @@ def confirm_password_reset(payload: user_dtos.ConfirmResetPasswordDto, db: Sessi
 
 
 
-# def confirm_password_reset(email: str, new_password: str, db: Session):
-#     # Cek apakah password memenuhi kebijakan
-#     is_valid, error_message = is_valid_password(new_password)
-#     if not is_valid:
-#         raise HTTPException(
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#             error="Bad Request",
-#             message=error_message
-#         )
-    
-#     user = db.query(UserModel).filter(UserModel.email == email).first()
-    
-#     if not user:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             error="Not Found",
-#             message="User not found"
-#         )
-    
-#     # Hash password baru dan simpan
-#     user.hash_password = password_lib.get_password_hash(new_password)
-#     db.commit()
-
-#     # log_password_reset_request(email, "Password reset confirmed")
-#     return {"message": "Password has been reset successfully."}

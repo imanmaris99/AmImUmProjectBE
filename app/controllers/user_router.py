@@ -266,6 +266,10 @@ def confirm_reset_password(payload: user_dtos.ConfirmResetPasswordDto, db: Sessi
     """
     API untuk mengkonfirmasi reset password setelah pengguna melakukannya di client-side.
 
+    Dengan menggunakan tautan reset password yang dikirim melalui email, 
+    
+    Anda memastikan bahwa hanya pengguna yang memiliki akses ke email yang terdaftar yang dapat melakukan penggantian password.
+
     Kriteria Password:
     - Password harus minimal 8 karakter.
     - Password harus mengandung setidaknya satu huruf besar.
@@ -274,6 +278,7 @@ def confirm_reset_password(payload: user_dtos.ConfirmResetPasswordDto, db: Sessi
     - Password harus mengandung setidaknya satu karakter spesial.
 
     Returns:
+
         dict: Pesan sukses jika password berhasil direset.
     """
     result = user_services.confirm_password_reset(payload=payload, db=db)
