@@ -10,20 +10,22 @@ ENV POETRY_VIRTUALENVS_CREATE=false
 
 # Install Poetry and dependencies in a build stage
 FROM base AS build
-# Set working directory
-WORKDIR /usr/src/app
 
 # Install required packages
-RUN apk add --no-cache build-base libffi-dev postgresql-dev musl-dev
+RUN apk add --update --no-cache build-base postgresql-dev musl-dev
+
+# Set working directory
+WORKDIR /usr/src/app
 
 # Copy the pyproject.toml and poetry.lock files to the container
 COPY pyproject.toml poetry.lock* ./ 
 
-# Install Poetry
-RUN pip install poetry==${POETRY_VERSION}
-
-# Install project dependencies without development dependencies
-RUN poetry install --no-dev --no-root
+# Create a virtual environment and install Poetry
+RUN python3 -m venv .venv\
+    &&pip install -U pip setuptools \
+    &&pip install poetry==${POETRY_VERSION} \
+    &&poetry install --without dev --no-root\
+    &&poetry add psycopg2
 
 # Final stage
 FROM base AS final
@@ -32,7 +34,10 @@ FROM base AS final
 ENV PYTHONDONTWRITEBYTECODE=1
 # Keeps Python from buffering stdout and stderr
 ENV PYTHONUNBUFFERED=1
-ENV APP_ENVIRONMENT=production
+ENV APP_DEVELOPMENT=False
+
+ENV VIRTUAL_ENV=/usr/src/app/.venv \
+    PATH="/usr/src/app/.venv/bin:$PATH"
 
 # Install production dependencies
 RUN apk add --no-cache postgresql-client
@@ -41,13 +46,15 @@ RUN apk add --no-cache postgresql-client
 WORKDIR /usr/src/app
 
 # Copy the dependencies from build stage
-COPY --from=build /usr/src/app /usr/src/app
-
+COPY --from=build /usr/src/app/.venv .venv
 # Copy the application code to the container
 COPY . /usr/src/app
+
+# See https://docs.docker.com/go/dockerfile-user-best-practices/
+ARG UID=10001
 
 # Expose the port the app runs on
 EXPOSE 8000
 
-# Run the application using Poetry
-CMD ["poetry", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run the application
+CMD ["python", "run.py"]
