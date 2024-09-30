@@ -7,7 +7,9 @@ from app.libs.jwt_lib import jwt_dto
 
 
 class UserCreateDto(BaseModel):
-    username: str = Field(default="username")
+    firstname: str = Field(default="firstname")
+    lastname: str = Field(default="lastname")
+    gender: str = Field(default="man/woman")
     email: EmailStr = Field(default="Example@Example.com")
     phone: str = Field(default="+6289965342543")
     password: str = Field(default="password")
@@ -50,14 +52,14 @@ class ConfirmResetPasswordResponseDto(BaseModel):
 
 
 class UserEditProfileDto(BaseModel):
-    phone: str
+    fullname: str
     address: str
-    about_me: str
+    photo_url: str
 
 class UserEditResponseDto(BaseModel):
-    phone: str
-    address: str
-    about_me: str
+    status_code: int = Field(default=201)
+    message: str = Field(default="Edit profile has been success")
+    data: UserEditProfileDto
 
 class UserEditPhotoProfileDto(BaseModel):
     photo_url: str

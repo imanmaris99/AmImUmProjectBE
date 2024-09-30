@@ -31,9 +31,11 @@ def create_user(db: Session, user: user_dtos.UserCreateDto) -> optional.Optional
 
         # Membuat instance user baru
         user_model = UserModel()
+        user_model.firstname = user.firstname
+        user_model.lastname = user.lastname
+        user_model.gender = user.gender
         user_model.email = firebase_user.email
         user_model.phone = user.phone
-        user_model.username = user.username
         user_model.hash_password = password_lib.get_password_hash(password=user.password)
 
         # Mengisi role secara otomatis sebagai 'customer'
@@ -55,8 +57,8 @@ def create_user(db: Session, user: user_dtos.UserCreateDto) -> optional.Optional
         # Menentukan apakah kesalahan berasal dari email atau username yang sudah ada
         if 'email' in str(ie.orig):
             message = "Email already exists. Please use a different email."
-        elif 'username' in str(ie.orig):
-            message = "Username already exists. Please choose a different username."
+        elif 'phone' in str(ie.orig):
+            message = "Phone already exists. Please choose a different phone."
         else:
             message = "Duplicate data found."
 
