@@ -9,77 +9,77 @@ from app.dtos import user_dtos
 
 
 router = APIRouter(
-    prefix="/user",
-    tags=["User/ Customer"]
+    prefix="/admin",
+    tags=["User/ Admin"]
 )
 
 ## == USER - REGISTER == ##
-@router.post(
-    "/register",
-    response_model=user_dtos.UserResponseDto,
-    status_code=status.HTTP_201_CREATED,
-    responses={
-        status.HTTP_201_CREATED: {
-            "description": "User successfully created",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "status_code": 201,
-                        "message": "User successfully created",
-                        "data": {
-                            "id": "be65485e-167b-446b-9ce8-0dc11e87e06b",
-                            "email": "user@example.com",
-                            "firstname": "Budi",
-                            "lastname": "Pekerti",
-                            "gender": "man",
-                            "phone": "123456789",
-                            "role": "customer",
-                            "created_at": "2024-09-21T14:28:23.382Z",
-                            "updated_at": "2024-09-21T14:28:23.382Z"
-                        }
-                    }
-                }
-            }
-        },
-        status.HTTP_400_BAD_REQUEST: {
-            "description": "User already exists (email or phone conflict)",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "status_code": 400,
-                        "error": "Bad Request",
-                        "message": "Email already exists. Please use a different email."
-                    }
-                }
-            }
-        },
-        status.HTTP_500_INTERNAL_SERVER_ERROR: {
-            "description": "Server error while creating user",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "status_code": 500,
-                        "error": "Database Error",
-                        "message": "An error occurred while creating the user. Please try again later."
-                    }
-                }
-            }
-        }
-    },
-    summary="Register a new user"
-)
-def create_user(user: user_dtos.UserCreateDto, db: Session = Depends(get_db)):
-    """
-    # User/ Customer Register #
-    This method is used to create a user
-    """
-    result = user_services.create_user(db, user)
+# @router.post(
+#     "/register",
+#     response_model=user_dtos.UserResponseDto,
+#     status_code=status.HTTP_201_CREATED,
+#     responses={
+#         status.HTTP_201_CREATED: {
+#             "description": "User successfully created",
+#             "content": {
+#                 "application/json": {
+#                     "example": {
+#                         "status_code": 201,
+#                         "message": "User successfully created",
+#                         "data": {
+#                             "id": "be65485e-167b-446b-9ce8-0dc11e87e06b",
+#                             "email": "user@example.com",
+#                             "firstname": "Budi",
+#                             "lastname": "Pekerti",
+#                             "gender": "man",
+#                             "phone": "123456789",
+#                             "role": "admin",
+#                             "created_at": "2024-09-21T14:28:23.382Z",
+#                             "updated_at": "2024-09-21T14:28:23.382Z"
+#                         }
+#                     }
+#                 }
+#             }
+#         },
+#         status.HTTP_400_BAD_REQUEST: {
+#             "description": "User already exists (email or phone conflict)",
+#             "content": {
+#                 "application/json": {
+#                     "example": {
+#                         "status_code": 400,
+#                         "error": "Bad Request",
+#                         "message": "Email already exists. Please use a different email."
+#                     }
+#                 }
+#             }
+#         },
+#         status.HTTP_500_INTERNAL_SERVER_ERROR: {
+#             "description": "Server error while creating user",
+#             "content": {
+#                 "application/json": {
+#                     "example": {
+#                         "status_code": 500,
+#                         "error": "Database Error",
+#                         "message": "An error occurred while creating the user. Please try again later."
+#                     }
+#                 }
+#             }
+#         }
+#     },
+#     summary="Register a new user as admin"
+# )
+# def create_admin(user: user_dtos.UserCreateDto, db: Session = Depends(get_db)):
+#     """
+#     # User as Admin Register #
+#     This method is used to create a user
+#     """
+#     result = user_services.create_admin(db, user)
     
-    return {
-    "status_code": status.HTTP_201_CREATED,
-    "message": "User successfully created",
-    "data": result.unwrap()
-}
+#     return {
+#     "status_code": status.HTTP_201_CREATED,
+#     "message": "User successfully created",
+#     "data": result.unwrap()
+# }
 
 
 ## == USER - LOGIN == ##
@@ -149,12 +149,12 @@ def create_user(user: user_dtos.UserCreateDto, db: Session = Depends(get_db)):
             }
         }
     },
-    summary="User login"
+    summary="User as admin login"
 )
-def user_login(user: user_dtos.UserLoginPayloadDto, db: Session = Depends(get_db)):
+def admin_login(user: user_dtos.UserLoginPayloadDto, db: Session = Depends(get_db)):
     """
-    # User/ Customer Login #
-    This method is used for user login
+    # Admin Login #
+    This method is used for user as admin to login
     """
     
     user_optional = user_services.user_login(db=db, user=user)

@@ -19,8 +19,8 @@ INIT ALL Database Here
 """
 
 app = FastAPI(
-    title="Dokumentasi API dari Proyek App. AmImUm Herbal",  
-    description="Media API untuk mengelola dan testing CRUD proyek App. AmImUm Herbal",
+    title="Dokumentasi API -> App. AmImUm Herbal",  
+    description="Media API untuk mengelola serta melakukan testing CRUD pada proyek App. AmImUm Herbal",
     version="1.0.0",
     terms_of_service="https://..../.../",
     contact={
@@ -35,7 +35,9 @@ app = FastAPI(
 )
 
 
+app.include_router(controllers.admin_router.router)
 app.include_router(controllers.user_router.router)
+
 
 origins = [
     "http://localhost",
