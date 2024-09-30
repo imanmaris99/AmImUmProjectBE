@@ -29,7 +29,9 @@ router = APIRouter(
                         "data": {
                             "id": "be65485e-167b-446b-9ce8-0dc11e87e06b",
                             "email": "user@example.com",
-                            "username": "username",
+                            "firstname": "Budi",
+                            "lastname": "Pekerti",
+                            "gender": "man",
                             "phone": "123456789",
                             "role": "customer",
                             "created_at": "2024-09-21T14:28:23.382Z",

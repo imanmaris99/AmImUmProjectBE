@@ -16,7 +16,9 @@ class UserCreateDto(BaseModel):
 
 class UserCreateResponseDto(BaseModel):
     id: str
-    username: str
+    firstname: str
+    lastname: str
+    gender:str
     email: str
     phone: Optional[str] = None
     address: Optional[str] = None
