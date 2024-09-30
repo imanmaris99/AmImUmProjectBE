@@ -5,5 +5,6 @@ from .user_login import user_login
 from .service_access_token import service_access_token
 
 from .send_reset_password_request import send_reset_password_request
+from .verify_reset_password_token import verify_reset_password_token
 from .reset_password import reset_password
 from .confirm_password_reset import confirm_password_reset

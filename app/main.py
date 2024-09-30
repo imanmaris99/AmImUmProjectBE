@@ -22,7 +22,7 @@ app = FastAPI(
     title="Dokumentasi API -> App. AmImUm Herbal",  
     description="Media API untuk mengelola serta melakukan testing CRUD pada proyek App. AmImUm Herbal",
     version="1.0.0",
-    terms_of_service="https://..../.../",
+    terms_of_service="https://github.com/imanmaris99/AmImUmProjectBE",
     contact={
         "name": "Developer API",
         "url": "https://github.com/imanmaris99",

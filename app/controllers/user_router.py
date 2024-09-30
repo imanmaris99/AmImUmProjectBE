@@ -286,3 +286,24 @@ def confirm_reset_password(payload: user_dtos.ConfirmResetPasswordDto, db: Sessi
     result = user_services.confirm_password_reset(payload=payload, db=db)
 
     return result.unwrap()  # Return the success response if no error
+
+# @router.post("/reset-password", response_model=user_dtos.ResetPasswordResponseDto)
+# def reset_password(payload: user_dtos.ResetPasswordDto, db: Session = Depends(get_db)):
+#     try:
+#         # Panggil service untuk memverifikasi token dan reset password
+#         user_services.reset_password(payload, db)
+        
+#         # Jika berhasil, kembalikan response yang sesuai
+#         return user_dtos.ResetPasswordResponseDto(
+#             status_code=200,
+#             message="Password has been reset successfully.",
+#             data=payload
+#         )
+#     except HTTPException as e:
+#         raise e
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             error="Internal Server Error",
+#             message=f"Error processing password reset: {str(e)}"
+#         )

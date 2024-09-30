@@ -32,8 +32,14 @@ class UserResponseDto(BaseModel):
     data: UserCreateResponseDto  # Atau Anda bisa membuat model terpisah untuk data yang lebih terstruktur
 
 class ResetPasswordDto(BaseModel):
-    token: str
+    oob_code: str
+    email: EmailStr 
     new_password: str
+
+class ResetPasswordResponseDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="Password reset email has been sent.")
+    data: ResetPasswordDto
 
 class ForgotPasswordDto(BaseModel):
     email: EmailStr = Field(default="myemail@gmail.com")
