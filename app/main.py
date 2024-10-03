@@ -43,6 +43,7 @@ origins = [
     "http://localhost",
     "http://localhost:3000",
     "http://http://localhost:5173",
+    "https://imanmaris-portfolio.vercel.app",
     "https://tools.slingacademy.com",
     "https://www.slingacademy.com",
     "https://amimumherbalproject.vercel.app"
