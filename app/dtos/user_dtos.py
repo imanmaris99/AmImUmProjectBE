@@ -81,7 +81,8 @@ class UserLoginResponseDto(BaseModel):
     message: str = Field(default="Your user account has been login successfully")
     data: jwt_dto.AccessTokenDto  # Atau Anda bisa membuat model terpisah untuk data yang lebih terstruktur
 
-
+class GoogleLoginRequest(BaseModel):
+    id_token: str
 
 # DTO untuk menangkap data dari JSON
 class ChangePasswordDto(BaseModel):

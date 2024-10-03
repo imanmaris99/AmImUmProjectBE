@@ -170,6 +170,12 @@ def user_login(user: user_dtos.UserLoginPayloadDto, db: Session = Depends(get_db
     "data": access_token  # Mengembalikan access_token yang benar
     }
 
+## == COBA PAKAI LOGIN USER GOOGLE == ##
+@router.post("/auth/google-login")
+async def google_login(google_login_req: user_dtos.GoogleLoginRequest, db: Session = Depends(get_db)):
+    user = user_services.login_with_google(db, google_login_req.id_token)
+    return {"message": "Login successful", "user": user}
+
 
 ## == USER - FORGOT_PASSWORD == ##
 @router.post(

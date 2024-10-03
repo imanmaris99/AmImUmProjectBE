@@ -42,6 +42,7 @@ app.include_router(controllers.user_router.router)
 origins = [
     "http://localhost",
     "http://localhost:3000",
+    "http://http://localhost:5173",
     "https://tools.slingacademy.com",
     "https://www.slingacademy.com",
     "https://amimumherbalproject.vercel.app"
