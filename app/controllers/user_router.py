@@ -171,10 +171,57 @@ def user_login(user: user_dtos.UserLoginPayloadDto, db: Session = Depends(get_db
     }
 
 ## == COBA PAKAI LOGIN USER GOOGLE == ##
-@router.post("/auth/google-login")
+@router.post(
+        "/auth/google-login",
+        response_model=user_dtos.GoogleLoginResponseRequestDto,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {
+                "description": "Unauthorized. Incorrect email or password.",
+                "content": {
+                    "application/json": {
+                        "example": {
+                            "status_code": 401,
+                            "error": "Unauthorized",
+                            "message": "Invalid token or login failed: [FirebaseError detail here]"
+                        }
+                    }
+                }
+            },
+            status.HTTP_404_NOT_FOUND: {
+                "description": "User not found",
+                "content": {
+                    "application/json": {
+                        "example": {
+                            "status_code": 404,
+                            "error": "Not Found",
+                            "message": "User with the provided email does not exist."
+                        }
+                    }
+                }
+            },
+            status.HTTP_500_INTERNAL_SERVER_ERROR: {
+                "description": "Server error during login",
+                "content": {
+                    "application/json": {
+                        "example": {
+                            "status_code": 500,
+                            "error": "Internal Server Error",
+                            "message": "An unexpected error occurred: [exception message here]"
+                        }
+                    }
+                }
+            }
+        },
+        summary="User login use Google account"
+    )
 async def google_login(google_login_req: user_dtos.GoogleLoginRequest, db: Session = Depends(get_db)):
     user = user_services.login_with_google(db, google_login_req.id_token)
-    return {"message": "Login successful", "user": user}
+    # return user.unwrap()
+    return {
+    "status_code": status.HTTP_200_OK,
+    "message": "Your user google account has been login successfully",
+    "data": user.unwrap()  # Mengembalikan access_token yang benar
+    }
 
 
 ## == USER - FORGOT_PASSWORD == ##

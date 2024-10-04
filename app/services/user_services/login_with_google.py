@@ -1,8 +1,12 @@
 # services/auth_service.py
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
+
 from firebase_admin import auth as firebase_auth
+from firebase_admin.exceptions import FirebaseError
+
 from app.models.user_model import UserModel
+from app.utils import optional
 
 def login_with_google(db: Session, id_token: str):
     try:
@@ -19,16 +23,26 @@ def login_with_google(db: Session, id_token: str):
                 email=email,
                 firstname=decoded_token.get('given_name', ''),
                 lastname=decoded_token.get('family_name', ''),
+                gender=decoded_token.get('gender', None),
+                phone=decoded_token.get('phone', None)
                 # Tambahkan data lainnya sesuai kebutuhan
             )
             db.add(user)
             db.commit()
             db.refresh(user)
 
-        return user
-    except Exception as e:
-        raise HTTPException(
+        return optional.build (data=user)
+    
+    except FirebaseError as e:
+        return optional.build(error=HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             error="Unauthorized",
-            message="Invalid token or login failed"
-        )
+            message="Invalid token or login failed :" + str(e)
+        ))
+    
+    except Exception as e:
+        return optional.build(error=HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            error="Internal Server Error",
+            message="An unexpected error occurred :" + str(e)
+        ))

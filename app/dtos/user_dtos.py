@@ -84,6 +84,12 @@ class UserLoginResponseDto(BaseModel):
 class GoogleLoginRequest(BaseModel):
     id_token: str
 
+class GoogleLoginResponseRequestDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="Your user google account has been login successfully")
+    data: UserCreateResponseDto
+
+
 # DTO untuk menangkap data dari JSON
 class ChangePasswordDto(BaseModel):
     old_password: str
