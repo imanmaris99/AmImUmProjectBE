@@ -30,16 +30,16 @@ def create_user(db: Session, user: user_dtos.UserCreateDto) -> optional.Optional
             )
 
         # Membuat instance user baru
-        user_model = UserModel()
-        user_model.firstname = user.firstname
-        user_model.lastname = user.lastname
-        user_model.gender = user.gender
-        user_model.email = firebase_user.email
-        user_model.phone = user.phone
-        user_model.hash_password = password_lib.get_password_hash(password=user.password)
-
-        # Mengisi role secara otomatis sebagai 'customer'
-        user_model.role = "customer"
+        user_model = UserModel(
+            firstname=user.firstname,  # Ambil firstname dari DTO
+            lastname=user.lastname,
+            gender=user.gender,
+            email=firebase_user.email,
+            phone=user.phone,
+            hash_password=password_lib.get_password_hash(password=user.password),
+            firebase_uid=firebase_user.uid,
+            role="customer"  # Role otomatis sebagai 'customer'
+        )
 
         # Menambahkan user ke dalam database
         db.add(user_model)
@@ -47,7 +47,7 @@ def create_user(db: Session, user: user_dtos.UserCreateDto) -> optional.Optional
         db.refresh(user_model)  # Memastikan data yang baru ditambahkan ter-refresh
         
         # Kirim email verifikasi setelah user berhasil dibuat
-        send_verification_email(firebase_user)
+        send_verification_email(firebase_user, user.firstname)
 
         return optional.build(data=user_model)
 

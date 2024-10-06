@@ -20,6 +20,7 @@ class UserModel(sql_alchemy_lib.Base):
     hash_password = Column(String(100))
     photo_url = Column(String(255))
     role = Column(String(50))
+    firebase_uid = Column(String(50))
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

@@ -233,10 +233,16 @@ def send_email_verification(to_email: str, verification_link: str, firstname: st
     </body>
     </html>
     """
-    # Mengirim email dengan format HTML
-    send_email(to_email, subject, body, html=True)
+    try:
+        # Mengirim email dengan format HTML
+        send_email(to_email, subject, body, html=True)
 
-
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            error="Internal Server Error",
+            message=f"Gagal mengirim email verifikasi ke {to_email}: {str(e)}"
+        )
 
 # Fungsi khusus untuk reset password
 def send_email_reset_password(to_email: str, reset_link: str):
@@ -257,15 +263,38 @@ def send_email_reset_password(to_email: str, reset_link: str):
     send_email(to_email, subject, body)
 
 # Fungsi untuk mengirim email verifikasi pengguna Firebase
-def send_verification_email(firebase_user):
+# def send_verification_email(firebase_user):
+#     """Mengirim email verifikasi ke pengguna Firebase."""
+#     try:
+#         email = firebase_user.email
+#         if not email:
+#             raise ValueError("Email address is empty.")
+        
+#         verification_link = auth.generate_email_verification_link(email)
+#         send_email_verification(email, verification_link)
+
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             error="Internal Server Error",
+#             message=f"Error sending verification email: {str(e)}"
+#         )
+
+def send_verification_email(firebase_user, firstname):
     """Mengirim email verifikasi ke pengguna Firebase."""
     try:
+        # Ambil email dan UID dari objek firebase_user
         email = firebase_user.email
+        uid = firebase_user.uid  # Ambil UID dari objek pengguna
+        
         if not email:
             raise ValueError("Email address is empty.")
-        
+
+        # Menghasilkan tautan verifikasi berdasarkan UID
         verification_link = auth.generate_email_verification_link(email)
-        send_email_verification(email, verification_link)
+
+        # Kirim email verifikasi menggunakan tautan yang dihasilkan
+        send_email_verification(email, verification_link, firstname)
 
     except Exception as e:
         raise HTTPException(
@@ -273,9 +302,6 @@ def send_verification_email(firebase_user):
             error="Internal Server Error",
             message=f"Error sending verification email: {str(e)}"
         )
-
-
-
 
 
 

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Literal
 from datetime import datetime
 
 from pydantic import BaseModel, Field, EmailStr
@@ -9,13 +9,14 @@ from app.libs.jwt_lib import jwt_dto
 class UserCreateDto(BaseModel):
     firstname: str = Field(default="firstname")
     lastname: str = Field(default="lastname")
-    gender: str = Field(default="man/woman")
+    gender: Literal['man', 'woman'] = Field(default='man')
     email: EmailStr = Field(default="Example@Example.com")
     phone: str = Field(default="+6289965342543")
     password: str = Field(default="password")
 
 class UserCreateResponseDto(BaseModel):
     id: str
+    firebase_uid: str
     firstname: str
     lastname: str
     gender:str
