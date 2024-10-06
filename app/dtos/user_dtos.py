@@ -16,14 +16,14 @@ class UserCreateDto(BaseModel):
 
 class UserCreateResponseDto(BaseModel):
     id: str
-    firebase_uid: str
-    firstname: str
-    lastname: str
-    gender:str
-    email: str
+    firebase_uid: Optional[str]
+    firstname: Optional[str]
+    lastname: Optional[str]
+    gender: Optional[str]
+    email: Optional[str]
     phone: Optional[str] = None
     address: Optional[str] = None
-    role: str
+    role: Optional[str]
     created_at: datetime
     updated_at: datetime
 

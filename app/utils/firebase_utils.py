@@ -108,6 +108,8 @@ def send_email_verification(to_email: str, verification_link: str, firstname: st
     
     firstname = firstname.capitalize()
 
+    url_verification = "https://yakuse.vercel.app/login"
+
     # URL logo toko (sesuaikan dengan URL gambar logo kamu)
     logo_url = "https://amimumprojectbe-production.up.railway.app/images/logo_toko_amimum.png"
     
@@ -188,7 +190,7 @@ def send_email_verification(to_email: str, verification_link: str, firstname: st
             <div class="email-body">
                 <h2>Halo {firstname},</h2>
                 <p>Terima kasih telah mendaftar di AmImUm Herbal! Untuk mengaktifkan akun Anda, silakan verifikasi email Anda dengan mengklik tombol di bawah ini:</p>
-                <p><a href="{verification_link}" class="verify-button">Verifikasi Email</a></p>
+                <p><a href="{url_verification}" class="verify-button">Verifikasi Email</a></p>
                 <p>Jika tombol tidak berfungsi, Anda juga dapat mengklik tautan di bawah ini:</p>
                 <p><a href="{verification_link}">{verification_link}</a></p>
                 <p class="team-message">Dikirim oleh, <br> AmImUm Herbal Team</p>
@@ -223,6 +225,8 @@ def send_email_reset_password(to_email: str, reset_link: str):
 
     # URL logo toko (sesuaikan dengan URL gambar logo kamu)
     logo_url = "https://amimumprojectbe-production.up.railway.app/images/logo_toko_amimum.png"
+
+    url_reset = "https://yakuse.vercel.app/login"
 
     body = f"""
     <html>
@@ -300,7 +304,7 @@ def send_email_reset_password(to_email: str, reset_link: str):
             <div class="email-body">
                 <h2>Halo {to_email},</h2>
                 <p>Anda telah meminta untuk mereset kata sandi Anda. Klik tombol di bawah ini untuk mengatur ulang kata sandi Anda:</p>
-                <p><a href="{reset_link}" class="reset-button">Reset Password</a></p>
+                <p><a href="{url_reset}" class="reset-button">Reset Password</a></p>
                 <p>Jika tombol tidak berfungsi, Anda juga dapat mengklik tautan di bawah ini:</p>
                 <p><a href="{reset_link}">{reset_link}</a></p>
                 <p>Jika Anda tidak meminta pengaturan ulang kata sandi, abaikan email ini.</p>
@@ -354,3 +358,93 @@ def send_verification_email(firebase_user, firstname):
 
 
 
+# == code use to trial == #
+# 1. init firebase admin #
+# Inisialisasi Firebase
+# cred = credentials.Certificate("path/to/serviceAccountKey.json")
+# if not firebase_admin._apps:
+#     firebase_admin.initialize_app(cred)
+
+# 2. utility for main service #
+# Fungsi umum untuk mengirim email
+# def send_email(to_email: str, subject: str, body: str):
+#     """Mengirim email melalui SMTP."""
+#     smtp_server = os.getenv("SMTP_SERVER")
+#     smtp_port = int(os.getenv("SMTP_PORT"))
+#     smtp_user = os.getenv("SMTP_USER")
+#     smtp_password = os.getenv("SMTP_PASSWORD")
+#     from_email = os.getenv("FROM_EMAIL")
+
+#     msg = MIMEMultipart()
+#     msg['From'] = from_email
+#     msg['To'] = to_email
+#     msg['Subject'] = subject
+#     msg.attach(MIMEText(body, 'plain'))
+
+#     try:
+#         with smtplib.SMTP(smtp_server, smtp_port) as server:
+#             server.starttls()
+#             server.login(smtp_user, smtp_password)
+#             server.send_message(msg)
+#         print(f"Email with subject '{subject}' sent successfully!")
+    
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             error="Internal Server Error",
+#             message=f"Error sending email: {str(e)}"
+#         )
+
+# Fungsi khusus untuk verifikasi email
+# def send_email_verification(to_email: str, verification_link: str):
+#     """Mengirim email verifikasi dengan tautan."""
+#     subject = "Email Verification"
+#     body = f"""
+#     Hi,
+    
+#     Please verify your email by clicking on the following link: 
+    
+#     {verification_link}
+
+#     Regards,
+#     AmImUm Herbal Team
+#     """
+#     send_email(to_email, subject, body)
+
+# Fungsi khusus untuk reset password
+# def send_email_reset_password(to_email: str, reset_link: str):
+#     """Mengirim email reset password dengan tautan."""
+#     subject = "Reset Password"
+#     body = f"""
+#     Hi,
+
+#     You requested a password reset. Click the link below to reset your password:
+
+#     {reset_link}
+
+#     If you did not request this, please ignore this email.
+
+#     Regards,
+#     AmImUm Herbal Team
+#     """
+#     send_email(to_email, subject, body)
+
+# Fungsi untuk mengirim email verifikasi pengguna Firebase
+# def send_verification_email(firebase_user):
+#     """Mengirim email verifikasi ke pengguna Firebase."""
+#     try:
+#         email = firebase_user.email
+#         if not email:
+#             raise ValueError("Email address is empty.")
+        
+#         verification_link = auth.generate_email_verification_link(email)
+#         send_email_verification(email, verification_link)
+
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             error="Internal Server Error",
+#             message=f"Error sending verification email: {str(e)}"
+#         )
+
+# == == #
