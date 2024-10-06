@@ -1,6 +1,8 @@
 # services/auth_service.py
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import DataError
 from fastapi import HTTPException, status
+from psycopg2.errors import StringDataRightTruncation
 
 from firebase_admin import auth as firebase_auth
 from firebase_admin.exceptions import FirebaseError
@@ -25,7 +27,7 @@ def login_with_google(db: Session, id_token: str):
                 email=email,
                 firstname=decoded_token.get('given_name', 'Unknown'),
                 lastname=decoded_token.get('family_name', 'Unknown'),
-                gender=decoded_token.get('gender', 'Not specified'),
+                gender=decoded_token.get('gender', 'Unknown'),
                 phone=decoded_token.get('phone', 'Not provided'),
                 address='No address provided',  # Set default address
                 role='customer'  # Set default role if not provided
@@ -70,6 +72,20 @@ def login_with_google(db: Session, id_token: str):
         )
 
         return optional.build(data=user_response)
+    
+    # Tangkap error SQLAlchemy untuk string yang terlalu panjang
+    except DataError as e:
+        if isinstance(e.orig, StringDataRightTruncation):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error="Bad Request",
+                message="Data value is too long for one of the fields."
+            )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            error="Internal Server Error",
+            message="Database error occurred: " + str(e)
+        )
     
     except FirebaseError as e:
         return optional.build(error=HTTPException(
