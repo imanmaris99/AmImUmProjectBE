@@ -72,8 +72,35 @@ def authenticate_firebase_user(email: str, password: str):
         )
 
 # Fungsi umum untuk mengirim email
-def send_email(to_email: str, subject: str, body: str):
-    """Mengirim email melalui SMTP."""
+# def send_email(to_email: str, subject: str, body: str):
+#     """Mengirim email melalui SMTP."""
+#     smtp_server = os.getenv("SMTP_SERVER")
+#     smtp_port = int(os.getenv("SMTP_PORT"))
+#     smtp_user = os.getenv("SMTP_USER")
+#     smtp_password = os.getenv("SMTP_PASSWORD")
+#     from_email = os.getenv("FROM_EMAIL")
+
+#     msg = MIMEMultipart()
+#     msg['From'] = from_email
+#     msg['To'] = to_email
+#     msg['Subject'] = subject
+#     msg.attach(MIMEText(body, 'plain'))
+
+#     try:
+#         with smtplib.SMTP(smtp_server, smtp_port) as server:
+#             server.starttls()
+#             server.login(smtp_user, smtp_password)
+#             server.send_message(msg)
+#         print(f"Email with subject '{subject}' sent successfully!")
+    
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             error="Internal Server Error",
+#             message=f"Error sending email: {str(e)}"
+#         )
+def send_email(to_email: str, subject: str, body: str, html: bool = False):
+    """Mengirim email melalui SMTP dengan opsi HTML atau teks biasa."""
     smtp_server = os.getenv("SMTP_SERVER")
     smtp_port = int(os.getenv("SMTP_PORT"))
     smtp_user = os.getenv("SMTP_USER")
@@ -84,7 +111,12 @@ def send_email(to_email: str, subject: str, body: str):
     msg['From'] = from_email
     msg['To'] = to_email
     msg['Subject'] = subject
-    msg.attach(MIMEText(body, 'plain'))
+
+    # Tentukan tipe konten berdasarkan parameter html
+    if html:
+        msg.attach(MIMEText(body, 'html'))  # Mengirim dalam format HTML
+    else:
+        msg.attach(MIMEText(body, 'plain'))  # Mengirim teks biasa
 
     try:
         with smtplib.SMTP(smtp_server, smtp_port) as server:
@@ -96,25 +128,115 @@ def send_email(to_email: str, subject: str, body: str):
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            error="Internal Server Error",
-            message=f"Error sending email: {str(e)}"
+            detail={
+                "status_code": 500,
+                "error": "Internal Server Error",
+                "message": f"Error sending email: {str(e)}"
+            }
         )
 
 # Fungsi khusus untuk verifikasi email
-def send_email_verification(to_email: str, verification_link: str):
-    """Mengirim email verifikasi dengan tautan."""
-    subject = "Email Verification"
-    body = f"""
-    Hi,
+# def send_email_verification(to_email: str, verification_link: str):
+#     """Mengirim email verifikasi dengan tautan."""
+#     subject = "Email Verification"
+#     body = f"""
+#     Hi,
     
-    Please verify your email by clicking on the following link: 
+#     Please verify your email by clicking on the following link: 
     
-    {verification_link}
+#     {verification_link}
 
-    Regards,
-    AmImUm Herbal Team
+#     Regards,
+#     AmImUm Herbal Team
+#     """
+#     send_email(to_email, subject, body)
+def send_email_verification(to_email: str, verification_link: str, firstname: str):
+    """Mengirim email verifikasi dengan tautan berformat HTML, logo, dan alamat di footer."""
+    subject = "Email Verification"
+    
+    # URL logo toko (sesuaikan dengan URL gambar logo kamu)
+    logo_url = "https://amimumprojectbe-production.up.railway.app/images/logo_toko_amimum.png"
+    
+    # Membuat body email dalam format HTML
+    body = f"""
+    <html>
+    <head>
+        <style>
+            .email-container {{
+                font-family: Arial, sans-serif;
+                color: #333;
+                background-color: #f4f4f4;
+                padding: 20px;
+                border-radius: 8px;
+                max-width: 600px;
+                margin: auto;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            }}
+            .email-header {{
+                background-color: #28a745;
+                color: white;
+                text-align: center;
+                padding: 15px;
+                border-radius: 8px 8px 0 0;
+            }}
+            .email-body {{
+                padding: 20px;
+                background-color: white;
+                border-radius: 0 0 8px 8px;
+            }}
+            .email-body p {{
+                margin-bottom: 20px;
+            }}
+            .verify-button {{
+                display: inline-block;
+                background-color: #28a745;
+                color: white;
+                padding: 10px 20px;
+                text-decoration: none;
+                border-radius: 5px;
+                font-weight: bold;
+                font-size: 16px;
+            }}
+            .email-footer {{
+                text-align: center;
+                margin-top: 30px;
+                padding-top: 20px;
+                border-top: 1px solid #e0e0e0;
+                font-size: 12px;
+                color: #888;
+            }}
+            .email-footer img {{
+                width: 100px;
+                margin-bottom: 10px;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="email-container">
+            <div class="email-header">
+                <h1>Verifikasi Email Anda</h1>
+            </div>
+            <div class="email-body">
+                <p>Halo {firstname},</p>
+                <p>Terima kasih telah mendaftar di AmImUm Herbal! Untuk mengaktifkan akun Anda, silakan verifikasi email Anda dengan mengklik tombol di bawah ini:</p>
+                <p>
+                    <a href="{verification_link}" class="verify-button">Verifikasi Email</a>
+                </p>
+                <p>Jika tombol tidak berfungsi, Anda juga dapat mengklik tautan di bawah ini:</p>
+                <p><a href="{verification_link}">{verification_link}</a></p>
+            </div>
+            <div class="email-footer">
+                <img src="{logo_url}" alt="Logo AmImUm Herbal" />
+                <p>AmImUm Herbal<br>Jl. Contoh Alamat No. 123, Jakarta, Indonesia</p>
+            </div>
+        </div>
+    </body>
+    </html>
     """
-    send_email(to_email, subject, body)
+    # Mengirim email dengan format HTML
+    send_email(to_email, subject, body, html=True)
+
+
 
 # Fungsi khusus untuk reset password
 def send_email_reset_password(to_email: str, reset_link: str):
