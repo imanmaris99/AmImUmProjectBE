@@ -37,7 +37,7 @@ app = FastAPI(
 
 app.include_router(controllers.admin_router.router)
 app.include_router(controllers.user_router.router)
-
+app.include_router(controllers.rajaongkir_router.router)
 
 origins = [
     "http://localhost",

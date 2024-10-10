@@ -33,6 +33,8 @@ services:
       SMTP_USER: ${SMTP_USER}
       SMTP_PASSWORD: ${SMTP_PASSWORD}
       FROM_EMAIL: ${FROM_EMAIL}
+      RAJAONGKIR_API_KEY: ${RAJAONGKIR_API_KEY}
+      RAJAONGKIR_API_HOST: ${RAJAONGKIR_API_HOST}
     ports:
       - "8000:8000"
     depends_on:

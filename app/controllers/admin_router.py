@@ -88,18 +88,6 @@ router = APIRouter(
     # response_model=jwt_dto.AccessTokenDto,
     response_model= user_dtos.UserLoginResponseDto,
     responses={
-        # status.HTTP_200_OK: {
-        #     "description": "Successful login",
-        #     "content": {
-        #         "application/json": {
-        #             "example": {
-        #                 "detail": "Your user account has been login successfully",
-        #                 "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
-        #                 "token_type": "bearer"
-        #             }
-        #         }
-        #     }
-        # },
         status.HTTP_401_UNAUTHORIZED: {
             "description": "Unauthorized. Incorrect email or password.",
             "content": {

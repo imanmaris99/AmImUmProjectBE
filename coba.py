@@ -1,19 +1,34 @@
-from urllib.parse import urlparse, parse_qs
+import http.client
 
-# URL yang diberikan
-url = "https://amimumherbalproject-427e5.firebaseapp.com/__/auth/action?mode=resetPassword&oobCode=5iW3-rAsJBzPmotW1oXMzLGwq8KVUg8DKhnwfuK3ShsAAAGSQlIHzA&apiKey=AIzaSyC5nNJjei821JWZA97y28ilKr59VDmwIzQ&lang=en"
+conn = http.client.HTTPSConnection("api.rajaongkir.com")
 
-# Mengurai URL
-parsed_url = urlparse(url)
-query_params = parse_qs(parsed_url.query)
+headers = { 'key': "ca7fcfd1ea635a0ef2c0959664cf6f34" }
 
-# Mengambil oobCode
-oob_code = query_params.get('oobCode', [None])[0]
+conn.request("GET", "/starter/province?id=12", headers=headers)
 
-if oob_code:
-    print(f"oobCode: {oob_code}")
-else:
-    print("oobCode tidak ditemukan dalam URL.")
+res = conn.getresponse()
+data = res.read()
+
+print(data.decode("utf-8"))
+
+
+
+# from urllib.parse import urlparse, parse_qs
+
+# # URL yang diberikan
+# url = "https://amimumherbalproject-427e5.firebaseapp.com/__/auth/action?mode=resetPassword&oobCode=5iW3-rAsJBzPmotW1oXMzLGwq8KVUg8DKhnwfuK3ShsAAAGSQlIHzA&apiKey=AIzaSyC5nNJjei821JWZA97y28ilKr59VDmwIzQ&lang=en"
+
+# # Mengurai URL
+# parsed_url = urlparse(url)
+# query_params = parse_qs(parsed_url.query)
+
+# # Mengambil oobCode
+# oob_code = query_params.get('oobCode', [None])[0]
+
+# if oob_code:
+#     print(f"oobCode: {oob_code}")
+# else:
+#     print("oobCode tidak ditemukan dalam URL.")
 
 
 # import smtplib
