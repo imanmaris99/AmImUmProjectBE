@@ -1,8 +1,8 @@
 import http.client
 
-conn = http.client.HTTPSConnection("api.rajaongkir.com")
+conn = http.client.HTTPSConnection("RAJAONGKIR_API_HOST")
 
-headers = { 'key': "ca7fcfd1ea635a0ef2c0959664cf6f34" }
+headers = { 'key': "RAJAONGKIR_API_KEY" }
 
 conn.request("GET", "/starter/province?id=12", headers=headers)
 
