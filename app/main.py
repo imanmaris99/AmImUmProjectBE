@@ -42,7 +42,7 @@ app.include_router(controllers.rajaongkir_router.router)
 origins = [
     "http://localhost",
     "http://localhost:3000",
-    "http://http://localhost:5173",
+    "http://localhost:5173",
     "https://imanmaris-portfolio.vercel.app",
     "https://tools.slingacademy.com",
     "https://www.slingacademy.com",
