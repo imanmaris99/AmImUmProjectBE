@@ -80,7 +80,8 @@ class UserLoginPayloadDto(BaseModel):
 class UserLoginResponseDto(BaseModel):
     status_code: int = Field(default=200)
     message: str = Field(default="Your user account has been login successfully")
-    data: jwt_dto.AccessTokenDto  # Atau Anda bisa membuat model terpisah untuk data yang lebih terstruktur
+    data: dict  # atau Anda bisa spesifik jika user punya schema sendiri
+    # data: jwt_dto.AccessTokenDto  # Atau Anda bisa membuat model terpisah untuk data yang lebih terstruktur
 
 class GoogleLoginRequest(BaseModel):
     id_token: str

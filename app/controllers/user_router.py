@@ -162,12 +162,13 @@ def user_login(user: user_dtos.UserLoginPayloadDto, db: Session = Depends(get_db
     if user_optional.error:
         raise user_optional.error
     
-    access_token = user_services.service_access_token(user_optional.data.id)
-    
+    user_data = user_optional.data
+    print(f"User info from login: {user_data['user']}")  # Log untuk memastikan data user
+
     return {
-    "status_code": status.HTTP_200_OK,
-    "message": "Your user account has been login successfully",
-    "data": access_token  # Mengembalikan access_token yang benar
+        "status_code": status.HTTP_200_OK,
+        "message": "Your user account has been logged in successfully",
+        "data":user_data
     }
 
 ## == COBA PAKAI LOGIN USER GOOGLE == ##

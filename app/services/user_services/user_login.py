@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from app.dtos import user_dtos
+from app.libs.jwt_lib import jwt_service
 from app.utils import optional
 from app.models.user_model import UserModel
 from app.libs import password_lib
@@ -33,6 +34,8 @@ def user_login(db: Session, user: user_dtos.UserLoginPayloadDto) -> optional.Opt
             ))
 
         user_model = user_optional.data  # Mengambil data user dari Optional
+        # Log untuk debugging role dan email
+        print(f"User found: {user_model.email}, Role: {user_model.role}")
 
         # Cek apakah akun pengguna diblokir atau tidak aktif
         if not user_model.is_active:  # Misalkan ada atribut is_active di model User
@@ -50,8 +53,26 @@ def user_login(db: Session, user: user_dtos.UserLoginPayloadDto) -> optional.Opt
                 message="Password does not match."
             ))
 
-        # Proses selanjutnya, misalnya generate JWT token
-        return optional.build(data=user_model)
+        # # Proses selanjutnya, misalnya generate JWT token
+        # return optional.build(data=user_model)
+                # Generate JWT token setelah autentikasi berhasil
+        token_data = {
+            "id": user_model.id,
+            "role": user_model.role
+        }
+        access_token = jwt_service.create_access_token(token_data)
+        print("Generated access token data:", token_data) 
+
+        # Kembalikan token dan user info
+        return optional.build(data={
+            "access_token": access_token,
+            "user": {
+                "id": user_model.id,
+                "email": user_model.email,
+                "role": user_model.role,
+                "is_active": user_model.is_active
+            }
+        })
 
     except HTTPException as e:
         # Menangani error yang dilempar oleh Firebase atau proses lainnya

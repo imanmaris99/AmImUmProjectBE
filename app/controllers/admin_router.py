@@ -141,23 +141,22 @@ router = APIRouter(
 )
 def admin_login(user: user_dtos.UserLoginPayloadDto, db: Session = Depends(get_db)):
     """
-    # Admin Login #
-    This method is used for user as admin to login
+    Admin Login
+    This method is used for the user as admin to login
     """
-    
     user_optional = user_services.user_login(db=db, user=user)
     
     if user_optional.error:
         raise user_optional.error
-    
-    access_token = user_services.service_access_token(user_optional.data.id)
-    
-    return {
-    "status_code": status.HTTP_200_OK,
-    "message": "Your user account has been login successfully",
-    "data": access_token  # Mengembalikan access_token yang benar
-    }
 
+    user_data = user_optional.data
+    print(f"User info from login: {user_data['user']}")  # Log untuk memastikan data user
+
+    return {
+        "status_code": status.HTTP_200_OK,
+        "message": "Your user account has been logged in successfully",
+        "data":user_data
+    }
 
 ## == USER - FORGOT_PASSWORD == ##
 @router.post(

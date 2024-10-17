@@ -122,14 +122,17 @@ def create_admin(db: Session, user: user_dtos.UserCreateDto) -> optional.Optiona
 
         # Mengisi role secara otomatis sebagai 'customer'
         user_model.role = "admin"
+        print(f"Role being set: {user_model.role}")  # Debug role sebelum commit
 
         # Menambahkan user ke dalam database
         db.add(user_model)
         db.commit()
         db.refresh(user_model)  # Memastikan data yang baru ditambahkan ter-refresh
         
+        print(f"Role after refresh: {user_model.role}")  # Debug role setelah commit
+        
         # Kirim email verifikasi setelah user berhasil dibuat
-        send_verification_email(firebase_user)
+        send_verification_email(firebase_user, user.firstname)
 
         return optional.build(data=user_model)
 
