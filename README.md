@@ -2,6 +2,11 @@
 
 AmImUmHerbal adalah sebuah aplikasi yang dirancang untuk membantu pengguna menemukan produk herbal dengan mudah dan efisien. Proyek ini dibangun menggunakan FastAPI dan berbagai pustaka lainnya untuk memberikan pengalaman pengguna yang optimal.
 
+## Prototype
+
+Prototype aplikasi AmImUmHerbal disusun menggunakan bantuan figma, berikut untuk gambaran sederhana dari aplikasi ini.
+["prototype aplikasi AmImUm Herbal"](https://www.figma.com/proto/x3RYOGzVfX6MxQo8rJemJ5/Consumer-UI---AmImUm-Herbal-Shop-Mobile-App?node-id=4074-7857&node-type=canvas&t=8ExRY6YHLRclxNfF-1&scaling=scale-down&content-scaling=fixed&page-id=4074%3A7695&starting-point-node-id=4074%3A7857&show-proto-sidebar=1)
+
 ## Fitur Utama
 
 - **Pencarian Produk**: Pengguna dapat mencari produk herbal berdasarkan nama, kategori, atau kata kunci.
