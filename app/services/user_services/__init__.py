@@ -10,3 +10,7 @@ from .send_reset_password_request import send_reset_password_request
 from .verify_reset_password_token import verify_reset_password_token
 from .reset_password import reset_password
 from .confirm_password_reset import confirm_password_reset
+
+from .change_password import change_password
+from .update_profile import user_edit
+from .update_photo import update_my_photo

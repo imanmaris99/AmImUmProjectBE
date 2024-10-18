@@ -1,3 +1,4 @@
+from typing import Annotated
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
@@ -70,8 +71,17 @@ router = APIRouter(
 )
 def create_user(user: user_dtos.UserCreateDto, db: Session = Depends(get_db)):
     """
-    # User/ Customer Register #
-    This method is used to create a user
+    # Register User Baru #
+
+    Endpoint ini digunakan untuk membuat akun user baru.
+
+    **Return:**
+
+    - **201 Created**: User berhasil dibuat.
+    - **400 Bad Request**: User sudah ada (email atau nomor telepon sudah terdaftar).
+        - Terjadi ketika email atau nomor telepon sudah terdaftar sebelumnya.
+    - **500 Internal Server Error**: Kesalahan server saat membuat user.
+        - Terjadi ketika ada kesalahan di sisi server saat membuat user.
     """
     result = user_services.create_user(db, user)
     
@@ -88,18 +98,6 @@ def create_user(user: user_dtos.UserCreateDto, db: Session = Depends(get_db)):
     # response_model=jwt_dto.AccessTokenDto,
     response_model= user_dtos.UserLoginResponseDto,
     responses={
-        # status.HTTP_200_OK: {
-        #     "description": "Successful login",
-        #     "content": {
-        #         "application/json": {
-        #             "example": {
-        #                 "detail": "Your user account has been login successfully",
-        #                 "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
-        #                 "token_type": "bearer"
-        #             }
-        #         }
-        #     }
-        # },
         status.HTTP_401_UNAUTHORIZED: {
             "description": "Unauthorized. Incorrect email or password.",
             "content": {
@@ -153,10 +151,22 @@ def create_user(user: user_dtos.UserCreateDto, db: Session = Depends(get_db)):
 )
 def user_login(user: user_dtos.UserLoginPayloadDto, db: Session = Depends(get_db)):
     """
-    # User/ Customer Login #
-    This method is used for user login
+    # Login User #
+
+    Endpoint ini digunakan untuk login user.
+
+    **Return:**
+
+    - **200 OK**: Login berhasil.
+    - **401 Unauthorized**: Email atau password salah.
+        - Terjadi ketika password yang dimasukkan tidak cocok dengan email yang diberikan.
+    - **403 Forbidden**: Akun Anda tidak aktif.
+        - Terjadi ketika akun user dinonaktifkan atau diblokir.
+    - **404 Not Found**: User tidak ditemukan.
+        - Terjadi ketika email yang diberikan tidak terdaftar.
+    - **500 Internal Server Error**: Kesalahan server saat login.
+        - Terjadi ketika ada kesalahan di sisi server saat login.
     """
-    
     user_optional = user_services.user_login(db=db, user=user)
     
     if user_optional.error:
@@ -216,6 +226,21 @@ def user_login(user: user_dtos.UserLoginPayloadDto, db: Session = Depends(get_db
         summary="User login use Google account"
     )
 async def google_login(google_login_req: user_dtos.GoogleLoginRequest, db: Session = Depends(get_db)):
+    """
+    # Login Menggunakan Akun Google #
+
+    Endpoint ini memungkinkan user untuk login menggunakan akun Google mereka.
+
+    **Return:**
+
+    - **200 OK**: Login dengan Google berhasil.
+    - **401 Unauthorized**: Token tidak valid atau login gagal.
+        - Terjadi ketika ID token Google tidak valid atau kadaluwarsa.
+    - **404 Not Found**: User tidak ditemukan.
+        - Terjadi ketika email dari Google tidak terdaftar di sistem.
+    - **500 Internal Server Error**: Kesalahan server saat login dengan Google.
+        - Terjadi ketika ada kesalahan tidak terduga di sisi server saat login dengan Google.
+    """
     user = user_services.login_with_google(db, google_login_req.id_token)
     # return user.unwrap()
     return {
@@ -260,14 +285,25 @@ async def google_login(google_login_req: user_dtos.GoogleLoginRequest, db: Sessi
 )
 def forgot_password(payload: user_dtos.ForgotPasswordDto, db: Session = Depends(get_db)):    
     """
-    Kirim permintaan reset password ke email.
+    # Lupa Password #
 
-    Kriteria Password:
+    Endpoint ini digunakan untuk mengirim email reset password ke user.
+    
+    **Kriteria Password:**
+
     - Password harus minimal 8 karakter.
     - Password harus mengandung setidaknya satu huruf besar.
     - Password harus mengandung setidaknya satu huruf kecil.
     - Password harus mengandung setidaknya satu angka.
     - Password harus mengandung setidaknya satu karakter spesial.
+
+    **Return:**
+
+    - **404 Not Found**: Email tidak ditemukan.
+        - Terjadi ketika email yang diberikan tidak terdaftar di sistem.
+    - **500 Internal Server Error**: Gagal mengirim email reset password.
+        - Terjadi ketika ada kesalahan di sisi server saat mengirim email.
+
     """
     # Implementasi send_reset_password_request yang mengirim email dengan token
     result = user_services.send_reset_password_request(db, payload)  # Pass the DTO directly
@@ -276,7 +312,7 @@ def forgot_password(payload: user_dtos.ForgotPasswordDto, db: Session = Depends(
 
 ## == USER - CONFIRM_NEW_PASSWORD == ##
 @router.post(
-    "/password-reset/confirm/",
+    "/password-reset/confirm",
     response_model=user_dtos.ConfirmResetPasswordResponseDto,
     responses={
         status.HTTP_404_NOT_FOUND: {
@@ -320,26 +356,333 @@ def forgot_password(payload: user_dtos.ForgotPasswordDto, db: Session = Depends(
 )
 def confirm_reset_password(payload: user_dtos.ConfirmResetPasswordDto, db: Session = Depends(get_db)):
     """
-    API untuk mengkonfirmasi reset password setelah pengguna melakukannya di client-side.
+    # Konfirmasi Reset Password #
+
+    Endpoint ini digunakan untuk mengkonfirmasi reset password dengan token yang dikirim melalui email.
 
     Dengan menggunakan tautan reset password yang dikirim melalui email, 
     
-    Anda memastikan bahwa hanya pengguna yang memiliki akses ke email yang terdaftar yang dapat melakukan penggantian password.
+    Anda memastikan bahwa hanya pengguna yang memiliki akses ke email terdaftar yang dapat melakukan penggantian password.
 
-    Kriteria Password:
+    **Kriteria Password:**
+
     - Password harus minimal 8 karakter.
     - Password harus mengandung setidaknya satu huruf besar.
     - Password harus mengandung setidaknya satu huruf kecil.
     - Password harus mengandung setidaknya satu angka.
     - Password harus mengandung setidaknya satu karakter spesial.
 
-    Returns:
+    **Return:**
 
-        dict: Pesan sukses jika password berhasil direset.
+    - **404 Not Found**: Email tidak ditemukan.
+        - Terjadi ketika email yang diberikan tidak terdaftar.
+    - **400 Bad Request**: Password tidak memenuhi kriteria.
+        - Terjadi ketika password baru tidak memenuhi syarat seperti panjang minimal 8 karakter, mengandung huruf besar, kecil, angka, dan simbol.
+    - **500 Internal Server Error**: Gagal reset password.
+        - Terjadi ketika ada kesalahan di sisi server saat melakukan reset password.
     """
     result = user_services.confirm_password_reset(payload=payload, db=db)
 
     return result.unwrap()  # Return the success response if no error
+
+
+## == USER - EDIT_PROFILE_USER == ##
+@router.put(
+    "/edit-info",
+    response_model=user_dtos.UserEditResponseDto,
+    responses={
+        status.HTTP_400_BAD_REQUEST: {
+            "description": "Input data tidak valid",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 400,
+                        "error": "Bad Request",
+                        "message": "Input data tidak valid."
+                    }
+                }
+            }
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Pengguna tidak ditemukan",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 404,
+                        "error": "Not Found",
+                        "message": "Pengguna dengan ID yang diberikan tidak ditemukan."
+                    }
+                }
+            }
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "description": "Kesalahan server internal",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 500,
+                        "error": "Internal Server Error",
+                        "message": "Terjadi kesalahan yang tidak terduga: {error_message}"
+                    }
+                }
+            }
+        }
+    },
+    summary="Update user profile without photo"
+)
+
+async def update_user_profile_without_photo(
+    user: user_dtos.UserEditProfileDto,
+    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],
+    db: Session = Depends(get_db)
+):
+    """
+    # Perbarui Profil Pengguna #
+
+    Endpoint ini digunakan untuk memperbarui profil pengguna tanpa mengubah foto profil.
+
+    **Return:**
+
+    - **400 Bad Request**: Input data tidak valid.
+        - Terjadi ketika data yang diberikan tidak memenuhi kriteria yang ditentukan dalam DTO.
+    - **404 Not Found**: Pengguna tidak ditemukan.
+        - Terjadi ketika pengguna dengan ID yang diberikan tidak ditemukan dalam database.
+    - **500 Internal Server Error**: Kesalahan server internal.
+        - Terjadi ketika ada kesalahan di sisi server saat memproses permintaan.
+    """
+    result = user_services.user_edit(
+        jwt_token.id,
+        db=db,
+        user=user
+    )
+
+    if result.error:
+        raise result.error
+
+    return result.unwrap()
+
+@router.put(
+    "/edit-photo", 
+    response_model=user_dtos.UserEditPhotoProfileResponseDto,
+    responses={
+        200: {
+            "description": "Foto profil berhasil diperbarui",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "success",
+                        "message": "Foto profil berhasil diperbarui",
+                        "data": {
+                            "photo_url": "https://example.com/path/to/new/photo.png"
+                        }
+                    }
+                }
+            },
+        },
+        400: {
+            "description": "File tidak valid atau format salah",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "File format not allowed. Please upload one of the following formats: png, jpeg, jpg, webp",
+                    }
+                }
+            },
+        },
+        401: {
+            "description": "Unauthorized: Token JWT tidak valid atau kadaluarsa",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "Unauthorized: Token JWT tidak valid atau kadaluarsa",
+                    }
+                }
+            },
+        },
+        413: {
+            "description": "Ukuran file terlalu besar",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "File too large. Maximum allowed size is 300 KB"
+                    }
+                }
+            },
+        },
+        500: {
+            "description": "Kesalahan internal server",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "Internal Server Error",
+                    }
+                }
+            },
+        },
+    }
+)
+async def update_only_photo(
+        file: UploadFile = None,  # Jika opsional, tetap `None`; jika wajib, gunakan `File(...)`
+        jwt_token: jwt_service.TokenPayLoad = Depends(jwt_service.get_jwt_pyload),
+        db: Session = Depends(get_db)
+):
+    """
+    # Ganti Photo #
+
+    Endpoint untuk mengupdate foto profil pengguna.
+    
+    - **file**: File gambar yang akan diunggah (opsional).
+    - **jwt_token**: Token JWT yang berisi informasi pengguna (wajib).
+    - **db**: Koneksi database.
+
+    ### Response:
+    - 200: Foto profil berhasil diperbarui.
+    - 400: Format file tidak diperbolehkan atau file tidak valid.
+    - 401: Pengguna tidak diotorisasi (token tidak valid).
+    - 413: Ukuran file melebihi batas yang diizinkan.
+    - 500: Kesalahan internal server.
+    """
+    
+    # Pastikan untuk menangani kasus di mana `file` adalah None di dalam layanan Anda
+    result = await user_services.update_my_photo(db, jwt_token.id, file)
+    
+    if result.error:
+        raise result.error
+    
+    return result.unwrap()
+
+@router.put(
+        "/change-password", 
+        response_model=user_dtos.ChangePasswordResponseDto,
+        responses={
+            status.HTTP_200_OK: {
+                "description": "Password changed successfully",
+                "content": {
+                    "application/json": {
+                        "example": {
+                            "status_code": 200,
+                            "message": "Password has been changed successfully",
+                            "data": {
+                                "old_password": "********",
+                                "new_password": "********"
+                            }
+                        }
+                    }
+                }
+            },
+            status.HTTP_400_BAD_REQUEST: {
+                "description": "Invalid password criteria or old password does not match",
+                "content": {
+                    "application/json": {
+                        "example": {
+                            "status_code": 400,
+                            "error": "Bad Request",
+                            "message": "Old password is incorrect or new password does not meet criteria."
+                        }
+                    }
+                }
+            },
+            status.HTTP_401_UNAUTHORIZED: {
+                "description": "Unauthorized access",
+                "content": {
+                    "application/json": {
+                        "example": {
+                            "status_code": 401,
+                            "error": "Unauthorized",
+                            "message": "Authentication credentials were not provided or invalid."
+                        }
+                    }
+                }
+            },
+            status.HTTP_500_INTERNAL_SERVER_ERROR: {
+                "description": "Failed to change password",
+                "content": {
+                    "application/json": {
+                        "example": {
+                            "status_code": 500,
+                            "error": "Internal Server Error",
+                            "message": "An error occurred while changing the password: [error_message]"
+                        }
+                    }
+                }
+            }
+        },
+        summary="Change user password"
+    )
+async def change_password(
+        payload: user_dtos.ChangePasswordDto,
+        jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],
+        db: Session = Depends(get_db)):
+    
+    """
+    # Ganti Password #
+
+    Endpoint ini memungkinkan user untuk mengganti password lama dengan yang baru.
+
+    **Kriteria Password:**
+
+    - Password harus minimal 8 karakter.
+    - Password harus mengandung setidaknya satu huruf besar.
+    - Password harus mengandung setidaknya satu huruf kecil.
+    - Password harus mengandung setidaknya satu angka.
+    - Password harus mengandung setidaknya satu karakter spesial.
+
+    **Return:**
+
+    - **200 OK**: Password berhasil diganti.
+    - **400 Bad Request**: Password tidak memenuhi kriteria.
+        - Terjadi ketika password baru tidak memenuhi syarat seperti panjang minimal 8 karakter, mengandung huruf besar, kecil, angka, dan simbol.
+    - **401 Unauthorized**: Autentikasi gagal atau token tidak valid.
+        - Terjadi ketika token JWT yang digunakan untuk autentikasi tidak valid atau sudah kadaluwarsa.
+    - **500 Internal Server Error**: Kesalahan server saat mengganti password.
+        - Terjadi ketika ada kesalahan di sisi server saat mengganti password.
+    """
+    result = await user_services.change_password(
+        jwt_token.id,
+        db=db, 
+        payload=payload
+    )
+
+    if result.error:
+        raise result.error
+
+    return result.unwrap()  # Return the success response if no error
+
+    # return {
+    #     "message": "Password has been changed successfully",
+    #     "data": {
+    #         "old_password": user.old_password,
+    #         "new_password": user.new_password
+    #     }
+    # }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # @router.post("/reset-password", response_model=user_dtos.ResetPasswordResponseDto)
 # def reset_password(payload: user_dtos.ResetPasswordDto, db: Session = Depends(get_db)):

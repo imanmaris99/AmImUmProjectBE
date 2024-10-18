@@ -1,12 +1,18 @@
 import re
-import uuid
+import time
+import io
 from fastapi import UploadFile, HTTPException, status
+from PIL import Image
 from app.libs.supabase_client import supabase
 
+# Konstanta untuk validasi file
 ALLOWED_EXTENSIONS = ['png', 'jpeg', 'jpg', 'webp']
-MAX_FILE_SIZE = 500 * 1024  # Maksimum ukuran file 500KB
+MAX_FILE_SIZE = 300 * 1024  # Maksimum ukuran file 300KB 
 
 def validate_file(file: UploadFile):
+    """
+    Validasi file untuk memastikan format dan ukuran yang diizinkan.
+    """
     # Langkah 1: Periksa format file
     filename = file.filename
     file_extension = filename.split('.')[-1].lower()
@@ -14,7 +20,8 @@ def validate_file(file: UploadFile):
     if file_extension not in ALLOWED_EXTENSIONS:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, 
-            detail=f"File format not allowed. Please upload one of the following formats: {', '.join(ALLOWED_EXTENSIONS)}"
+            error="Bad Request",
+            message=f"File format not allowed. Please upload one of the following formats: {', '.join(ALLOWED_EXTENSIONS)}"
         )
 
     # Langkah 2: Periksa ukuran file
@@ -25,22 +32,47 @@ def validate_file(file: UploadFile):
     if file_size > MAX_FILE_SIZE:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"File too large. Maximum allowed size is {MAX_FILE_SIZE / 1024} KB"
+            error="Request Entity Too Large",
+            message=f"File too large. Maximum allowed size is {MAX_FILE_SIZE / 1024} KB"
         )
 
-async def upload_image_to_supabase(file: UploadFile, bucket_name: str, user_id: str, folder_name: str = "", old_file_url: str = None) -> str:
-    try:
-        # Baca isi file
-        file_content = await file.read()
+async def compress_image(file: UploadFile) -> bytes:
+    """
+    Mengompresi gambar menggunakan Pillow.
+    """
+    image = Image.open(file.file)
+    img_byte_arr = io.BytesIO()
+    
+    # Mengompresi gambar dengan kualitas 85
+    image.save(img_byte_arr, format=image.format, quality=85)
+    img_byte_arr.seek(0)
+    
+    return img_byte_arr.read()
 
-        # Buat UUID untuk gambar
-        image_uuid = uuid.uuid4()
+async def upload_image_to_supabase(
+        file: UploadFile, 
+        bucket_name: str, 
+        user_id: str, 
+        folder_name: str = "", 
+        old_file_url: str = None
+    ) -> str:
+    
+    """
+    Mengupload gambar yang telah dikompresi ke Supabase.
+    """
+    try:
+        # Kompres gambar sebelum upload
+        file_content = await compress_image(file)
+
+        # Buat ID yang lebih sederhana menggunakan timestamp
+        timestamp = int(time.time())
+        simple_id = f"{user_id}_{timestamp}"
 
         # Sanitasi nama file untuk menghindari karakter yang tidak valid
         sanitized_filename = re.sub(r'[^a-zA-Z0-9_.-]', '_', file.filename)
 
-        # Buat nama file yang unik dengan menggabungkan UUID gambar, nama user, dan nama file asli
-        unique_filename = f"{image_uuid}_{user_id}_{sanitized_filename}"
+        # Buat nama file yang unik
+        unique_filename = f"{simple_id}_{sanitized_filename}"
        
         # Jika ada folder_name, simpan file di dalam folder tersebut
         if folder_name:
@@ -49,14 +81,13 @@ async def upload_image_to_supabase(file: UploadFile, bucket_name: str, user_id: 
         # Tampilkan URL file lama yang akan dihapus
         print(f"Old file URL: {old_file_url}")
 
-        # # Hapus file lama jika ada
+        # Hapus file lama jika ada
         if old_file_url:
             old_file_name = old_file_url.split('/')[-1].split('?')[0].strip()
             print(f"Old file name extracted: {old_file_name}")
             print(f"Attempting to delete old file: {old_file_name}")
 
-            # delete_response = supabase.storage.from_(bucket_name).remove([old_file_name])
-            delete_response = supabase.storage.from_(bucket_name).remove(old_file_name)
+            delete_response = supabase.storage.from_(bucket_name).remove([old_file_name])
             print(f"Delete response: {delete_response}")
 
             if isinstance(delete_response, dict) and 'error' in delete_response:

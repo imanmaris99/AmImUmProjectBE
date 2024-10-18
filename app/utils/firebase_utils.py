@@ -23,6 +23,10 @@ if firebase_service_account_key and not firebase_admin._apps:
 else:
     raise ValueError("Firebase service account key tidak ditemukan atau sudah diinisialisasi.")
 
+# Inisialisasi Firebase
+# cred = credentials.Certificate("path/to/serviceAccountKey.json")
+# if not firebase_admin._apps:
+#     firebase_admin.initialize_app(cred)
 
 # Fungsi untuk membuat user di Firebase
 def create_firebase_user(email: str, password: str):

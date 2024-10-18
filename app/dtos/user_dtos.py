@@ -62,8 +62,10 @@ class ConfirmResetPasswordResponseDto(BaseModel):
 
 class UserEditProfileDto(BaseModel):
     fullname: str
+    firstname: str
+    lastname: str
+    phone: str
     address: str
-    photo_url: str
 
 class UserEditResponseDto(BaseModel):
     status_code: int = Field(default=201)
@@ -71,6 +73,11 @@ class UserEditResponseDto(BaseModel):
     data: UserEditProfileDto
 
 class UserEditPhotoProfileDto(BaseModel):
+    photo_url: str
+
+class UserEditPhotoProfileResponseDto(BaseModel):
+    status_code: int = Field(default=201)
+    message: str = Field(default="Edit photo profile has been success")
     photo_url: str
 
 class UserLoginPayloadDto(BaseModel):
@@ -98,6 +105,7 @@ class ChangePasswordDto(BaseModel):
     new_password: str
 
 class ChangePasswordResponseDto(BaseModel):
+    status_code: int = Field(default=201)
     message : str = Field(default="Password has been changed successfully")
     data: ChangePasswordDto
 
