@@ -23,7 +23,9 @@ class UserCreateResponseDto(BaseModel):
     email: Optional[str]
     phone: Optional[str] = None
     address: Optional[str] = None
+    photo_url: Optional[str] = None
     role: Optional[str]
+    is_active: bool 
     created_at: datetime
     updated_at: datetime
 

@@ -44,7 +44,8 @@ async def update_my_photo(
             if public_url is None:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
-                    detail="Failed to upload image."
+                    error="Internal Server Error",
+                    message="Failed to upload image."
                 )
             
             # Update photo_url pada user

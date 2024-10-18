@@ -385,6 +385,75 @@ def confirm_reset_password(payload: user_dtos.ConfirmResetPasswordDto, db: Sessi
 
     return result.unwrap()  # Return the success response if no error
 
+# == USER - GET_USER_PROFILE == ##
+@router.get(
+    "/profile", 
+    response_model=user_dtos.UserResponseDto,
+    responses={
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Pengguna tidak ditemukan",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 404,
+                        "error": "Not Found",
+                        "message": "Pengguna tidak ditemukan."
+                    }
+                }
+            },
+        },
+        status.HTTP_409_CONFLICT: {
+            "description": "Terjadi konflik saat mengakses data",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 409,
+                        "error": "Conflict",
+                        "message": "Terjadi konflik saat mengambil profil pengguna."
+                    }
+                }
+            },
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "description": "Terjadi kesalahan di server",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 500,
+                        "error": "Internal Server Error",
+                        "message": "Terjadi kesalahan saat mengambil profil pengguna."
+                    }
+                }
+            }
+        }
+    },
+    summary="Get user who login profile"
+)
+async def get_user_profile_by_id(
+    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],
+    db: Session = Depends(get_db)
+):
+    """
+    # Ambil Profil Pengguna #
+
+    Endpoint ini digunakan untuk mengambil profil pengguna berdasarkan ID yang terdapat dalam token JWT.
+
+    **Return:**
+
+    - **404 Not Found**: Pengguna tidak ditemukan.
+        - Terjadi ketika pengguna dengan ID yang diberikan tidak terdaftar.
+    - **409 Conflict**: Terjadi konflik saat mengakses data.
+        - Terjadi ketika ada masalah yang berhubungan dengan data saat mencoba mengambil profil pengguna.
+    - **500 Internal Server Error**: Terjadi kesalahan di server.
+        - Terjadi ketika ada kesalahan di sisi server saat mengambil profil pengguna.
+    """
+    result = user_services.get_user_profile(db, jwt_token.id)
+
+    if result.error:
+        raise result.error
+    
+    return result.unwrap()
+
 
 ## == USER - EDIT_PROFILE_USER == ##
 @router.put(
