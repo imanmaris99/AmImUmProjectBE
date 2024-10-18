@@ -56,11 +56,16 @@ async def update_my_photo(
         db.commit()
         db.refresh(user_model)
 
+        # Buat instance dari UserEditProfileDto
+        user_response = user_dtos.UserEditPhotoProfileDto(
+            photo_url=user_model.photo_url,
+        )
+
         # return build(data=user_model)
         return build(data=user_dtos.UserEditPhotoProfileResponseDto(
             status_code=201,
             message="Your profile has been successfully updated",
-            photo_url=user_model.photo_url
+            data=user_response
         ))
 
     except SQLAlchemyError as e:

@@ -80,7 +80,7 @@ class UserEditPhotoProfileDto(BaseModel):
 class UserEditPhotoProfileResponseDto(BaseModel):
     status_code: int = Field(default=201)
     message: str = Field(default="Edit photo profile has been success")
-    photo_url: str
+    data: UserEditPhotoProfileDto
 
 class UserLoginPayloadDto(BaseModel):
     email: EmailStr = Field(default="Example@Example.com")
