@@ -1,5 +1,6 @@
+from typing import Optional
 from sqlalchemy import Column, Integer, String, DateTime, func
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Mapped
 from app.libs import sql_alchemy_lib
 
 class TagCategoryModel(sql_alchemy_lib.Base):
@@ -10,19 +11,18 @@ class TagCategoryModel(sql_alchemy_lib.Base):
     description : str = Column(String(500), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     
-    # Relationships
-    # product_bies = relationship(
-    #     "ProductionModel",
-    #     back_populates="herbal_category",
-    #     lazy='selectin'  # Menggunakan selectin untuk optimasi eager loading
-    # )
+ # Relationships
+    products: Mapped[list["ProductionModel"]] = relationship("ProductionModel")
     
+    def __init__(self, name: str, description: Optional[str] = None):
+        self.name = name
+        self.description = description
+
     def __repr__(self):
-        return f"<TagCategory(name='{self.name}', id={self.id})>"
+        return f"<TagCategory(name='{self.name}', description={self.description})>"
     
     @property
     def description_list(self):
         if not self.description:
             return []
-        # Memecah deskripsi berdasarkan baris baru menggunakan splitlines()
         return [d.strip() for d in self.description.splitlines() if d.strip()]
