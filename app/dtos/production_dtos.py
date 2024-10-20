@@ -26,7 +26,7 @@ class ProductionCreateResponseDto(BaseModel):
     data: ProductionCreateDto
 
 class AllProductionsDto(BaseModel):
-    id: str
+    id: int
     name: str
     photo_url: Optional[str] = None
     description_list: list[str]

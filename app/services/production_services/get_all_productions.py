@@ -28,7 +28,7 @@ def get_all_productions(
         # Konversi produk menjadi DTO
         productions_dto = [
             production_dtos.AllProductionsDto(
-                id=str(production.id),  # Pastikan id adalah string
+                id=production.id,  # Pastikan id adalah string
                 name=production.name,
                 photo_url=production.photo_url,
                 description_list=production.description_list,  # Menggunakan property untuk mendapatkan deskripsi
