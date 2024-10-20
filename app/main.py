@@ -38,7 +38,8 @@ app = FastAPI(
 app.include_router(controllers.admin_router.router)
 app.include_router(controllers.user_router.router)
 app.include_router(controllers.article_router.router)
-app.include_router(controllers.catergory_route.router)
+app.include_router(controllers.category_router.router)
+app.include_router(controllers.production_router.router)
 app.include_router(controllers.rajaongkir_router.router)
 
 

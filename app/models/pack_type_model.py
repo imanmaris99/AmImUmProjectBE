@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Float, String, Integer, DateTime, func
+from sqlalchemy import Column, Float, ForeignKey, String, Integer, DateTime, func
 from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.mysql import CHAR
 from app.libs import sql_alchemy_lib
 
 class PackTypeModel(sql_alchemy_lib.Base):
@@ -14,6 +15,7 @@ class PackTypeModel(sql_alchemy_lib.Base):
     expiration = Column(String(15), nullable=True)  # Ganti ke DateTime jika mengacu pada tanggal
     stock = Column(Integer, nullable=False)
     discount = Column(Float, nullable=True)  # Menggunakan Float untuk persentase dengan desimal
+    fk_admin_id = Column(CHAR(36), ForeignKey('users.id'))
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
         

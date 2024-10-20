@@ -1,7 +1,7 @@
 import uuid
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, DECIMAL, Boolean, func
 from sqlalchemy.dialects.mysql import CHAR
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Mapped
 from app.libs import sql_alchemy_lib
 
 class ProductModel(sql_alchemy_lib.Base):
@@ -23,7 +23,12 @@ class ProductModel(sql_alchemy_lib.Base):
     
     # Relationships
     # pack_type = relationship("PackTypeModel", back_populates="products", lazy='selectin')  # Optimasi eager loading
-    # product_by = relationship("ProductionModel", back_populates="products", lazy='selectin')  # Optimasi eager loading
+
+    product_bies: Mapped["ProductionModel"] = relationship(
+        "ProductionModel",
+        back_populates="products",
+        lazy="selectin"  # Optimized eager loading
+    )    
     # ratings = relationship("RatingModel", back_populates="product", lazy='select')  # Lazy loading
     # order_items = relationship("OrderItemModel", back_populates="product", lazy='select')  # Lazy loading
     # cart_products = relationship("CartProductModel", back_populates="product", lazy='select')  # Lazy loading

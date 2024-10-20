@@ -12,7 +12,7 @@ class TagCategoryModel(sql_alchemy_lib.Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     
  # Relationships
-    products: Mapped[list["ProductionModel"]] = relationship("ProductionModel")
+    product_bies: Mapped[list["ProductionModel"]] = relationship("ProductionModel")
     
     def __init__(self, name: str, description: Optional[str] = None):
         self.name = name

@@ -4,7 +4,7 @@ from typing import List, Annotated
 from app.dtos import category_dtos
 from app.models.tag_category_model import TagCategoryModel
 
-from app.services import category_service
+from app.services import category_services
 from app.libs.sql_alchemy_lib import get_db
 from app.libs.jwt_lib import jwt_dto, jwt_service
 
@@ -19,11 +19,11 @@ router = APIRouter(
         status_code=status.HTTP_201_CREATED,
         dependencies=[Depends(jwt_service.admin_access_required)]
     )
-def create_article(
+def create_categories(
     category_create_dto: category_dtos.CategoryCreateDto, 
     db: Session = Depends(get_db),
 ):
-    result = category_service.create_categories(
+    result = category_services.create_categories(
         db, 
         category_create_dto
     )
@@ -40,5 +40,5 @@ def read_categories(
     # jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],    
     db: Session = Depends(get_db)
 ):
-    result = category_service.get_all_categories(db)
+    result = category_services.get_all_categories(db)
     return result.unwrap()

@@ -592,7 +592,8 @@ async def update_user_profile_without_photo(
                 }
             },
         },
-    }
+    },
+    summary="Update user profile photo"
 )
 async def update_only_photo(
         file: UploadFile = None,  # Jika opsional, tetap `None`; jika wajib, gunakan `File(...)`
