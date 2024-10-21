@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Float, ForeignKey, String, Integer, DateTime, func
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Mapped
 from sqlalchemy.dialects.mysql import CHAR
 from app.libs import sql_alchemy_lib
 
@@ -20,11 +20,11 @@ class PackTypeModel(sql_alchemy_lib.Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
         
     # Relationships
-    # products = relationship(
-    #     "ProductModel",
-    #     back_populates="pack_type",
-    #     lazy='selectin'  # Menggunakan selectin untuk optimasi eager loading
-    # )
+    products: Mapped["ProductModel"]= relationship(
+        "ProductModel",
+        back_populates="pack_type",
+        lazy='selectin'  # Menggunakan selectin untuk optimasi eager loading
+    )
     
     def __repr__(self):
         return f"<PackType(variant='{self.variant}', name='{self.name}', id={self.id})>"

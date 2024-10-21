@@ -2,6 +2,7 @@ import uuid
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, DECIMAL, Boolean, func
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import relationship, Mapped
+from app.dtos import product_dtos
 from app.libs import sql_alchemy_lib
 
 class ProductModel(sql_alchemy_lib.Base):
@@ -22,14 +23,22 @@ class ProductModel(sql_alchemy_lib.Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     
     # Relationships
-    # pack_type = relationship("PackTypeModel", back_populates="products", lazy='selectin')  # Optimasi eager loading
+    pack_type: Mapped["PackTypeModel"] = relationship(
+        "PackTypeModel", 
+        back_populates="products", 
+        lazy='selectin')  # Optimasi eager loading
 
     product_bies: Mapped["ProductionModel"] = relationship(
         "ProductionModel",
         back_populates="products",
         lazy="selectin"  # Optimized eager loading
     )    
-    # ratings = relationship("RatingModel", back_populates="product", lazy='select')  # Lazy loading
+
+    ratings: Mapped[list["RatingModel"]] = relationship(
+        "RatingModel", 
+        back_populates="products", 
+        lazy='select')  # Lazy loading
+    
     # order_items = relationship("OrderItemModel", back_populates="product", lazy='select')  # Lazy loading
     # cart_products = relationship("CartProductModel", back_populates="product", lazy='select')  # Lazy loading
     # wishlists = relationship("WishlistModel", back_populates="product", lazy='select')  # Lazy loading
@@ -52,3 +61,48 @@ class ProductModel(sql_alchemy_lib.Base):
             return []
         # Memecah instruksi berdasarkan baris baru menggunakan splitlines()
         return [i.strip() for i in self.instruction.splitlines() if i.strip()]
+    
+    @property
+    def company(self):
+        return self.product_bies.name if self.product_bies else ""
+    
+    @property
+    def avg_rating(self):
+        if not self.ratings:  # Menggunakan relasi ratings langsung
+            return 0
+        total_rating = sum(rating.rating_count for rating in self.ratings)
+        average_rating = total_rating / len(self.ratings)
+        return round(average_rating, 1)
+
+    @property
+    def total_rater(self):
+        return len(self.ratings)
+
+    @property
+    def variants_list(self):
+        from app.models.pack_type_model import PackTypeModel
+        pack_type_dtos = []
+        variants_list: list[PackTypeModel] = self.pack_type
+        for variants in variants_list:
+            variant_dto = product_dtos.VariantProductDto(
+                id= variants.id,
+                variant= variants.variant,
+                expiration= variants.expiration,
+                stock= variants.stock,
+                discount= variants.discount).model_dump()
+            pack_type_dtos.append(variant_dto)
+        return pack_type_dtos
+
+    @property
+    def rating_list(self):
+        from app.models.rating_model import RatingModel
+        rating_dtos = []
+        rating_list: list[RatingModel] = self.ratings
+        for rating in rating_list:
+            rating_dto = product_dtos.ProductRatingDto(
+                id=rating.id,
+                rating_count=rating.rate,
+                review_description=rating.review,
+                rater_name=rating.rater_name).model_dump()
+            rating_dtos.append(rating_dto)
+        return rating_dtos

@@ -2,8 +2,6 @@ from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
 
-from app.models.article_model import ArticleModel
-from sqlalchemy.orm import Session
 
 # DTO untuk membuat artikel baru
 class ArticleCreateDTO(BaseModel):

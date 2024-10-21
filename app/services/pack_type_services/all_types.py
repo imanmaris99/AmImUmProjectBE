@@ -5,39 +5,40 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from typing import List, Type
 
-from app.models.production_model import ProductionModel
-from app.dtos import production_dtos
+from app.models.pack_type_model import PackTypeModel
+from app.dtos.pack_type_dtos import VariantProductDto
 
+from app.utils import optional
 from app.utils.result import build, Result
 
 
-def get_all_productions(
+def all_types(
         db: Session, skip: int = 0, limit: int = 10
-    ) -> Result[List[Type[ProductionModel]], Exception]:
+    ) -> Result[List[Type[PackTypeModel]], Exception]:
     try:
-        product_bies = db.query(ProductionModel).offset(skip).limit(limit).all()
+        pack_types = db.query(PackTypeModel).offset(skip).limit(limit).all()
 
-        if not product_bies:
+        if not pack_types:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 error="Not Found",
-                message="No information about productions found"
+                message="No information about type or variant products found"
             )
 
         # Konversi produk menjadi DTO
-        productions_dto = [
-            production_dtos.AllProductionsDto(
-                id=production.id,  # Pastikan id adalah string
-                name=production.name,
-                photo_url=production.photo_url,
-                description_list=production.description_list,  # Menggunakan property untuk mendapatkan deskripsi
-                category=production.category,  # Menggunakan property untuk mendapatkan nama kategori
-                created_at=production.created_at.isoformat()  # Ubah ke string ISO 8601
+        types_dto = [
+            VariantProductDto(
+                id=types.id, 
+                variant=types.variant,
+                expiration=types.expiration,
+                stock=types.stock,
+                created_at=types.created_at,
+                updated_at=types.updated_at
             )
-            for production in product_bies
+            for types in pack_types
         ]
 
-        return build(data=productions_dto)
+        return build(data=types_dto)
 
     except SQLAlchemyError as e:
         print(e)
