@@ -32,6 +32,7 @@ def all_types(
                 variant=types.variant,
                 expiration=types.expiration,
                 stock=types.stock,
+                discount=types.discount,
                 created_at=types.created_at,
                 updated_at=types.updated_at
             )
