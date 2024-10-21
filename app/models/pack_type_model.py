@@ -1,3 +1,4 @@
+from decimal import Decimal
 from sqlalchemy import Column, Float, ForeignKey, String, Integer, DateTime, func
 from sqlalchemy.orm import relationship, Mapped
 from sqlalchemy.dialects.mysql import CHAR
@@ -37,8 +38,18 @@ class PackTypeModel(sql_alchemy_lib.Base):
     @property
     def discounted_price(self):
         if not self.products or self.products.price is None:
-            return 0
-        price = self.products.price
+            return Decimal(0)
+        price = Decimal(self.products.price)
         if self.discount:
-            return round(price - (price * self.discount), 2)
+            discount_value = Decimal(self.discount)  # Ubah diskon ke Decimal
+            return round(price - (price * (discount_value / Decimal(100))), 2)
         return price
+
+    # @property
+    # def discounted_price(self):
+    #     if not self.products or self.products.price is None:
+    #         return 0
+    #     price = self.products.price
+    #     if self.discount:
+    #         return round(price - (price * self.discount), 2)
+    #     return price

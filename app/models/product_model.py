@@ -1,6 +1,7 @@
 import uuid
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, DECIMAL, Boolean, func
 from sqlalchemy.dialects.mysql import CHAR
+from decimal import Decimal
 from sqlalchemy.orm import relationship, Mapped
 from app.dtos import product_dtos
 from app.libs import sql_alchemy_lib
@@ -22,7 +23,7 @@ class ProductModel(sql_alchemy_lib.Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     
     # Relationships
-    pack_type: Mapped["PackTypeModel"] = relationship(
+    pack_type: Mapped[list["PackTypeModel"]] = relationship(
         "PackTypeModel", 
         back_populates="products", 
         lazy='selectin')  # Optimasi eager loading
@@ -85,19 +86,20 @@ class ProductModel(sql_alchemy_lib.Base):
     def all_variants(self):
         from app.models.pack_type_model import PackTypeModel
         pack_type_dtos = []
-        all_variants: list[PackTypeModel] = self.pack_type if self.pack_type else []  # Cek None
+        all_variants: list[PackTypeModel] = self.pack_type if self.pack_type else []
         
         for type in all_variants:
-            all_variant_dto = product_dtos.VariantProductDto(
+            all_variant_dto = product_dtos.VariantAllProductDto(
                 id=type.id,
                 variant=type.variant,
                 discount=type.discount,
-                discounted_price=type.discounted_price,
+                discounted_price=float(type.discounted_price),  # Mengembalikan ke float jika perlu
                 updated_at=type.updated_at
             ).model_dump()
             pack_type_dtos.append(all_variant_dto)
         
         return pack_type_dtos
+
 
     @property
     def variants_list(self):
@@ -113,7 +115,7 @@ class ProductModel(sql_alchemy_lib.Base):
                 expiration= variants.expiration,
                 stock= variants.stock,
                 discount= variants.discount,
-                discounted_price=variants.discounted_price,
+                discounted_price=float(variants.discounted_price),
                 updated_at=variants.updated_at
             ).model_dump()
             pack_type_dtos.append(variant_dto)
