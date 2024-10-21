@@ -4,6 +4,7 @@ from datetime import datetime
 
 
 class PackTypeCreateDto(BaseModel):
+    product_id: str = Field(default="5e4da772-e77b-4889-8314-7b9930a13c71")
     name: str = Field(default="gram/ dosh/ botol")
     min_amount: int = Field(default="1")
     variant: Optional[str]= Field(default="Cokelat")
@@ -14,6 +15,7 @@ class PackTypeCreateDto(BaseModel):
 class PackTypeInfoDto(BaseModel):
     id: int
     img: Optional[str] = None
+    product_id: str = Field(default="5e4da772-e77b-4889-8314-7b9930a13c71")
     name: str = Field(default="gram/ dosh/ botol")
     min_amount: int = Field(default="1")
     variant: Optional[str]= Field(default="Cokelat")
@@ -46,14 +48,22 @@ class EditPhotoProductResponseDto(BaseModel):
 
 class VariantProductDto(BaseModel):
     id: int
+    product:str
     variant: Optional[str]
     expiration: Optional[str]
     stock: int
     discount: Optional[float] = None
-    created_at: datetime
+    discounted_price: Optional[float] = None
     updated_at: datetime
     
 class PackTypeEditInfoResponseDto(BaseModel):
     status_code: int = Field(default=200)
     message: str = Field(default="Edit stock and discount product has been success")
     data: VariantProductDto
+
+class VariantAllProductDto(BaseModel):
+    id: Optional[int] = None
+    variant: Optional[str] = None
+    discount: Optional[float] = None
+    discounted_price: Optional[float] = None
+    updated_at: datetime

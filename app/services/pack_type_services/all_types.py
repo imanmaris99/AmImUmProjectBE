@@ -29,10 +29,12 @@ def all_types(
         types_dto = [
             VariantProductDto(
                 id=types.id, 
+                product=types.product,
                 variant=types.variant,
                 expiration=types.expiration,
                 stock=types.stock,
                 discount=types.discount,
+                discounted_price=types.discounted_price,
                 created_at=types.created_at,
                 updated_at=types.updated_at
             )

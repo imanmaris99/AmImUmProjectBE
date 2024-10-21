@@ -13,10 +13,9 @@ class ProductModel(sql_alchemy_lib.Base):
     name = Column(String(100), nullable=False, index=True)  # Menambahkan indeks jika sering dicari
     info = Column(String(100), nullable=True)  # Content of the post
     weight = Column(Integer, nullable=False)
-    pack_type_id = Column(Integer, ForeignKey("pack_types.id"), nullable=False)
     description : str = Column(Text, nullable=True)
     instruction : str = Column(Text, nullable=True)  # Content of instructions for use
-    price = Column(DECIMAL(10, 2), nullable=False)
+    price = Column(DECIMAL(10, 2), nullable=False, index=True)
     is_active = Column(Boolean, default=True, index=True)
     product_by_id = Column(Integer, ForeignKey("productions.id"), nullable=False, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
@@ -67,6 +66,10 @@ class ProductModel(sql_alchemy_lib.Base):
         return self.product_bies.name if self.product_bies else ""
     
     @property
+    def promo(self):
+        return self.pack_type.discount if self.pack_type else ""
+
+    @property
     def avg_rating(self):
         if not self.ratings:  # Menggunakan relasi ratings langsung
             return 0
@@ -79,30 +82,56 @@ class ProductModel(sql_alchemy_lib.Base):
         return len(self.ratings)
 
     @property
+    def all_variants(self):
+        from app.models.pack_type_model import PackTypeModel
+        pack_type_dtos = []
+        all_variants: list[PackTypeModel] = self.pack_type if self.pack_type else []  # Cek None
+        
+        for type in all_variants:
+            all_variant_dto = product_dtos.VariantProductDto(
+                id=type.id,
+                variant=type.variant,
+                discount=type.discount,
+                discounted_price=type.discounted_price,
+                updated_at=type.updated_at
+            ).model_dump()
+            pack_type_dtos.append(all_variant_dto)
+        
+        return pack_type_dtos
+
+    @property
     def variants_list(self):
         from app.models.pack_type_model import PackTypeModel
         pack_type_dtos = []
-        variants_list: list[PackTypeModel] = self.pack_type
+        variants_list: list[PackTypeModel] = self.pack_type if self.pack_type else []
+        
         for variants in variants_list:
             variant_dto = product_dtos.VariantProductDto(
                 id= variants.id,
+                product=variants.product,
                 variant= variants.variant,
                 expiration= variants.expiration,
                 stock= variants.stock,
-                discount= variants.discount).model_dump()
+                discount= variants.discount,
+                discounted_price=variants.discounted_price,
+                updated_at=variants.updated_at
+            ).model_dump()
             pack_type_dtos.append(variant_dto)
+
         return pack_type_dtos
 
     @property
     def rating_list(self):
         from app.models.rating_model import RatingModel
         rating_dtos = []
-        rating_list: list[RatingModel] = self.ratings
+        rating_list: list[RatingModel] = self.ratings if self.ratings else []
         for rating in rating_list:
             rating_dto = product_dtos.ProductRatingDto(
                 id=rating.id,
                 rating_count=rating.rate,
                 review_description=rating.review,
-                rater_name=rating.rater_name).model_dump()
+                rater_name=rating.rater_name
+            ).model_dump()
             rating_dtos.append(rating_dto)
+
         return rating_dtos
