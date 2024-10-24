@@ -71,6 +71,29 @@ def read_promo(
     
     return result.unwrap()
 
+@router.put(
+    "/{production_id}",
+    response_model=production_dtos.ProductionInfoUpdateResponseDto,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(jwt_service.admin_access_required)]  # Pastikan Anda memiliki dependency untuk akses admin
+)
+def update_info_company(
+    company_id: production_dtos.ProductionIdToUpdateDto, 
+    production_update: production_dtos.ProductionInfoUpdateDTO,
+    db: Session = Depends(get_db)
+):
+    # Panggil service untuk memperbarui stok
+    result = production_services.edit_production(
+        db=db, 
+        company_id=company_id, 
+        production_update=production_update 
+    )
+
+    # Tangani error jika ada
+    if result.error:
+        raise result.error
+
+    return result.unwrap()
 
 @router.put(
         "/logo/{production_id}", 
@@ -89,6 +112,25 @@ async def update_logo(
         production_id=production_id,
         user_id=jwt_token.id,  # Mengambil ID dari payload JWT
         file=file
+    )
+
+    if result.error:
+        raise result.error
+    
+    return result.unwrap()
+
+@router.delete(
+        "/delete/{production_id}", 
+        response_model= production_dtos.DeleteProdutionResponseDto,
+        dependencies=[Depends(jwt_service.admin_access_required)]
+    )
+def delete_company(
+    deleted_data: production_dtos.ProductionIdToUpdateDto, 
+    db: Session = Depends(get_db)
+):
+    result = production_services.delete_production(
+        db, 
+        deleted_data=deleted_data
     )
 
     if result.error:

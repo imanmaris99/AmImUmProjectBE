@@ -3,40 +3,38 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.models.pack_type_model import PackTypeModel
-from app.dtos.pack_type_dtos import DeletePackTypeDto, InfoDeletePackTypeDto, DeletePackTypeResponseDto
+from app.models.production_model import ProductionModel
+from app.dtos import production_dtos
 
 from app.utils.result import build, Result
 
 
-def delete_type(
+def delete_production(
         db: Session, 
-        variant_data: DeletePackTypeDto,
+        deleted_data: production_dtos.ProductionIdToUpdateDto
         ) -> Result[None, Exception]:
-    """Menghapus variasi produk berdasarkan ID dan mengatur ulang display_id."""
     try:
-        type = db.query(PackTypeModel).filter(PackTypeModel.id == variant_data.type_id).first()
-        if not type:
+        company = db.query(ProductionModel).filter(ProductionModel.id == deleted_data.production_id).first()
+        if not company:
             return build(error=HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 error="Not Found",
-                message="Type or variant not found"
+                message="Company not found"
             ))
         
         # Simpan informasi pengguna sebelum dihapus
-        variant_delete_info = InfoDeletePackTypeDto(
-            type_id= type.id,
-            variant= type.variant
+        company_delete_info = production_dtos.InfoDeleteProductionDto(
+            id= company.id,
+            name= company.name
         )
 
-        # Hapus artikel
-        db.delete(type)
+        db.delete(company)
         db.commit()
 
-        return build(data=DeletePackTypeResponseDto(
+        return build(data=production_dtos.DeleteProdutionResponseDto(
             status_code=200,
-            message="Your pack and variant type product has been deleted",
-            data=variant_delete_info
+            message="Info about company some product has been deleted",
+            data=company_delete_info
         ))
     
     except SQLAlchemyError as e:

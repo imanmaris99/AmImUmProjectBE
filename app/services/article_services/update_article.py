@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.models.article_model import ArticleModel
-from app.dtos.article_dtos import ArticleIdToUpdateDto, ArticleDataUpdateDTO
+from app.dtos.article_dtos import ArticleIdToUpdateDto, ArticleDataUpdateDTO, ArticleInfoUpdateResponseDto
 
 from app.utils import optional
 from app.utils.result import build, Result
@@ -34,7 +34,14 @@ def update_article(
         # Simpan perubahan ke dalam database   
         db.commit()
         db.refresh(article)
-        return build(data=article)
+        return build(data=ArticleInfoUpdateResponseDto(
+            status_code=200,
+            message="Information about some article has been updated",
+            data=ArticleDataUpdateDTO(
+                title=article.title,
+                description=article.description
+            )
+        ))
     
     except SQLAlchemyError as e:
         print(e)

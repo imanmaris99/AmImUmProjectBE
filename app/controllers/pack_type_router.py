@@ -99,7 +99,7 @@ async def update_logo(
         response_model= pack_type_dtos.DeletePackTypeResponseDto,
         dependencies=[Depends(jwt_service.admin_access_required)]
     )
-def delete_article(
+def delete_variant(
     variant_data: pack_type_dtos.DeletePackTypeDto, 
     db: Session = Depends(get_db)
 ):

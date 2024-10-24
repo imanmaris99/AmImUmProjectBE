@@ -3,11 +3,10 @@
 from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session
 from typing import List, Annotated
-from app.dtos.article_dtos import ArticleCreateDTO, ArticleIdToUpdateDto, ArticleDataUpdateDTO, ArticleResponseDTO, GetAllArticleDTO, DeleteArticleDto, DeleteArticleResponseDto
+from app.dtos.article_dtos import ArticleCreateDTO, ArticleIdToUpdateDto, ArticleDataUpdateDTO, ArticleInfoUpdateResponseDto, ArticleResponseDTO, GetAllArticleDTO, DeleteArticleDto, DeleteArticleResponseDto
 from app.services import article_services
 from app.libs.sql_alchemy_lib import get_db
 from app.libs.jwt_lib import jwt_dto, jwt_service
-# from app.libs.jwt_lib.jwt_service import admin_access_required  # Import dependency check admin
 
 router = APIRouter(
     prefix="/articles",
@@ -42,7 +41,7 @@ def read_articles(
 
 @router.put(
         "/{article_id}", 
-        response_model=ArticleDataUpdateDTO,
+        response_model=ArticleInfoUpdateResponseDto,
         status_code=status.HTTP_200_OK,
         dependencies=[Depends(jwt_service.admin_access_required)]
     )
@@ -52,8 +51,10 @@ def update_article(
     db: Session = Depends(get_db)
 ):
     result = article_services.update_article(db, article_id_update, article_update_dto)
-    # if result.error:
-    #     raise result.error
+    
+    if result.error:
+        raise result.error
+    
     return result.data
 
 @router.delete(
@@ -63,7 +64,6 @@ def update_article(
     )
 def delete_article(
     article_data: DeleteArticleDto, 
-    # jwt_token: jwt_service.TokenPayLoad = Depends(jwt_service.get_jwt_pyload),
     db: Session = Depends(get_db)
 ):
     result = article_services.delete_article(

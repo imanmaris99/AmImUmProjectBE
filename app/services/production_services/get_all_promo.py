@@ -38,7 +38,7 @@ def get_all_promo(
         # Menyiapkan DTO promo untuk response
         info_promo = []
         for prod in product_bies:
-            if prod.promo_special > 0:  # Memanfaatkan properti avg_promo setelah pengambilan data
+            if prod.promo_special > 0:  # Memanfaatkan properti promo_special setelah pengambilan data
                 info_promo.append(
                     production_dtos.AllProductionPromoDto(
                         id=prod.id,

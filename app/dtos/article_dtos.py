@@ -16,8 +16,12 @@ class ArticleIdToUpdateDto(BaseModel):
 # DTO untuk memperbarui informasi artikel
 class ArticleDataUpdateDTO(BaseModel):
     title: Optional[str]
-    img: Optional[str] = None
     description: Optional[str] = None
+
+class ArticleInfoUpdateResponseDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="Updated Info about some article has been success")
+    data: ArticleDataUpdateDTO
 
 # DTO untuk respon artikel
 class ArticleResponseDTO(BaseModel):

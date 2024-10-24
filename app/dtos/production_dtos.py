@@ -6,6 +6,19 @@ class ProductionCreateDto(BaseModel):
     herbal_category_id: int = Field(default=1)
     description: Optional[str] = None
 
+class ProductionIdToUpdateDto(BaseModel):
+    production_id:int
+
+# DTO untuk memperbarui informasi artikel
+class ProductionInfoUpdateDTO(BaseModel):
+    name: Optional[str]
+    description: Optional[str] = None
+
+class ProductionInfoUpdateResponseDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="Updated Info about some company production has been success")
+    data: ProductionInfoUpdateDTO   
+
 class PostLogoCompanyDto(BaseModel):
     photo_url: str
 
@@ -38,3 +51,12 @@ class AllProductionPromoDto(BaseModel):
     name: str
     photo_url: Optional[str] = None
     promo_special: Optional[float] = None
+
+class InfoDeleteProductionDto(BaseModel):
+    id: int
+    name: str
+
+class DeleteProdutionResponseDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="Info about company some product has been deleted")
+    data: InfoDeleteProductionDto
