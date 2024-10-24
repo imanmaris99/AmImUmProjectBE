@@ -32,3 +32,9 @@ class AllProductionsDto(BaseModel):
     description_list: list[str]
     category: Optional[str] = None
     created_at: str
+
+class AllProductionPromoDto(BaseModel):
+    id: int
+    name: str
+    photo_url: Optional[str] = None
+    promo_special: Optional[float] = None

@@ -19,7 +19,7 @@ class ProductionModel(sql_alchemy_lib.Base):
  # Relationships
     herbal_category: Mapped["TagCategoryModel"] = relationship(viewonly=True)
 
-    products: Mapped[list["ProductModel"]] = relationship(
+    products: Mapped["ProductModel"] = relationship(
         "ProductModel",
         back_populates="product_bies",
         lazy="selectin"  # Optimized eager loading
@@ -37,3 +37,7 @@ class ProductionModel(sql_alchemy_lib.Base):
     @property
     def category(self):
         return self.herbal_category.name if self.herbal_category else ""
+    
+    @property
+    def promo_special(self):
+        return self.products.avg_promo if self.products else 0

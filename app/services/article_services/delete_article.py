@@ -1,12 +1,10 @@
-# services/article_service.py
-
 from fastapi import HTTPException, status
 
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.models.article_model import ArticleModel
-from app.dtos.article_dtos import DeleteArticleDto
+from app.dtos.article_dtos import DeleteArticleDto, InfoDeleteArticleDto, DeleteArticleResponseDto
 
 from app.utils import optional
 from app.utils.result import build, Result
@@ -37,10 +35,10 @@ def delete_article(
             ))
         
         # Simpan informasi pengguna sebelum dihapus
-        article_delete_info = {
-            "article_id": article.id,
-            "title": article.title
-        }
+        article_delete_info = InfoDeleteArticleDto(
+            article_id= article.id,
+            title= article.title
+        )
 
         # Hapus artikel
         db.delete(article)
@@ -49,7 +47,11 @@ def delete_article(
         # Panggil reorder_ids setelah penghapusan
         reorder_ids(db)
 
-        return build(data=article_delete_info)
+        return build(data=DeleteArticleResponseDto(
+            status_code=200,
+            message="Your article has been deleted",
+            data=article_delete_info
+        ))
     
     except SQLAlchemyError as e:
         print(e)

@@ -36,6 +36,42 @@ def create_productions(
     
     return result.unwrap()
 
+
+@router.get(
+        "/", 
+        response_model=List[production_dtos.AllProductionsDto],
+        summary="Get All Productions Company",
+        description="Retrieve a list of productions companies."
+
+    )
+def read_productions(   
+    db: Session = Depends(get_db)
+):
+    result = production_services.get_all_productions(db)
+
+    if result.error:
+        raise result.error
+    
+    return result.unwrap()
+
+
+@router.get(
+    "/promo", 
+    response_model=List[production_dtos.AllProductionPromoDto],
+    summary="Get All Promotions",
+    description="Retrieve a list of productions with special promotions."
+)
+def read_promo(   
+    db: Session = Depends(get_db)
+):
+    result = production_services.get_all_promo(db)
+
+    if result.error:
+        raise result.error
+    
+    return result.unwrap()
+
+
 @router.put(
         "/logo/{production_id}", 
         response_model=production_dtos.PostLogoCompanyResponseDto,
@@ -58,14 +94,4 @@ async def update_logo(
     if result.error:
         raise result.error
     
-    return result.unwrap()
-
-@router.get(
-        "/", 
-        response_model=List[production_dtos.AllProductionsDto]
-    )
-def read_productions(   
-    db: Session = Depends(get_db)
-):
-    result = production_services.get_all_productions(db)
     return result.unwrap()

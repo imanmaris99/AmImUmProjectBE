@@ -57,7 +57,7 @@ def update_article(
     return result.data
 
 @router.delete(
-        "/{article_id}", 
+        "/delete/{article_id}", 
         response_model= DeleteArticleResponseDto,
         dependencies=[Depends(jwt_service.admin_access_required)]
     )
@@ -66,7 +66,12 @@ def delete_article(
     # jwt_token: jwt_service.TokenPayLoad = Depends(jwt_service.get_jwt_pyload),
     db: Session = Depends(get_db)
 ):
-    result = article_services.delete_article(db, article_data=article_data)
-    # if result.error:
-    #     raise result.error
+    result = article_services.delete_article(
+        db, 
+        article_data=article_data
+    )
+
+    if result.error:
+        raise result.error
+    
     return result.unwrap()

@@ -67,3 +67,15 @@ class VariantAllProductDto(BaseModel):
     discount: Optional[float] = None
     discounted_price: Optional[float] = None
     updated_at: datetime
+
+class DeletePackTypeDto(BaseModel):
+    type_id:int
+
+class InfoDeletePackTypeDto(BaseModel):
+    type_id: int
+    variant: str
+
+class DeletePackTypeResponseDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="Your pack and variant type product has been deleted")
+    data: InfoDeletePackTypeDto

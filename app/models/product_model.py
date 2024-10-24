@@ -39,9 +39,6 @@ class ProductModel(sql_alchemy_lib.Base):
         back_populates="products", 
         lazy='select')  # Lazy loading
     
-    # order_items = relationship("OrderItemModel", back_populates="product", lazy='select')  # Lazy loading
-    # cart_products = relationship("CartProductModel", back_populates="product", lazy='select')  # Lazy loading
-    # wishlists = relationship("WishlistModel", back_populates="product", lazy='select')  # Lazy loading
 
 
     def __repr__(self):
@@ -67,15 +64,19 @@ class ProductModel(sql_alchemy_lib.Base):
         return self.product_bies.name if self.product_bies else ""
     
     @property
-    def promo(self):
-        return self.pack_type.discount if self.pack_type else ""
+    def avg_promo(self):
+        if not self.pack_type:
+            return 0
+        total_discount = sum(discounted.discount for discounted in self.pack_type if discounted.discount)
+        average_discount = total_discount / len(self.pack_type) if self.pack_type else 0
+        return round(average_discount, 1)
 
     @property
     def avg_rating(self):
         if not self.ratings:  # Menggunakan relasi ratings langsung
             return 0
         total_rating = sum(rating.rating_count for rating in self.ratings)
-        average_rating = total_rating / len(self.ratings)
+        average_rating = total_rating / len(self.ratings) if self.pack_type else 0
         return round(average_rating, 1)
 
     @property

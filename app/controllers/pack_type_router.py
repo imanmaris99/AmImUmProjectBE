@@ -94,3 +94,20 @@ async def update_logo(
     
     return result.unwrap()
 
+@router.delete(
+        "/delete/{type_id}", 
+        response_model= pack_type_dtos.DeletePackTypeResponseDto,
+        dependencies=[Depends(jwt_service.admin_access_required)]
+    )
+def delete_article(
+    variant_data: pack_type_dtos.DeletePackTypeDto, 
+    db: Session = Depends(get_db)
+):
+    result = pack_type_services.delete_type(
+        db, 
+        variant_data=variant_data)
+    
+    if result.error:
+        raise result.error
+    
+    return result.unwrap()

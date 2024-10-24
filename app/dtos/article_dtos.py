@@ -38,7 +38,11 @@ class GetAllArticleDTO(BaseModel):
 class DeleteArticleDto(BaseModel):
     article_id:int
 
-class DeleteArticleResponseDto(BaseModel):
-    detail: str = Field(default="Article has been deleted successfully")
+class InfoDeleteArticleDto(BaseModel):
     article_id: int
     title: str
+
+class DeleteArticleResponseDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="Your article has been deleted")
+    data: InfoDeleteArticleDto
