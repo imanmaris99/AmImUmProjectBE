@@ -9,7 +9,7 @@ class PaymentModel(Base):
     
     # Menggunakan UUID untuk ID payment
     id = Column(CHAR(36), primary_key=True, default=lambda: str(uuid.uuid4()), unique=True, index=True)
-    order_id = Column(CHAR(36), ForeignKey("orders.id"), nullable=False, unique=True)  # UUID from OrderModel
+    order_id = Column(CHAR(36), ForeignKey("orders.id"), nullable=False, unique=True, index=True)  # UUID from OrderModel
     transaction_id = Column(String(255), unique=True, nullable=False)  # ID transaksi dari Midtrans
     payment_type = Column(String(50), nullable=False)  # e.g., credit_card, bank_transfer
     gross_amount = Column(DECIMAL(10, 2), nullable=False)

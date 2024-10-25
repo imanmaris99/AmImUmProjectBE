@@ -9,7 +9,7 @@ class PackTypeModel(sql_alchemy_lib.Base):
     
     # Menggunakan Integer ID
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
-    product_id = Column(CHAR(36), ForeignKey("products.id"), nullable=True)  # UUID from ProductModel
+    product_id = Column(CHAR(36), ForeignKey("products.id"), nullable=True, index=True)  # UUID from ProductModel
     img = Column(String(200), nullable=True)
     name = Column(String(50), nullable=False)  # gram/dosh/sachet
     min_amount = Column(Integer, nullable=False)

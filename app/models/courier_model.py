@@ -7,7 +7,7 @@ class CourierModel(Base):
     
     # Menggunakan Integer ID
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
-    courier_name = Column(String(15), nullable=False)
+    courier_name = Column(String(15), nullable=False, index=True)
     weight = Column(Integer, nullable=False)
     length = Column(Integer, nullable=True)
     width = Column(Integer, nullable=True)

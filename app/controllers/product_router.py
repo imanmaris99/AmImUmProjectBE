@@ -48,6 +48,20 @@ def read_all_products(
     
     return result.unwrap()
 
+@router.get(
+        "/discount", 
+        response_model=List[product_dtos.AllProductInfoDTO]
+    )
+def read_all_products_with_discount(   
+    db: Session = Depends(get_db)
+):
+    result = product_services.all_product_with_discount(db)
+
+    if result.error:
+        raise result.error
+    
+    return result.unwrap()
+
 # @router.put(
 #     "/{type_id}",
 #     response_model=pack_type_dtos.PackTypeEditInfoResponseDto,

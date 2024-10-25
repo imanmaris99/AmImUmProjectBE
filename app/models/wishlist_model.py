@@ -8,7 +8,7 @@ class WishlistModel(Base):
     
     # Using Integer for ID with autoincrement
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
-    product_id = Column(CHAR(36), ForeignKey("products.id"), nullable=False)  # UUID from ProductModel
+    product_id = Column(CHAR(36), ForeignKey("products.id"), nullable=False, index=True)  # UUID from ProductModel
     customer_id = Column(CHAR(36), ForeignKey("users.id"), nullable=False)  # UUID from UserModel
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     

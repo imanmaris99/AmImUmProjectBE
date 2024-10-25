@@ -1,2 +1,3 @@
 from .create_product import create_product
 from .all_product import all_product
+from .all_product_with_discount import all_product_with_discount

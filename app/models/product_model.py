@@ -39,102 +39,88 @@ class ProductModel(sql_alchemy_lib.Base):
         back_populates="products", 
         lazy='select')  # Lazy loading
     
-
-
     def __repr__(self):
-        # Mengonversi UUID biner kembali ke format string untuk representasi yang lebih mudah dibaca
         return f"<Product(name='{self.name}', id='{self.id}')>"
-    
+
+    # Properti yang memecah deskripsi dan instruksi berdasarkan baris baru
     @property
     def description_list(self):
-        if not self.description:
-            return []
-        # Memecah deskripsi berdasarkan baris baru menggunakan splitlines()
-        return [d.strip() for d in self.description.splitlines() if d.strip()]
-    
+        return [d.strip() for d in self.description.splitlines() if d.strip()] if self.description else []
+
     @property
     def instruction_list(self):
-        if not self.instruction:
-            return []
-        # Memecah instruksi berdasarkan baris baru menggunakan splitlines()
-        return [i.strip() for i in self.instruction.splitlines() if i.strip()]
-    
+        return [i.strip() for i in self.instruction.splitlines() if i.strip()] if self.instruction else []
+
+    # Properti untuk mendapatkan nama perusahaan terkait
     @property
     def company(self):
         return self.product_bies.name if self.product_bies else ""
     
     @property
+    def highest_promo(self):
+        if not self.pack_type:
+            return 0
+        # Mengambil nilai diskon tertinggi dari pack_type
+        max_discount = max((pt.discount for pt in self.pack_type if pt.discount), default=0)
+        return round(max_discount, 1)
+
+    # Properti untuk menghitung rata-rata promo
+    @property
     def avg_promo(self):
         if not self.pack_type:
             return 0
-        total_discount = sum(discounted.discount for discounted in self.pack_type if discounted.discount)
-        average_discount = total_discount / len(self.pack_type) if self.pack_type else 0
-        return round(average_discount, 1)
+        total_discount = sum(pt.discount for pt in self.pack_type if pt.discount)
+        return round(total_discount / len(self.pack_type), 1) if self.pack_type else 0
 
+    # Properti untuk menghitung rata-rata rating
     @property
     def avg_rating(self):
-        if not self.ratings:  # Menggunakan relasi ratings langsung
+        if not self.ratings:
             return 0
-        total_rating = sum(rating.rating_count for rating in self.ratings)
-        average_rating = total_rating / len(self.ratings) if self.pack_type else 0
-        return round(average_rating, 1)
+        total_rating = sum(r.rating_count for r in self.ratings)
+        return round(total_rating / len(self.ratings), 1) if self.ratings else 0
 
     @property
     def total_rater(self):
         return len(self.ratings)
 
+    # Properti untuk mendapatkan semua varian produk
     @property
     def all_variants(self):
-        from app.models.pack_type_model import PackTypeModel
-        pack_type_dtos = []
-        all_variants: list[PackTypeModel] = self.pack_type if self.pack_type else []
-        
-        for type in all_variants:
-            all_variant_dto = product_dtos.VariantAllProductDto(
-                id=type.id,
-                variant=type.variant,
-                discount=type.discount,
-                discounted_price=float(type.discounted_price),  # Mengembalikan ke float jika perlu
-                updated_at=type.updated_at
-            ).model_dump()
-            pack_type_dtos.append(all_variant_dto)
-        
-        return pack_type_dtos
+        return [
+            product_dtos.VariantAllProductDto(
+                id=variant.id,
+                variant=variant.variant,
+                discount=variant.discount,
+                discounted_price=float(variant.discounted_price),
+                updated_at=variant.updated_at
+            ).model_dump() for variant in self.pack_type
+        ] if self.pack_type else []
 
-
+    # Properti untuk mendapatkan daftar varian produk
     @property
     def variants_list(self):
-        from app.models.pack_type_model import PackTypeModel
-        pack_type_dtos = []
-        variants_list: list[PackTypeModel] = self.pack_type if self.pack_type else []
-        
-        for variants in variants_list:
-            variant_dto = product_dtos.VariantProductDto(
-                id= variants.id,
-                product=variants.product,
-                variant= variants.variant,
-                expiration= variants.expiration,
-                stock= variants.stock,
-                discount= variants.discount,
-                discounted_price=float(variants.discounted_price),
-                updated_at=variants.updated_at
-            ).model_dump()
-            pack_type_dtos.append(variant_dto)
+        return [
+            product_dtos.VariantProductDto(
+                id=variant.id,
+                product=variant.product,
+                variant=variant.variant,
+                expiration=variant.expiration,
+                stock=variant.stock,
+                discount=variant.discount,
+                discounted_price=float(variant.discounted_price),
+                updated_at=variant.updated_at
+            ).model_dump() for variant in self.pack_type
+        ] if self.pack_type else []
 
-        return pack_type_dtos
-
+    # Properti untuk mendapatkan daftar rating produk
     @property
     def rating_list(self):
-        from app.models.rating_model import RatingModel
-        rating_dtos = []
-        rating_list: list[RatingModel] = self.ratings if self.ratings else []
-        for rating in rating_list:
-            rating_dto = product_dtos.ProductRatingDto(
+        return [
+            product_dtos.ProductRatingDto(
                 id=rating.id,
                 rating_count=rating.rate,
                 review_description=rating.review,
                 rater_name=rating.rater_name
-            ).model_dump()
-            rating_dtos.append(rating_dto)
-
-        return rating_dtos
+            ).model_dump() for rating in self.ratings
+        ] if self.ratings else []

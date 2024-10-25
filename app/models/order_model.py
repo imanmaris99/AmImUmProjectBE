@@ -11,8 +11,8 @@ class OrderModel(Base):
     id = Column(CHAR(36), primary_key=True, default=lambda: str(uuid.uuid4()), unique=True, index=True)
     status = Column(String(15), nullable=False)  # e.g., pending, paid, shipped
     total_price = Column(DECIMAL(10, 2), nullable=False)
-    customer_id = Column(CHAR(36), ForeignKey("users.id"), nullable=True)  # member or non-member
-    shipment_id = Column(CHAR(36), ForeignKey("shipments.id"), nullable=True)
+    customer_id = Column(CHAR(36), ForeignKey("users.id"), nullable=True, index=True)  # member or non-member
+    shipment_id = Column(CHAR(36), ForeignKey("shipments.id"), nullable=True, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     

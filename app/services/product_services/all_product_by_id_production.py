@@ -9,28 +9,30 @@ from app.models.product_model import ProductModel
 from app.dtos.product_dtos import AllProductInfoDTO
 from app.utils.result import build, Result
 
-
-def all_product(
+def all_product_by_id_production(
         db: Session, 
+        production_by_id: int,  # Parameter untuk filter berdasarkan production_id
         skip: int = 0, 
         limit: int = 10
     ) -> Result[List[Type[ProductModel]], Exception]:
     try:
-        # Menggunakan eager loading untuk relasi `all_variants` (contoh)
+        # Mengambil produk berdasarkan production_by_id dan menerapkan pagination
         product_model = (
             db.query(ProductModel)
+            .filter(ProductModel.product_by_id == production_by_id)  # Filter berdasarkan production_by_id
             .offset(skip)
             .limit(limit)
             .all()
         )
+        
         if not product_model:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 error="Not Found",
-                message="No information about type or variant products found"
+                message="No information about products found for the specified production ID"
             )
 
-        # Konversi produk menjadi DTO, cek `all_variants` agar tidak menyebabkan error jika None
+        # Konversi produk menjadi DTO
         all_products_dto = [
             AllProductInfoDTO(
                 id=product.id, 

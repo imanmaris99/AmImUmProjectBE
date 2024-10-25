@@ -1,28 +1,37 @@
 from fastapi import HTTPException, status
-
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import SQLAlchemyError
 from typing import List, Type
 
 from app.models.product_model import ProductModel
+from app.models.pack_type_model import PackTypeModel  # Pastikan diimpor
 from app.dtos.product_dtos import AllProductInfoDTO
 from app.utils.result import build, Result
 
-
-def all_product(
+def all_product_with_discount(
         db: Session, 
         skip: int = 0, 
         limit: int = 10
     ) -> Result[List[Type[ProductModel]], Exception]:
     try:
-        # Menggunakan eager loading untuk relasi `all_variants` (contoh)
+        # Subquery untuk mendapatkan produk yang memiliki pack type dengan diskon
+        subquery = (
+            db.query(PackTypeModel.product_id)
+            .filter(PackTypeModel.discount > 0)
+            .subquery()
+        )
+
+        # Mengambil produk yang aktif dan memiliki variasi dengan diskon
         product_model = (
             db.query(ProductModel)
+            .options(joinedload(ProductModel.pack_type))  # Eager loading untuk pack_type
+            .filter(ProductModel.is_active.is_(True), ProductModel.id.in_(subquery))
             .offset(skip)
             .limit(limit)
             .all()
         )
+
         if not product_model:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -30,7 +39,7 @@ def all_product(
                 message="No information about type or variant products found"
             )
 
-        # Konversi produk menjadi DTO, cek `all_variants` agar tidak menyebabkan error jika None
+        # Konversi produk menjadi DTO
         all_products_dto = [
             AllProductInfoDTO(
                 id=product.id, 

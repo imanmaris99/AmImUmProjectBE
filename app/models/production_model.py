@@ -40,4 +40,4 @@ class ProductionModel(sql_alchemy_lib.Base):
     
     @property
     def promo_special(self):
-        return self.products.avg_promo if self.products else 0
+        return self.products.highest_promo if self.products else 0
