@@ -62,6 +62,46 @@ def read_all_products_with_discount(
     
     return result.unwrap()
 
+
+@router.get(
+    "/production/{production_id}", 
+    response_model=List[product_dtos.AllProductInfoDTO]
+)
+def read_all_products_by_id_production(
+    production_id: int,  # Ambil production_id dari path
+    db: Session = Depends(get_db)
+):
+    # Langsung kirim production_id ke service tanpa DTO
+    result = product_services.all_product_by_id_production(
+        db=db,
+        production_id=production_id
+    )
+
+    if result.error:
+        raise result.error
+    
+    return result.unwrap()
+
+@router.get(
+    "/discount/{production_id}", 
+    response_model=List[product_dtos.AllProductInfoDTO]
+)
+def read_all_products_by_id_production(
+    production_id: int,  # Ambil production_id dari path
+    db: Session = Depends(get_db)
+):
+    # Langsung kirim production_id ke service tanpa DTO
+    result = product_services.all_discount_by_id_production(
+        db=db,
+        production_id=production_id
+    )
+
+    if result.error:
+        raise result.error
+    
+    return result.unwrap()
+
+
 # @router.put(
 #     "/{type_id}",
 #     response_model=pack_type_dtos.PackTypeEditInfoResponseDto,

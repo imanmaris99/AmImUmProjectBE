@@ -66,3 +66,5 @@ class ProductDetailResponseDTO(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+class ProductInfoByIdProductionDTO(BaseModel):
+    production_id: int

@@ -1,44 +1,39 @@
 from fastapi import HTTPException, status
-
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from sqlalchemy.exc import SQLAlchemyError
 from typing import List, Type
 
 from app.models.product_model import ProductModel
-from app.dtos.product_dtos import AllProductInfoDTO
+from app.dtos.product_dtos import AllProductInfoDTO, ProductInfoByIdProductionDTO
 from app.utils.result import build, Result
 
 def all_product_by_id_production(
         db: Session, 
-        production_by_id: int,  # Parameter untuk filter berdasarkan production_id
+        production_id: int,  
         skip: int = 0, 
         limit: int = 10
-    ) -> Result[List[Type[ProductModel]], Exception]:
+    ) -> Result[List[Type[ProductModel]], Exception]:  # Mengembalikan List DTO
     try:
-        # Mengambil produk berdasarkan production_by_id dan menerapkan pagination
-        product_model = (
-            db.query(ProductModel)
-            .filter(ProductModel.product_by_id == production_by_id)  # Filter berdasarkan production_by_id
+        # Query untuk mengambil produk berdasarkan product_by_id
+        product_model = db.execute(
+            select(ProductModel)
+            .options(selectinload(ProductModel.pack_type))  # Eager load untuk pack_type
+            .where(ProductModel.product_by_id == production_id)  # Filter dengan production_id
             .offset(skip)
             .limit(limit)
-            .all()
-        )
-        
-        if not product_model:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                error="Not Found",
-                message="No information about products found for the specified production ID"
-            )
+        ).scalars().all()
 
-        # Konversi produk menjadi DTO
+        if not product_model:
+            return build(data=[])  # Kembalikan list kosong jika tidak ada produk ditemukan
+
+        # Konversi produk ke DTO
         all_products_dto = [
             AllProductInfoDTO(
                 id=product.id, 
                 name=product.name,
                 price=product.price,
-                all_variants=product.all_variants or [],  # Cek None dan default ke list kosong                
+                all_variants=product.all_variants or [],                
                 created_at=product.created_at
             )
             for product in product_model

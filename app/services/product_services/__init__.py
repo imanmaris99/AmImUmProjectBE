@@ -1,3 +1,5 @@
 from .create_product import create_product
 from .all_product import all_product
 from .all_product_with_discount import all_product_with_discount
+from .all_product_by_id_production import all_product_by_id_production
+from .all_discount_by_id_production import all_discount_by_id_production
