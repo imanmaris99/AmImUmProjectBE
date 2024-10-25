@@ -1,6 +1,6 @@
 from fastapi import HTTPException, status
 from sqlalchemy import select
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, selectinload  # Menggunakan selectinload untuk efisiensi
 from sqlalchemy.exc import SQLAlchemyError
 from typing import List, Type
 
@@ -17,18 +17,21 @@ def all_product_with_discount(
     try:
         # Subquery untuk mendapatkan produk yang memiliki pack type dengan diskon
         subquery = (
-            db.query(PackTypeModel.product_id)
+            select(PackTypeModel.product_id)
             .filter(PackTypeModel.discount > 0)
-            .subquery()
+            .scalar_subquery()  # Menggunakan scalar_subquery()
         )
 
         # Mengambil produk yang aktif dan memiliki variasi dengan diskon
         product_model = (
-            db.query(ProductModel)
-            .options(joinedload(ProductModel.pack_type))  # Eager loading untuk pack_type
-            .filter(ProductModel.is_active.is_(True), ProductModel.id.in_(subquery))
-            .offset(skip)
-            .limit(limit)
+            db.execute(
+                select(ProductModel)
+                .options(selectinload(ProductModel.pack_type))  # Eager loading untuk pack_type
+                .filter(ProductModel.is_active.is_(True), 
+                        ProductModel.id.in_(subquery))  # Menggunakan in_() dengan subquery
+                .offset(skip)
+                .limit(limit)
+            ).scalars()  # Mengambil hasil sebagai scalar
             .all()
         )
 
