@@ -86,7 +86,7 @@ def read_all_products_by_id_production(
     "/discount/{production_id}", 
     response_model=List[product_dtos.AllProductInfoDTO]
 )
-def read_all_products_by_id_production(
+def read_all_products_discount_by_id_production(
     production_id: int,  # Ambil production_id dari path
     db: Session = Depends(get_db)
 ):
