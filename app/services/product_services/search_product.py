@@ -10,28 +10,36 @@ from app.dtos.product_dtos import AllProductInfoDTO
 from app.utils.result import build, Result
 
 
-def all_product(
+def search_product(
         db: Session, 
+        product_name: str,
         skip: int = 0, 
         limit: int = 10
     ) -> Result[List[Type[ProductModel]], Exception]:
     try:
+        search_query = f"%{product_name}%"
+
         product_model = (
             db.execute(
                 select(ProductModel)
                 .options(selectinload(ProductModel.pack_type))  # Eager loading untuk pack_type
+                .filter(
+                    ProductModel.name.ilike(search_query)
+                )
                 .offset(skip)
                 .limit(limit)
-            ).scalars()  # Mengambil hasil sebagai scalar
-            .all()
+            ).scalars().all()
         )
+        # if not product_model:
+        #     raise HTTPException(
+        #         status_code=status.HTTP_404_NOT_FOUND,
+        #         error="Not Found",
+        #         message="No information about type or variant products found"
+        #     )
 
+        # Jika tidak ada produk ditemukan, kembalikan list kosong
         if not product_model:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                error="Not Found",
-                message="List products not found"
-            )
+            return build(data=[])
 
         # Konversi produk menjadi DTO, cek `all_variants` agar tidak menyebabkan error jika None
         all_products_dto = [
@@ -46,6 +54,7 @@ def all_product(
         ]
 
         return build(data=all_products_dto)
+
 
     except SQLAlchemyError as e:
         print(e)

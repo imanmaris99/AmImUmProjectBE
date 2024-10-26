@@ -1,3 +1,4 @@
+from uuid import UUID
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, status
 
 from sqlalchemy.orm import Session
@@ -48,6 +49,27 @@ def read_all_products(
     
     return result.unwrap()
 
+# get-list-product-by-keyword-search
+@router.get(
+        "/{product_name}", 
+        response_model=List[product_dtos.AllProductInfoDTO]
+    )
+def search_product(
+        product_name: str,
+        # jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],
+        db: Session = Depends(get_db)
+):
+    result = product_services.search_product(
+        db,
+        product_name
+    )
+
+    if result.error:
+        raise result.error
+    
+    return result.unwrap()
+
+
 @router.get(
         "/discount", 
         response_model=List[product_dtos.AllProductInfoDTO]
@@ -62,7 +84,6 @@ def read_all_products_with_discount(
     
     return result.unwrap()
 
-
 @router.get(
     "/production/{production_id}", 
     response_model=List[product_dtos.AllProductInfoDTO]
@@ -75,6 +96,27 @@ def read_all_products_by_id_production(
     result = product_services.all_product_by_id_production(
         db=db,
         production_id=production_id
+    )
+
+    if result.error:
+        raise result.error
+    
+    return result.unwrap()
+
+
+# get-product-discount-by-keyword-search
+@router.get(
+        "/discount/{product_name}", 
+        response_model=List[product_dtos.AllProductInfoDTO]
+    )
+def search_product_discount(
+        product_name: str,
+        # jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],
+        db: Session = Depends(get_db)
+):
+    result = product_services.search_product_discount(
+        db,
+        product_name
     )
 
     if result.error:
@@ -101,52 +143,16 @@ def read_all_products_discount_by_id_production(
     
     return result.unwrap()
 
+@router.get("/detail/{product_id}", response_model=product_dtos.ProductDetailResponseDto)
+def get_product_detail(product_id: UUID, db: Session = Depends(get_db)):
+    # Call the service to get the product detail
+    result = product_services.get_product_by_id(db, product_id)
 
-# @router.put(
-#     "/{type_id}",
-#     response_model=pack_type_dtos.PackTypeEditInfoResponseDto,
-#     status_code=status.HTTP_200_OK,
-#     dependencies=[Depends(jwt_service.admin_access_required)]  # Pastikan Anda memiliki dependency untuk akses admin
-# )
-# def update_stock(
-#     type_id_update: pack_type_dtos.TypeIdToUpdateDto, 
-#     type_update_dto: pack_type_dtos.PackTypeEditInfoDto,
-#     db: Session = Depends(get_db)
-# ):
-#     # Panggil service untuk memperbarui stok
-#     result = pack_type_services.update_stock(
-#         db=db, 
-#         type_id_update=type_id_update, 
-#         type_update=type_update_dto  # Ganti type_update_dto sesuai parameter service
-#     )
+    if result.error:
+        raise result.error
+    # Unwrap the result to raise exceptions if they exist, otherwise return the data
+    return result.unwrap()
 
-#     # Tangani error jika ada
-#     if result.error:
-#         raise result.error
 
-#     return result.unwrap()
 
-# @router.put(
-#         "/image/{type_id}", 
-#         response_model=pack_type_dtos.EditPhotoProductResponseDto,
-#         status_code=status.HTTP_201_CREATED,
-#         dependencies=[Depends(jwt_service.admin_access_required)]
-#     )
-# async def update_logo(
-#         type_id: int,
-#         file: UploadFile = None,  # Jika opsional, tetap `None`; jika wajib, gunakan `File(...)`
-#         jwt_token: jwt_service.TokenPayLoad = Depends(jwt_service.get_jwt_pyload),
-#         db: Session = Depends(get_db)
-# ):
-#     result = await pack_type_services.post_photo(
-#         db=db, 
-#         type_id=type_id,
-#         user_id=jwt_token.id,  # Mengambil ID dari payload JWT
-#         file=file
-#     )
-
-#     if result.error:
-#         raise result.error
-    
-#     return result.unwrap()
 

@@ -1,39 +1,57 @@
 from fastapi import HTTPException, status
-
 from sqlalchemy import select
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session, selectinload  # Menggunakan selectinload untuk efisiensi
 from sqlalchemy.exc import SQLAlchemyError
 from typing import List, Type
 
 from app.models.product_model import ProductModel
+from app.models.pack_type_model import PackTypeModel  # Pastikan diimpor
 from app.dtos.product_dtos import AllProductInfoDTO
 from app.utils.result import build, Result
 
-
-def all_product(
+def search_product_discount(
         db: Session, 
+        product_name: str,
         skip: int = 0, 
         limit: int = 10
     ) -> Result[List[Type[ProductModel]], Exception]:
     try:
+        # Subquery untuk produk dengan diskon
+        subquery = (
+            select(PackTypeModel.product_id)
+            .filter(PackTypeModel.discount > 0)
+            .scalar_subquery()
+        )
+
+        search_query = f"%{product_name}%"  # Pencarian menggunakan ilike
+        
+        # Query untuk produk yang cocok dengan nama dan aktif serta memiliki diskon
         product_model = (
             db.execute(
                 select(ProductModel)
                 .options(selectinload(ProductModel.pack_type))  # Eager loading untuk pack_type
+                .filter(
+                    ProductModel.name.ilike(search_query),
+                    ProductModel.is_active.is_(True),
+                    ProductModel.id.in_(subquery)
+                )
                 .offset(skip)
                 .limit(limit)
-            ).scalars()  # Mengambil hasil sebagai scalar
-            .all()
+            ).scalars().all()
         )
 
-        if not product_model:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                error="Not Found",
-                message="List products not found"
-            )
+        # if not product_model:
+        #     raise HTTPException(
+        #         status_code=status.HTTP_404_NOT_FOUND,
+        #         error="Not Found",
+        #         message="No information about type or variant products found"
+        #     )
 
-        # Konversi produk menjadi DTO, cek `all_variants` agar tidak menyebabkan error jika None
+        # Jika tidak ada produk ditemukan, kembalikan list kosong
+        if not product_model:
+            return build(data=[])
+        
+        # Konversi produk menjadi DTO
         all_products_dto = [
             AllProductInfoDTO(
                 id=product.id, 

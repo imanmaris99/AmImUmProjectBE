@@ -49,22 +49,25 @@ class ProductUpdateDTO(BaseModel):
     is_active: Optional[bool]
     product_by_id: Optional[int]
 
-
-class ProductDetailResponseDTO(BaseModel):
+class ProductDetailDTO(BaseModel):
     id: str
     name: str
     info: Optional[str]
     variants_list: List[VariantProductDto]
-    description: Optional[str]
-    instructions: Optional[str]
+    description_list: List[str]
+    instructions_list: List[str]
     price: float
     is_active: bool
     company: str
     avg_rating: Optional[float] = None
     total_rater: Optional[int] = None
-    rating_list: List[ProductRatingDto]
     created_at: datetime
     updated_at: datetime
+
+class ProductDetailResponseDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="Product details successfully retrieved")
+    data: ProductDetailDTO 
 
 class ProductInfoByIdProductionDTO(BaseModel):
     production_id: int
