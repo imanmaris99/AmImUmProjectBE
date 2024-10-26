@@ -49,6 +49,8 @@ class EditPhotoProductResponseDto(BaseModel):
 class VariantProductDto(BaseModel):
     id: int
     product:str
+    name: str
+    img: Optional[str] = None
     variant: Optional[str]
     expiration: Optional[str]
     stock: int
@@ -64,6 +66,7 @@ class PackTypeEditInfoResponseDto(BaseModel):
 class VariantAllProductDto(BaseModel):
     id: Optional[int] = None
     variant: Optional[str] = None
+    img: Optional[str] = None
     discount: Optional[float] = None
     discounted_price: Optional[float] = None
     updated_at: datetime

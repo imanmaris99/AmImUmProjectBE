@@ -91,6 +91,7 @@ class ProductModel(sql_alchemy_lib.Base):
             product_dtos.VariantAllProductDto(
                 id=variant.id,
                 variant=variant.variant,
+                img=variant.img,
                 discount=variant.discount,
                 discounted_price=float(variant.discounted_price),
                 updated_at=variant.updated_at
@@ -104,6 +105,8 @@ class ProductModel(sql_alchemy_lib.Base):
             product_dtos.VariantProductDto(
                 id=variant.id,
                 product=variant.product,
+                name=variant.name,
+                img=variant.img,
                 variant=variant.variant,
                 expiration=variant.expiration,
                 stock=variant.stock,
