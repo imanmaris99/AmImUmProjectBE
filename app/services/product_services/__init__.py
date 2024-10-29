@@ -5,4 +5,7 @@ from .all_product_by_id_production import all_product_by_id_production
 from .all_discount_by_id_production import all_discount_by_id_production
 from .search_product import search_product
 from .search_product_discount import search_product_discount
+from .search_product_of_id_production import search_product_of_id_production
 from .detail_product import get_product_by_id
+from .update_product import update_product
+from .delete_product import delete_product

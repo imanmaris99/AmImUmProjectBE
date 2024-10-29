@@ -39,15 +39,17 @@ class AllProductInfoDTO(BaseModel):
     all_variants: List[VariantAllProductDto]
     created_at: datetime
 
+class ProductIdToUpdateDTO(BaseModel):
+    product_id: str = Field(default="287ba5f9-c495-455d-9e38-8ceb3cac61ba")
+
 class ProductUpdateDTO(BaseModel):
     name: Optional[str]
     info: Optional[str]
-    pack_type_id: Optional[int]
+    weight: Optional[int]
     description: Optional[str]
     instructions: Optional[str]
     price: Optional[float]
-    is_active: Optional[bool]
-    product_by_id: Optional[int]
+
 
 class ProductDetailDTO(BaseModel):
     id: str
@@ -71,3 +73,15 @@ class ProductDetailResponseDto(BaseModel):
 
 class ProductInfoByIdProductionDTO(BaseModel):
     production_id: int
+
+class DeleteByIdProductDto(BaseModel):
+    product_id: str = Field(default="287ba5f9-c495-455d-9e38-8ceb3cac61ba")
+
+class InfoDeleteProductDto(BaseModel):
+    product_id: str = Field(default="287ba5f9-c495-455d-9e38-8ceb3cac61ba")
+    name: str= Field(default="buyung upik")
+
+class DeleteProductResponseDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="Your product has been deleted")
+    data: InfoDeleteProductDto

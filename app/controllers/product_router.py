@@ -103,6 +103,25 @@ def read_all_products_by_id_production(
     
     return result.unwrap()
 
+@router.get(
+        "/production/{production_id}/{product_name}", 
+        response_model=List[product_dtos.AllProductInfoDTO]
+    )
+def search_product_from_filtering_of_id_production(
+        production_id: int,
+        product_name: str,
+        db: Session = Depends(get_db)
+):
+    result = product_services.search_product_of_id_production(
+        db,
+        production_id,
+        product_name
+    )
+
+    if result.error:
+        raise result.error
+    
+    return result.unwrap()
 
 # get-product-discount-by-keyword-search
 @router.get(
@@ -143,7 +162,10 @@ def read_all_products_discount_by_id_production(
     
     return result.unwrap()
 
-@router.get("/detail/{product_id}", response_model=product_dtos.ProductDetailResponseDto)
+@router.get(
+        "/detail/{product_id}", 
+        response_model=product_dtos.ProductDetailResponseDto
+    )
 def get_product_detail(product_id: UUID, db: Session = Depends(get_db)):
     # Call the service to get the product detail
     result = product_services.get_product_by_id(db, product_id)
@@ -154,5 +176,43 @@ def get_product_detail(product_id: UUID, db: Session = Depends(get_db)):
     return result.unwrap()
 
 
+@router.put(
+    "/{product_id}",
+    response_model=product_dtos.ProductResponseDto,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(jwt_service.admin_access_required)]  # Pastikan Anda memiliki dependency untuk akses admin
+)
+def update_product(
+    product_id_update: product_dtos.ProductIdToUpdateDTO, 
+    product_update: product_dtos.ProductUpdateDTO,
+    db: Session = Depends(get_db)
+):
+    result = product_services.update_product(
+        db=db, 
+        product_id_update=product_id_update, 
+        product_update=product_update  
+    )
 
+    if result.error:
+        raise result.error
+
+    return result.unwrap()
+
+@router.delete(
+        "/delete/{product_id}", 
+        response_model= product_dtos.DeleteProductResponseDto,
+        dependencies=[Depends(jwt_service.admin_access_required)]
+    )
+def delete_product(
+    product_data: product_dtos.DeleteByIdProductDto, 
+    db: Session = Depends(get_db)
+):
+    result = product_services.delete_product(
+        db, 
+        product_data=product_data)
+    
+    if result.error:
+        raise result.error
+    
+    return result.unwrap()
 
