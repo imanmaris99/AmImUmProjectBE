@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+from datetime import datetime
 from typing import Optional, List
 
 class ProductionCreateDto(BaseModel):
@@ -44,7 +45,21 @@ class AllProductionsDto(BaseModel):
     photo_url: Optional[str] = None
     description_list: list[str]
     category: Optional[str] = None
-    created_at: str
+    created_at: datetime
+
+class DetailProductionDto(BaseModel):
+    id: int
+    name: str
+    photo_url: Optional[str] = None
+    description_list: list[str]
+    category: Optional[str] = None
+    total_product: Optional[int] = None
+    created_at: datetime
+
+class ProductionDetailResponseDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="Info aboout Production or brand details successfully retrieved")
+    data: DetailProductionDto
 
 class AllProductionPromoDto(BaseModel):
     id: int

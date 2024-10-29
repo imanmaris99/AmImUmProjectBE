@@ -71,6 +71,26 @@ def read_promo(
     
     return result.unwrap()
 
+
+@router.get(
+        "/detail/{production_id}", 
+        response_model=production_dtos.ProductionDetailResponseDto
+    )
+def get_product_detail(
+    production_id: int, 
+    db: Session = Depends(get_db)):
+
+
+    result = production_services.detail_production(
+        db, 
+        production_id)
+
+    if result.error:
+        raise result.error
+    
+    return result.unwrap()
+
+
 @router.put(
     "/{production_id}",
     response_model=production_dtos.ProductionInfoUpdateResponseDto,
