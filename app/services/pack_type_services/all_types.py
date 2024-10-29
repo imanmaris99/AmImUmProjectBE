@@ -1,12 +1,13 @@
 from fastapi import HTTPException, status
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
 from typing import List, Type
 
 from app.models.pack_type_model import PackTypeModel
-from app.dtos.pack_type_dtos import VariantProductDto
+from app.dtos.pack_type_dtos import VariantProductDto, PackTypeEditInfoResponseDto
 
 from app.utils import optional
 from app.utils.result import build, Result
@@ -16,7 +17,11 @@ def all_types(
         db: Session, skip: int = 0, limit: int = 10
     ) -> Result[List[Type[PackTypeModel]], Exception]:
     try:
-        pack_types = db.query(PackTypeModel).offset(skip).limit(limit).all()
+        pack_types = db.execute(
+            select(PackTypeModel)
+            .offset(skip)
+            .limit(limit)
+        ).scalars().all()
 
         if not pack_types:
             raise HTTPException(
@@ -30,12 +35,13 @@ def all_types(
             VariantProductDto(
                 id=types.id, 
                 product=types.product,
+                name=types.name,
+                img=types.img,
                 variant=types.variant,
                 expiration=types.expiration,
                 stock=types.stock,
                 discount=types.discount,
                 discounted_price=types.discounted_price,
-                created_at=types.created_at,
                 updated_at=types.updated_at
             )
             for types in pack_types

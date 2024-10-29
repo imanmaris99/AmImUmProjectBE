@@ -76,7 +76,7 @@ def read_promo(
         "/detail/{production_id}", 
         response_model=production_dtos.ProductionDetailResponseDto
     )
-def get_product_detail(
+def get_production_detail(
     production_id: int, 
     db: Session = Depends(get_db)):
 
