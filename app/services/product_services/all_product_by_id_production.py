@@ -24,8 +24,15 @@ def all_product_by_id_production(
             .limit(limit)
         ).scalars().all()
 
+        # if not product_model:
+        #     return build(data=[])  # Kembalikan list kosong jika tidak ada produk ditemukan
         if not product_model:
-            return build(data=[])  # Kembalikan list kosong jika tidak ada produk ditemukan
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                error="Not Found",
+                message=f"list products from this id {production_id} not found"
+            )
+
 
         # Konversi produk ke DTO
         all_products_dto = [

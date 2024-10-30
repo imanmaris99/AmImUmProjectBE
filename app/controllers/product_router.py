@@ -71,7 +71,7 @@ def search_product(
 
 
 @router.get(
-        "/discount", 
+        "/discount/all", 
         response_model=List[product_dtos.AllProductInfoDTO]
     )
 def read_all_products_with_discount(   
@@ -125,7 +125,7 @@ def search_product_from_filtering_of_id_production(
 
 # get-product-discount-by-keyword-search
 @router.get(
-        "/discount/{product_name}", 
+        "/discount/name/{product_name}", 
         response_model=List[product_dtos.AllProductInfoDTO]
     )
 def search_product_discount(
@@ -144,7 +144,7 @@ def search_product_discount(
     return result.unwrap()
 
 @router.get(
-    "/discount/{production_id}", 
+    "/discount/production/{production_id}", 
     response_model=List[product_dtos.AllProductInfoDTO]
 )
 def read_all_products_discount_by_id_production(

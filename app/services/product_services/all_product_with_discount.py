@@ -27,19 +27,18 @@ def all_product_with_discount(
             db.execute(
                 select(ProductModel)
                 .options(selectinload(ProductModel.pack_type))  # Eager loading untuk pack_type
-                .filter(ProductModel.is_active.is_(True), 
+                .where(ProductModel.is_active.is_(True), 
                         ProductModel.id.in_(subquery))  # Menggunakan in_() dengan subquery
                 .offset(skip)
                 .limit(limit)
-            ).scalars()  # Mengambil hasil sebagai scalar
-            .all()
+            ).scalars().all()
         )
 
         if not product_model:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 error="Not Found",
-                message="No information about type or variant products found"
+                message="list products have a discount not found"
             )
 
         # Konversi produk menjadi DTO

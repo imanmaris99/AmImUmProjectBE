@@ -37,12 +37,18 @@ def all_discount_by_id_production(
             .all()
         )
 
-        # Jika tidak ada produk ditemukan, kembalikan list kosong
+        # # Jika tidak ada produk ditemukan, kembalikan list kosong
+        # if not product_model:
+        #     return build(data=[])
         if not product_model:
-            return build(data=[])
+            return build(error=HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                error="Not Found",
+                message=f"info about discount product of this brand Production with ID {production_id} not found"
+            ))
 
         # Konversi produk menjadi DTO
-        all_products_dto = [
+        all_products_discount_by_production_dto = [
             AllProductInfoDTO(
                 id=product.id, 
                 name=product.name,
@@ -53,14 +59,14 @@ def all_discount_by_id_production(
             for product in product_model
         ]
 
-        return build(data=all_products_dto)
+        return build(data=all_products_discount_by_production_dto)
 
     except SQLAlchemyError as e:
         print(e)
         db.rollback()
         return build(error=HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Database conflict",
+            error="Database conflict",
             message=f"Database conflict: {str(e)}"
         ))
     
@@ -68,6 +74,6 @@ def all_discount_by_id_production(
         print(e)
         return build(error=HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal Server Error",
+            error="Internal Server Error",
             message=f"An error occurred: {str(e)}"
         ))

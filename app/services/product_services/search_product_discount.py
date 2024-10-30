@@ -40,19 +40,19 @@ def search_product_discount(
             ).scalars().all()
         )
 
-        # if not product_model:
-        #     raise HTTPException(
-        #         status_code=status.HTTP_404_NOT_FOUND,
-        #         error="Not Found",
-        #         message="No information about type or variant products found"
-        #     )
-
-        # Jika tidak ada produk ditemukan, kembalikan list kosong
         if not product_model:
-            return build(data=[])
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                error="Not Found",
+                message=f"No product have a discount found with name containing '{product_name}'."
+            )
+
+        # # Jika tidak ada produk ditemukan, kembalikan list kosong
+        # if not product_model:
+        #     return build(data=[])
         
         # Konversi produk menjadi DTO
-        all_products_dto = [
+        product_discount_dto = [
             AllProductInfoDTO(
                 id=product.id, 
                 name=product.name,
@@ -63,7 +63,7 @@ def search_product_discount(
             for product in product_model
         ]
 
-        return build(data=all_products_dto)
+        return build(data=product_discount_dto)
 
     except SQLAlchemyError as e:
         print(e)

@@ -16,6 +16,14 @@ def search_product_of_id_production(
         limit: int = 10
     ) -> Result[List[Type[ProductModel]], Exception]:  # Mengembalikan List DTO
     try:
+        # Memeriksa apakah production_id valid
+        if not production_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error= "Bad Request",
+                message= "Production ID must be provided."
+            )
+
         search_query = f"%{product_name}%"
         # Query untuk mengambil produk berdasarkan product_by_id
         product_model = db.execute(
@@ -29,8 +37,21 @@ def search_product_of_id_production(
             .limit(limit)
         ).scalars().all()
 
+        # Memeriksa apakah ada produk ditemukan
         if not product_model:
-            return build(data=[])  # Kembalikan list kosong jika tidak ada produk ditemukan
+            # Memisahkan pesan kesalahan
+            if db.execute(select(ProductModel).where(ProductModel.product_by_id == production_id)).scalars().first() is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    error= "Not Found",
+                    message= f"No products found for production ID {production_id}."
+                )
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    error= "Not Found",
+                    message= f"No products found with name containing '{product_name}' for production ID {production_id}."
+                )
 
         # Konversi produk ke DTO
         all_products_dto = [
