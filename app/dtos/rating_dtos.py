@@ -3,6 +3,9 @@ from typing import Optional
 from datetime import datetime
 
 
+class RatingCreateOfIdProductDto(BaseModel):
+    product_id: str
+
 class RatingCreateDto(BaseModel):
     rate: Optional[int] = None
     review: Optional[str] = None
@@ -20,8 +23,9 @@ class RatingResponseCreateDto(BaseModel):
     message: str = Field(default="Your rate for some product has been created")
     data: RatingInfoCreateDto
 
+
 class RatingAllResponseDto(BaseModel):
-    id: str
+    id: int
     rate: int
     review: Optional[str] = None
     product_name: Optional[str] = None
@@ -30,7 +34,7 @@ class RatingAllResponseDto(BaseModel):
     updated_at: datetime
 
 class ProductRatingDto(BaseModel):
-    id: str
+    id: int
     rate: int
     review: str
     rater_name: Optional[str] = None

@@ -77,7 +77,7 @@ class ProductModel(sql_alchemy_lib.Base):
     def avg_rating(self):
         if not self.ratings:
             return 0
-        total_rating = sum(r.rating_count for r in self.ratings)
+        total_rating = sum(r.rate for r in self.ratings)
         return round(total_rating / len(self.ratings), 1) if self.ratings else 0
 
     @property
