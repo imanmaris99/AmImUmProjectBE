@@ -47,3 +47,28 @@ class MyRatingListDto(BaseModel):
     created_at: datetime
     # updated_at: datetime
 
+class ReviewIdToUpdateDto(BaseModel):
+    rating_id:int
+
+class ReviewDataUpdateDTO(BaseModel):
+    rate: int
+    review: Optional[str] = None
+
+class ReviewInfoUpdateResponseDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="updated info rating and review for this product id successfully")
+    data: ReviewDataUpdateDTO
+
+class DeleteReviewDto(BaseModel):
+    rating_id:int
+
+class InfoDeleteReviewDto(BaseModel):
+    rating_id: int
+    rate: int
+    review: Optional[str] = None
+    product_name: Optional[str] = None
+
+class DeleteReviewResponseDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="Your article has been deleted")
+    data: InfoDeleteReviewDto

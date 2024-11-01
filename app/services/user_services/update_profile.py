@@ -24,7 +24,7 @@ def user_edit(
             db.refresh(user_model)
             # return optional.build(data=user_model)
             return optional.build(data=user_dtos.UserEditResponseDto(
-            status_code=201,
+            status_code=status.HTTP_200_OK,
             message="Your profile has been successfully updated",
             data=user
         ))
