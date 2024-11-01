@@ -31,7 +31,7 @@ def delete_article(
             return build(error=HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 error="Not Found",
-                message="Article not found"
+                message=f"Article with ID {article_data.article_id} not found"
             ))
         
         # Simpan informasi pengguna sebelum dihapus

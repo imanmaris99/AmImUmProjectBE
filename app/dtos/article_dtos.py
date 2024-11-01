@@ -9,6 +9,10 @@ class ArticleCreateDTO(BaseModel):
     img: Optional[str] = None
     description: str = Field(default="this is good news")
 
+class ArticleCreateResponseDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="Create new Info about some article has been success")
+    data: ArticleCreateDTO
     
 class ArticleIdToUpdateDto(BaseModel):
     article_id:int
@@ -31,6 +35,11 @@ class ArticleResponseDTO(BaseModel):
     img: Optional[str] = None
     description_list: list[str]  # Properti untuk deskripsi yang dipisah menjadi list
     created_at: datetime
+
+class ArticleCreateResponseDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="Create new Info about some article has been success")
+    data: ArticleResponseDTO
 
 class GetAllArticleDTO(BaseModel):
     display_id: Optional[int] = None

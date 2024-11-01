@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.models.article_model import ArticleModel
-from app.dtos.article_dtos import ArticleCreateDTO
+from app.dtos.article_dtos import ArticleCreateDTO, ArticleResponseDTO, ArticleCreateResponseDto
 from typing import List, Optional
 
 from app.utils import optional
@@ -26,19 +26,32 @@ def create_article(
         db.add(article)
         db.commit()
         db.refresh(article)
-        return build(data=article)
+
+        article_new_dto = ArticleResponseDTO(
+            id=article.id,
+            display_id=article.display_id,
+            title=article.title,
+            img=article.img,
+            description_list=article.description_list,
+            created_at=article.created_at
+        )
+
+        return build(data=ArticleCreateResponseDto(
+            status_code=status.HTTP_201_CREATED,
+            message="Successfully created new article",
+            data=article_new_dto
+        ))
     
     except SQLAlchemyError as e:
         db.rollback()  # Rollback untuk semua error SQLAlchemy umum lainnya
         return build(error=HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             error="Internal Server Error",
-            message="An error occurred while creating the user. Please try again later."
+            message="Database Error: Failed to create article."
         ))
     
     except HTTPException as http_ex:
         db.rollback()  # Rollback jika terjadi error dari Firebase
-        # Langsung kembalikan error dari Firebase tanpa membuat response baru
         return build(error=http_ex)
 
     except Exception as e:
