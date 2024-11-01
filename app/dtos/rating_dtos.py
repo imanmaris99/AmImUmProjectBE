@@ -31,11 +31,19 @@ class RatingAllResponseDto(BaseModel):
     product_name: Optional[str] = None
     rater_name: Optional[str] = None
     created_at: datetime
-    updated_at: datetime
+    # updated_at: datetime
 
 class ProductRatingDto(BaseModel):
     id: int
     rate: int
     review: str
     rater_name: Optional[str] = None
+
+class MyRatingListDto(BaseModel):
+    id: int
+    rate: int
+    review: Optional[str] = None
+    product_name: Optional[str] = None
+    created_at: datetime
+    # updated_at: datetime
 
