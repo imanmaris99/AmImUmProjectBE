@@ -1,32 +1,40 @@
 from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 from typing import Dict, Any
 
 from app.models.production_model import ProductionModel
 from app.dtos import production_dtos
 from app.utils.result import build, Result
 
-
 def get_infinite_scrolling(
         db: Session, skip: int = 0, limit: int = 6
     ) -> Result[Dict[str, Any], Exception]:
     try:
-        # Ambil data produk berdasarkan skip dan limit
-        product_bies = db.query(ProductionModel).offset(skip).limit(limit).all()
-        total_records = db.query(ProductionModel).count()
+        # Ambil data produk dengan lazy loading, ambil kolom yang relevan saja
+        product_bies = (
+            db.execute(
+                select(ProductionModel)
+                .offset(skip)
+                .limit(limit)
+            )
+        ).scalars().all()
 
-        # Hitung sisa data dan apakah ada lebih banyak data
-        displayed_records = skip + len(product_bies)
-        remaining_records = max(total_records - displayed_records, 0)
-        has_more = displayed_records < total_records  # Cek jika masih ada data tersisa
-                
         if not product_bies:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 error="Not Found",
                 message="No information about productions found"
             )
+
+        # Hitung total_records
+        total_records = db.execute(select(func.count()).select_from(ProductionModel)).scalar()
+
+        # Hitung sisa data
+        displayed_records = skip + len(product_bies)
+        remaining_records = max(total_records - displayed_records, 0)
+        has_more = displayed_records < total_records
 
         # Konversi produk menjadi DTO
         productions_dto = [
