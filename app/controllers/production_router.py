@@ -280,11 +280,11 @@ def get_productions(
 
     Endpoint ini memungkinkan pengguna untuk Mengambil daftar item produksi dengan menggunakan paginasi.
 
-    **Parameter**:
+    **Parameter:**
     - **skip** (int, opsional): Jumlah item yang dilewati sebelum memulai pengambilan data. Default adalah 0.
     - **limit** (int, opsional): Jumlah maksimum item yang akan dikembalikan dalam respons. Default adalah 6.
     
-    **Mengembalikan**:
+    **Return:**
     - **200 OK**: Daftar item produksi beserta metadata paginasi (remaining records, `has_more`).
     - **404 Not Found**: Jika tidak ada item produksi yang ditemukan.
     - **409 Conflict**: Jika terjadi kesalahan pada database.
