@@ -44,7 +44,7 @@ def get_infinite_scrolling(
                 photo_url=production.photo_url,
                 description_list=production.description_list,
                 category=production.category,
-                created_at=production.created_at.isoformat()
+                created_at=production.created_at
             )
             for production in product_bies
         ]
