@@ -47,6 +47,11 @@ class AllProductionsDto(BaseModel):
     category: Optional[str] = None
     created_at: datetime
 
+class ArticleListScrollResponseDto(BaseModel):
+    data: List[AllProductionsDto]
+    remaining_records: int
+    has_more: bool  # Indikasi apakah masih ada data lain
+
 class DetailProductionDto(BaseModel):
     id: int
     name: str
@@ -75,3 +80,4 @@ class DeleteProdutionResponseDto(BaseModel):
     status_code: int = Field(default=200)
     message: str = Field(default="Info about company some product has been deleted")
     data: InfoDeleteProductionDto
+
