@@ -132,10 +132,21 @@ def post_my_wishlist(
                     "example": {
                         "status_code": 200,
                         "message": "Your all of products wishlist success to access",
+                        "total_records": 1,
                         "data": [
                             {
                                 "id": 0,
                                 "product_name": "string",
+                                "product_variant": [
+                                    {
+                                    "id": 0,
+                                    "variant": "string",
+                                    "img": "string",
+                                    "discount": 0,
+                                    "discounted_price": 0,
+                                    "updated_at": "2024-10-21T13:01:38.381228Z"
+                                    }
+                                ],
                                 "created_at": "2024-11-03T06:19:31.047Z"
                             }
                         ]
@@ -223,7 +234,7 @@ async def get_my_products_wishlist(
                         "status_code": 200,
                         "message": "Your product wishlist with ID 1 has been deleted",
                         "data": {
-                            "wishlist_id": 2,
+                            "wishlist_id": 1,
                             "product_name": "Buyung Upik"
                         }
                     }

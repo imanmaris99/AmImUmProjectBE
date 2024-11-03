@@ -1,3 +1,4 @@
+from typing import Any, Dict, Optional
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import relationship, Mapped
@@ -30,3 +31,13 @@ class WishlistModel(Base):
         from app.models.product_model import ProductModel
         products_model: ProductModel = self.products
         return products_model.name if products_model else ""
+
+    @property
+    def product_variant(self) -> Optional[Dict[str, Any]]:
+        from app.models.product_model import ProductModel
+        
+        # Pastikan self.products adalah instance ProductModel atau memiliki relationship ke ProductModel
+        products_model: Optional[ProductModel] = self.products
+        if products_model:
+            return products_model.all_variants
+        return None  # Mengembalikan None jika products_model tidak ada

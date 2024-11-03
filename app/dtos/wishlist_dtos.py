@@ -1,15 +1,15 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Any, Dict, Optional, List
 from datetime import datetime
 
 
 class WishlistCreateOfIdProductDto(BaseModel):
     product_id: str
 
-
 class WishlistInfoCreateDto(BaseModel):
     id: int
     product_name: Optional[str] = None
+    product_variant: Optional[List[Dict[str, Any]]] = None
     created_at: datetime
 
 class WishlistResponseCreateDto(BaseModel):
@@ -21,6 +21,7 @@ class WishlistResponseCreateDto(BaseModel):
 class AllWishlistResponseCreateDto(BaseModel):
     status_code: int = Field(default=200)
     message: str = Field(default="Your all of products wishlist success to access")
+    total_records: int = Field(default=3)
     data: List[WishlistInfoCreateDto]
 
 class DeleteByIdWishlistDto(BaseModel):
