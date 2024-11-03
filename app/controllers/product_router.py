@@ -104,7 +104,7 @@ def read_all_products_by_id_production(
     return result.unwrap()
 
 @router.get(
-    "/production/loader/{production_id}",
+    "/loader/production/{production_id}",
     response_model=product_dtos.ProductListScrollResponseDto,
     status_code=status.HTTP_200_OK,
     responses={
