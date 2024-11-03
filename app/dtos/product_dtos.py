@@ -39,6 +39,10 @@ class AllProductInfoDTO(BaseModel):
     all_variants: List[VariantAllProductDto]
     created_at: datetime
 
+class ProductListScrollResponseDto(BaseModel):
+    data: List[AllProductInfoDTO]
+    has_more: bool  # Indikasi apakah masih ada data lain
+
 class ProductIdToUpdateDTO(BaseModel):
     product_id: str = Field(default="287ba5f9-c495-455d-9e38-8ceb3cac61ba")
 

@@ -104,6 +104,138 @@ def read_all_products_by_id_production(
     return result.unwrap()
 
 @router.get(
+    "/production/loader/{production_id}",
+    response_model=product_dtos.ProductListScrollResponseDto,
+    status_code=status.HTTP_200_OK,
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Daftar produk berhasil diambil dengan format respons infinite scrolling",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": [
+                            {
+                            "id": "2762403f-2eb1-4c94-b4af-05c04759fcc0",
+                            "name": "Buyung Upik",
+                            "price": 8000,
+                            "all_variants": [
+                                {
+                                "id": 2,
+                                "variant": "Cokelat",
+                                "img": "https://5e4da772-e77b-4889-8314-7b9930a13c71_1729515706_buyung-upik-c-min.png?",
+                                "discount": 10,
+                                "discounted_price": 7200,
+                                "updated_at": "2024-10-21T13:01:38.381228Z"
+                                },
+                                                                {
+                                "id": 3,
+                                "variant": "Strawberry",
+                                "img": "https://5e4da772-e77b-4889-8314-7b9930a13c71_1729515706_buyung-upik-c-min.png?",
+                                "discount": 0,
+                                "discounted_price": 8000,
+                                "updated_at": "2024-10-21T13:01:38.381228Z"
+                                }
+                            ],
+                            "created_at": "2024-10-21T12:36:09.928091Z"
+                            },
+                            {
+                            "id": "3762504f-2eb1-4c94-b4af-05c04759fcc1",
+                            "name": "Pegel Linu",
+                            "price": 9000,
+                            "all_variants": [
+                                {
+                                "id": 1,
+                                "variant": "Original",
+                                "img": "https://5e4da772-e77b-4889-8314-7b9930a13c71_1729515706_buyung-upik-c-min.png?",
+                                "discount": 0,
+                                "discounted_price": 9000,
+                                "updated_at": "2024-10-21T13:01:38.381228Z"
+                                }
+                            ],
+                            "created_at": "2024-10-21T12:36:09.928091Z"
+                            }
+                        ],
+                        "has_more": False
+                    }
+                }
+            }
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Data produk tidak ditemukan",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 404,
+                        "error": "Not Found",
+                        "message": "No information about products found."
+                    }
+                }
+            }
+        },
+        status.HTTP_409_CONFLICT: {
+            "description": "Konflik saat mengambil data produk",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 409,
+                        "error": "Conflict",
+                        "message": "Database conflict occurred while fetching data."
+                    }
+                }
+            }
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "description": "Kesalahan server",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 500,
+                        "error": "Internal Server Error",
+                        "message": "An unexpected error occurred while fetching data."
+                    }
+                }
+            }
+        }
+    },
+    summary="Fetch a infinite scrolling list of products by id production"
+)
+def get_list_products_by_id_production(
+    production_id: int,
+    skip: int = 0,               # Posisi awal data untuk pagination
+    limit: int = 6,              # Jumlah data yang akan ditampilkan per halaman
+    db: Session = Depends(get_db)
+):
+    """
+    # Menampilkan List Produk dari Brand dengan Pagination #
+
+    Endpoint ini memungkinkan pengguna untuk Mengambil daftar item produksi dengan menggunakan paginasi.
+
+    **Parameter:**
+    - **production_id** (int): ID dari produsen untuk filter list produk.
+    - **skip** (int, opsional): Jumlah item yang dilewati sebelum memulai pengambilan data. Default adalah 0.
+    - **limit** (int, opsional): Jumlah maksimum item yang akan dikembalikan dalam respons. Default adalah 6.
+    
+    **Return:**
+    - **200 OK**: Daftar item produk dari brand produksi beserta metadata paginasi (remaining records, `has_more`).
+    - **404 Not Found**: Jika tidak ada item produk dari id produsen yang ditemukan.
+    - **409 Conflict**: Jika terjadi kesalahan pada database.
+    - **500 Internal Server Error**: Jika terjadi kesalahan yang tidak terduga.
+
+    """
+    result = product_services.infinite_scrolling_list_products_by_id_production(
+        db, 
+        production_id=production_id,
+        skip=skip, 
+        limit=limit
+    )
+
+    if result.error:
+        raise result.error  
+    
+    return result.unwrap()
+
+
+@router.get(
         "/production/{production_id}/{product_name}", 
         response_model=List[product_dtos.AllProductInfoDTO]
     )
