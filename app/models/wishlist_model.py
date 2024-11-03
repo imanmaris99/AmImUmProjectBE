@@ -1,6 +1,6 @@
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.dialects.mysql import CHAR
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Mapped
 from app.libs.sql_alchemy_lib import Base
 
 class WishlistModel(Base):
@@ -13,8 +13,20 @@ class WishlistModel(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     
     # Relationships
-    # product = relationship("ProductModel", back_populates="wishlists", lazy='selectin')  # Optimized eager loading
-    # customer = relationship("UserModel", back_populates="wishlists", lazy='select')  # Lazy loading
+    products: Mapped["ProductModel"] = relationship(
+        "ProductModel",
+        back_populates="",
+    )
 
+    user: Mapped["UserModel"] = relationship(
+        "UserModel",
+        back_populates=""
+    )
     def __repr__(self):
         return f"<Wishlist(id={self.id}, product_id={self.product_id}, customer_id={self.customer_id})>"
+
+    @property
+    def product_name(self) -> str:
+        from app.models.product_model import ProductModel
+        products_model: ProductModel = self.products
+        return products_model.name if products_model else ""

@@ -7,3 +7,4 @@ from . import production_router
 from . import product_router
 from . import pack_type_router
 from . import rating_router
+from . import wishlist_router
