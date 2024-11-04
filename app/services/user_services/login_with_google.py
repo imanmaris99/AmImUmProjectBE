@@ -9,6 +9,7 @@ from firebase_admin.exceptions import FirebaseError
 
 from app.models.user_model import UserModel
 from app.dtos.user_dtos import UserCreateResponseDto 
+from app.dtos.error_response_dtos import ErrorResponseDto
 from app.utils import optional
 
 def login_with_google(db: Session, id_token: str):
@@ -78,25 +79,58 @@ def login_with_google(db: Session, id_token: str):
         if isinstance(e.orig, StringDataRightTruncation):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                error="Bad Request",
-                message="Data value is too long for one of the fields."
+                detail=ErrorResponseDto(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    error="Bad Request",
+                    message="Data value is too long for one of the fields."
+                ).dict()
             )
+            # raise HTTPException(
+            #     status_code=status.HTTP_400_BAD_REQUEST,
+            #     error="Bad Request",
+            #     message="Data value is too long for one of the fields."
+            # )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            error="Internal Server Error",
-            message="Database error occurred: " + str(e)
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                error="Internal Server Error",
+                message="Database error occurred: " + str(e)            
+            ).dict()
         )
+        # raise HTTPException(
+        #     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        #     error="Internal Server Error",
+        #     message="Database error occurred: " + str(e)
+        # )
     
     except FirebaseError as e:
         return optional.build(error=HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            error="Unauthorized",
-            message="Invalid token or login failed :" + str(e)
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                error="Unauthorized",
+                message="Invalid token or login failed :" + str(e)
+            ).dict()
         ))
+        # return optional.build(error=HTTPException(
+        #     status_code=status.HTTP_401_UNAUTHORIZED,
+        #     error="Unauthorized",
+        #     message="Invalid token or login failed :" + str(e)
+        # ))
     
     except Exception as e:
         return optional.build(error=HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            error="Internal Server Error",
-            message="An unexpected error occurred :" + str(e)
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                error="Internal Server Error",
+                message="An unexpected error occurred :" + str(e)
+            ).dict()
         ))
+    # except Exception as e:
+    #     return optional.build(error=HTTPException(
+    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    #         error="Internal Server Error",
+    #         message="An unexpected error occurred :" + str(e)
+    #     ))

@@ -10,6 +10,8 @@ import os
 from dotenv import load_dotenv
 import json
 
+from app.dtos.error_response_dtos import ErrorResponseDto
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -38,16 +40,33 @@ def create_firebase_user(email: str, password: str):
     except auth.EmailAlreadyExistsError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            error="Bad Request",
-            message="The email address is already in use by another account."
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error="Bad Request",
+                message="The email address is already in use by another account."
+
+            ).dict()
         )
+        # raise HTTPException(
+        #     status_code=status.HTTP_400_BAD_REQUEST,
+        #     error="Bad Request",
+        #     message="The email address is already in use by another account."
+        # )
     
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            error="Internal Server Error",
-            message=f"Error creating user in Firebase: {str(e)}"
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                error="Internal Server Error",
+                message=f"Error creating user in Firebase: {str(e)}"
+            ).dict()
         )
+        # raise HTTPException(
+        #     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        #     error="Internal Server Error",
+        #     message=f"Error creating user in Firebase: {str(e)}"
+        # )
 
 # Fungsi untuk autentikasi pengguna di Firebase
 def authenticate_firebase_user(email: str, password: str):
@@ -59,16 +78,32 @@ def authenticate_firebase_user(email: str, password: str):
     except auth.UserNotFoundError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            error="Not Found",
-            message="User with the provided email does not exist in Firebase."
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_404_NOT_FOUND,
+                error="Not Found",
+                message="User with the provided email does not exist in Firebase."
+            ).dict()
         )
+        # raise HTTPException(
+        #     status_code=status.HTTP_404_NOT_FOUND,
+        #     error="Not Found",
+        #     message="User with the provided email does not exist in Firebase."
+        # )
     
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            error="Internal Server Error",
-            message=f"Error authenticating user in Firebase: {str(e)}"
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                error="Internal Server Error",
+                message=f"Error authenticating user in Firebase: {str(e)}"
+            ).dict()
         )
+        # raise HTTPException(
+        #     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        #     error="Internal Server Error",
+        #     message=f"Error authenticating user in Firebase: {str(e)}"
+        # )
 
 def send_email(to_email: str, subject: str, body: str, html: bool = False):
     """Mengirim email melalui SMTP dengan opsi HTML atau teks biasa."""
@@ -99,12 +134,20 @@ def send_email(to_email: str, subject: str, body: str, html: bool = False):
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "status_code": 500,
-                "error": "Internal Server Error",
-                "message": f"Error sending email: {str(e)}"
-            }
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                error="Internal Server Error",
+                message=f"Error sending email: {str(e)}"
+            ).dict()
         )
+        # raise HTTPException(
+        #     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        #     detail={
+        #         "status_code": 500,
+        #         "error": "Internal Server Error",
+        #         "message": f"Error sending email: {str(e)}"
+        #     }
+        # )
 
 def send_email_verification(to_email: str, verification_link: str, firstname: str):
     """Mengirim email verifikasi dengan tautan berformat HTML, logo, dan alamat di footer."""
@@ -218,9 +261,17 @@ def send_email_verification(to_email: str, verification_link: str, firstname: st
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            error="Internal Server Error",
-            message=f"Gagal mengirim email verifikasi ke {to_email}: {str(e)}"
+                detail=ErrorResponseDto(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                error="Internal Server Error",
+                message=f"Gagal mengirim email verifikasi ke {to_email}: {str(e)}"
+            ).dict()
         )
+        # raise HTTPException(
+        #     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        #     error="Internal Server Error",
+        #     message=f"Gagal mengirim email verifikasi ke {to_email}: {str(e)}"
+        # )
 
 def send_email_reset_password(to_email: str, reset_link: str):
     """Mengirim email reset password dengan tautan dalam format HTML."""
@@ -332,9 +383,17 @@ def send_email_reset_password(to_email: str, reset_link: str):
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            error="Internal Server Error",
-            message=f"Gagal mengirim email reset password ke {to_email}: {str(e)}"
+                detail=ErrorResponseDto(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                error="Internal Server Error",
+                message=f"Gagal mengirim email reset password ke {to_email}: {str(e)}"
+            ).dict()
         )
+        # raise HTTPException(
+        #     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        #     error="Internal Server Error",
+        #     message=f"Gagal mengirim email reset password ke {to_email}: {str(e)}"
+        # )
 
 def send_verification_email(firebase_user, firstname):
     """Mengirim email verifikasi ke pengguna Firebase."""
@@ -355,7 +414,15 @@ def send_verification_email(firebase_user, firstname):
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            error="Internal Server Error",
-            message=f"Error sending verification email: {str(e)}"
+                detail=ErrorResponseDto(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                error="Internal Server Error",
+                message=f"Error sending verification email: {str(e)}"
+            ).dict()
         )
+        # raise HTTPException(
+        #     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        #     error="Internal Server Error",
+        #     message=f"Error sending verification email: {str(e)}"
+        # )
 

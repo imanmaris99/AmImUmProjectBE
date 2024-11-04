@@ -20,8 +20,13 @@ def validate_file(file: UploadFile):
     if file_extension not in ALLOWED_EXTENSIONS:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, 
-            error="Bad Request",
-            message=f"File format not allowed. Please upload one of the following formats: {', '.join(ALLOWED_EXTENSIONS)}"
+            detail={
+                "status_code": status.HTTP_400_BAD_REQUEST,
+                "error":"Bad Request",
+                "message":f"File format not allowed. Please upload one of the following formats: {', '.join(ALLOWED_EXTENSIONS)}"
+            },
+            # error="Bad Request",
+            # message=f"File format not allowed. Please upload one of the following formats: {', '.join(ALLOWED_EXTENSIONS)}"
         )
 
     # Langkah 2: Periksa ukuran file
@@ -32,8 +37,13 @@ def validate_file(file: UploadFile):
     if file_size > MAX_FILE_SIZE:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            error="Request Entity Too Large",
-            message=f"File too large. Maximum allowed size is {MAX_FILE_SIZE / 1024} KB"
+            detail={
+                "status_code": status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                "error":"Request Entity Too Large",
+                "message":f"File too large. Maximum allowed size is {MAX_FILE_SIZE / 1024} KB"
+            },
+            # error="Request Entity Too Large",
+            # message=f"File too large. Maximum allowed size is {MAX_FILE_SIZE / 1024} KB"
         )
 
 async def compress_image(file: UploadFile) -> bytes:

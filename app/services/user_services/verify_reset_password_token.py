@@ -13,6 +13,11 @@ def verify_reset_password_token(token: str):
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            error="Bad Request",
-            message=f"Invalid or expired token: {str(e)}"
+            detail={
+                "status_code": status.HTTP_400_BAD_REQUEST,
+                "error":"Bad Request",
+                "message":f"Invalid or expired token: {str(e)}"
+            }, 
+            # error="Bad Request",
+            # message=f"Invalid or expired token: {str(e)}"
         )

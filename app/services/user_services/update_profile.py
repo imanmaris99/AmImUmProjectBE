@@ -5,6 +5,7 @@ from fastapi import HTTPException, UploadFile, status
 
 from app.models.user_model import UserModel
 from app.dtos import user_dtos
+from app.dtos.error_response_dtos import ErrorResponseDto
 
 from app.utils import optional, find_errr_from_args
 
@@ -36,12 +37,36 @@ def user_edit(
                 message="User not found"
                 )
             )
+        
+    except SQLAlchemyError:
+        return optional.build(error= HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_409_CONFLICT,
+                error="Conflict",
+                message=f"Database conflict: {str(e)}"
+            ).dict()
+        ))
+    # except SQLAlchemyError as e:
+    #     db.rollback()
+    #     return optional.build(error=HTTPException(
+    #         status_code=status.HTTP_409_CONFLICT, 
+    #         error="Conflict",
+    #         message="Database conflict: " + str(e)
+    #         )
+    #     )
 
-    except SQLAlchemyError as e:
-        db.rollback()
+    except HTTPException as e:
+        # Menangani error yang dilempar oleh Firebase atau proses lainnya
+        return optional.build(error=e)
+
+    except Exception as e:
         return optional.build(error=HTTPException(
-            status_code=status.HTTP_409_CONFLICT, 
-            error="Conflict",
-            message="Database conflict: " + str(e)
-            )
-        )
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                error="Internal Server Error",
+                message=f"An error occurred: {str(e)}"
+            ).dict()
+        ))
+    

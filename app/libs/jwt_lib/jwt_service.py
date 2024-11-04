@@ -64,8 +64,13 @@ async def get_jwt_pyload(token: Annotated[HTTPAuthorizationCredentials, Depends(
         if "id" not in payload or "role" not in payload:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                error="Unauthorized",
-                message="Invalid token payload"
+                detail={
+                    "status_code":status.HTTP_401_UNAUTHORIZED,
+                    "error":"Unauthorized",
+                    "message":"Invalid token payload"
+                },
+                # error="Unauthorized",
+                # message="Invalid token payload"
             )
 
         return TokenPayLoad(id=payload["id"], role=payload["role"])
@@ -73,16 +78,26 @@ async def get_jwt_pyload(token: Annotated[HTTPAuthorizationCredentials, Depends(
     except ExpiredSignatureError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            error="UnAuthorized",
-            message="Token has expired",
+            detail={
+                "status_code":status.HTTP_401_UNAUTHORIZED,
+                "error":"Unauthorized",
+                "message":"Token has expired"
+            },
+            # error="UnAuthorized",
+            # message="Token has expired",
             headers={"WWW-Authenticate": "Bearer"},
         )
      
     except InvalidTokenError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            error="UnAuthorized",
-            message="Could not validate credentials hallo",
+            detail={
+                "status_code":status.HTTP_401_UNAUTHORIZED,
+                "error":"Unauthorized",
+                "message":"Could not validate credentials hallo"
+            },
+            # error="UnAuthorized",
+            # message="Could not validate credentials hallo",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -93,8 +108,13 @@ def admin_access_required(jwt_token: TokenPayLoad = Depends(get_jwt_pyload)):
     if not jwt_token or jwt_token.role != "admin":     
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            error="Forbidden",
-            message="You do not have permission to access this resource."
+            detail={
+                "status_code": status.HTTP_403_FORBIDDEN,
+                "error":"Forbidden",
+                "message":"You do not have permission to access this resource."
+            },
+            # error="Forbidden",
+            # message="You do not have permission to access this resource."
         )
     return jwt_token
     
@@ -121,18 +141,36 @@ def verify_reset_password_token(token: str) -> str:
         if not email:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                error="Bad Request", 
-                message="Invalid token.")
+                detail={
+                    "status_code": status.HTTP_400_BAD_REQUEST,
+                    "error":"Bad Request",
+                    "message":"Invalid token."
+                },
+                # error="Bad Request", 
+                # message="Invalid token."
+            )
         return email
     
     except jwt.ExpiredSignatureError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, 
-            error="Bad Request",
-            message="Token has expired.")
+            detail={
+                "status_code": status.HTTP_400_BAD_REQUEST,
+                "error":"Bad Request",
+                "message":"Token has expired."
+            },
+            # error="Bad Request",
+            # message="Token has expired."
+        )
     
     except jwt.InvalidTokenError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, 
-            error="Bad Request",
-            message="Invalid token.")
+            detail={
+                "status_code": status.HTTP_400_BAD_REQUEST,
+                "error":"Bad Request",
+                "message":"Invalid token."
+            },
+            # error="Bad Request",
+            # message="Invalid token."
+        )
