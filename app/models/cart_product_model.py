@@ -10,6 +10,7 @@ class CartProductModel(Base):
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     quantity = Column(Integer, nullable=False)
     product_id = Column(CHAR(36), ForeignKey("products.id"), nullable=False, index=True)  # UUID from ProductModel
+    variant_id = Column(Integer, ForeignKey("pack_types.id"), nullable=False, index=True)  
     customer_id = Column(CHAR(36), ForeignKey("users.id"), nullable=False, index=True)  # UUID from UserModel
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     
