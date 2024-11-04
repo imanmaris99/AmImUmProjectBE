@@ -9,7 +9,7 @@ from app.libs.jwt_lib import jwt_dto
 class UserCreateDto(BaseModel):
     firstname: str = Field(default="firstname")
     lastname: str = Field(default="lastname")
-    gender: Literal['man', 'woman'] = Field(default='man')
+    gender: Literal['male', 'female'] = Field(default='male')
     email: EmailStr = Field(default="Example@Example.com")
     phone: str = Field(default="+6289965342543")
     password: str = Field(default="password")
