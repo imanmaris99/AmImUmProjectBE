@@ -9,86 +9,93 @@ from app.dtos import user_dtos
 from app.libs import password_lib
 from app.utils import optional, error_parser
 
+from app.dtos.error_response_dtos import ErrorResponseDto
+
 def create_user(db: Session, user: user_dtos.UserCreateDto) -> optional.Optional[UserModel, Exception]:
     try:
         # Validasi input email dan password
         if not user.email or not user.password:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                error="Bad Request",
-                message="Email and password must be provided."
+                detail=ErrorResponseDto(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    error="Bad Request",
+                    message="Email and password must be provided."
+                ).dict()
             )
 
         # Buat user di Firebase
         firebase_user = create_firebase_user(user.email, user.password)
 
-        if firebase_user is None:  # Pastikan firebase_user tidak None
+        if firebase_user is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                error="Bad Request",
-                message="Failed to create user in Firebase."
+                detail=ErrorResponseDto(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    error="Bad Request",
+                    message="Failed to create user in Firebase."
+                ).dict()
             )
 
         # Membuat instance user baru
         user_model = UserModel(
-            firstname=user.firstname,  # Ambil firstname dari DTO
+            firstname=user.firstname,
             lastname=user.lastname,
             gender=user.gender,
             email=firebase_user.email,
             phone=user.phone,
             hash_password=password_lib.get_password_hash(password=user.password),
             firebase_uid=firebase_user.uid,
-            role="customer"  # Role otomatis sebagai 'customer'
+            role="customer"
         )
 
-        # Menambahkan user ke dalam database
         db.add(user_model)
         db.commit()
-        db.refresh(user_model)  # Memastikan data yang baru ditambahkan ter-refresh
-        
-        # Kirim email verifikasi setelah user berhasil dibuat
+        db.refresh(user_model)
+
         send_verification_email(firebase_user, user.firstname)
 
         return optional.build(data=user_model)
 
     except IntegrityError as ie:
-        db.rollback()  # Rollback jika ada kesalahan integritas data (misal, duplikasi email atau username)
-
-        # Menentukan apakah kesalahan berasal dari email atau username yang sudah ada
+        db.rollback()
         if 'email' in str(ie.orig):
-            message = "Email already exists. Please use a different email."
+            message = "The email address is already in use by another account."
         elif 'phone' in str(ie.orig):
-            message = "Phone already exists. Please choose a different phone."
+            message = "The phone number is already in use by another account."
         else:
             message = "Duplicate data found."
 
-        # Mengembalikan kesalahan dengan pesan yang jelas
-        return optional.build(error=HTTPException(
+        raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            error= "Bad Request",
-            message=message
-        ))
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error="Bad Request",
+                message=message
+            ).dict()
+        )
 
-    except SQLAlchemyError as e:
-        db.rollback()  # Rollback untuk semua error SQLAlchemy umum lainnya
-        return optional.build(error=HTTPException(
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            error="Internal Server Error",
-            message="An error occurred while creating the user. Please try again later."
-        ))
-    
-    except HTTPException as http_ex:
-        db.rollback()  # Rollback jika terjadi error dari Firebase
-        # Langsung kembalikan error dari Firebase tanpa membuat response baru
-        return optional.build(error=http_ex)
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                error="Internal Server Error",
+                message="An error occurred while creating the user. Please try again later."
+            ).dict()
+        )
 
     except Exception as e:
-        db.rollback()  # Rollback untuk error tak terduga
-        return optional.build(error=HTTPException(
+        db.rollback()
+        raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            error="Internal Server Error",
-            message=f"Unexpected error: {str(e)}"
-        ))
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                error="Internal Server Error",
+                message=f"Unexpected error: {str(e)}"
+            ).dict()
+        )
 
 
 def create_admin(db: Session, user: user_dtos.UserCreateDto) -> optional.Optional[UserModel, Exception]:
