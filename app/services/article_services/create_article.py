@@ -7,11 +7,10 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.models.article_model import ArticleModel
 from app.dtos.article_dtos import ArticleCreateDTO, ArticleResponseDTO, ArticleCreateResponseDto
-from typing import List, Optional
+from app.dtos.error_response_dtos import ErrorResponseDto
 
 from app.utils import optional
 from app.utils.result import build, Result
-from app.utils.error_parser import find_errr_from_args
 
     
 def create_article(
@@ -41,23 +40,45 @@ def create_article(
             message="Successfully created new article",
             data=article_new_dto
         ))
-    
-    except SQLAlchemyError as e:
-        db.rollback()  # Rollback untuk semua error SQLAlchemy umum lainnya
-        return build(error=HTTPException(
+        
+    except SQLAlchemyError:
+        db.rollback()
+        return build(error= HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            error="Internal Server Error",
-            message="Database Error: Failed to create article."
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                error="Internal Server Error",
+                message=f"Database Error: Failed to create article. {str(e)}"
+            ).dict()
         ))
+
+    # except SQLAlchemyError as e:
+    #     db.rollback()  # Rollback untuk semua error SQLAlchemy umum lainnya
+    #     return build(error=HTTPException(
+    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    #         error="Internal Server Error",
+    #         message="Database Error: Failed to create article."
+    #     ))
     
     except HTTPException as http_ex:
         db.rollback()  # Rollback jika terjadi error dari Firebase
         return build(error=http_ex)
 
     except Exception as e:
-        db.rollback()  # Rollback untuk error tak terduga
-        return build(error=HTTPException(
+        db.rollback()
+        return build(error= HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            error="Internal Server Error",
-            message=f"Unexpected error: {str(e)}"
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                error="Internal Server Error",
+                message=f"Unexpected error: {str(e)}"            
+            ).dict()
         ))
+    
+    # except Exception as e:
+    #     db.rollback()  # Rollback untuk error tak terduga
+    #     return build(error=HTTPException(
+    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    #         error="Internal Server Error",
+    #         message=f"Unexpected error: {str(e)}"
+    #     ))

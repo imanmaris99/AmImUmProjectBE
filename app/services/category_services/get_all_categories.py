@@ -4,6 +4,8 @@ from typing import List
 
 from app.models.tag_category_model import TagCategoryModel
 from app.dtos.category_dtos import AllCategoryResponseDto
+from app.dtos.error_response_dtos import ErrorResponseDto
+
 from app.utils.result import build, Result
 
 
@@ -16,9 +18,17 @@ def get_all_categories(
         if not categories:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                error="Not Found",
-                message="No categories found"
+                detail=ErrorResponseDto(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    error="Not Found",
+                    message="Categories not found"
+                ).dict()
             )
+            # raise HTTPException(
+            #     status_code=status.HTTP_404_NOT_FOUND,
+            #     error="Not Found",
+            #     message="No categories found"
+            # )
 
         # Konversi kategori ke DTO
         response_data = [
@@ -33,11 +43,26 @@ def get_all_categories(
         return build(data=response_data)
 
     except HTTPException as e:
-        raise e
-
+        # Menangani error yang dilempar oleh Firebase atau proses lainnya
+        return build(error=e)
+    
     except Exception as e:
-        raise HTTPException(
+        db.rollback()
+        return build(error= HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            error="Internal Server Error",
-            message=f"An error occurred: {str(e)}"
-        )
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                error="Internal Server Error",
+                message=f"An error occurred: {str(e)}"            
+            ).dict()
+        ))
+    
+    # except HTTPException as e:
+    #     raise e
+
+    # except Exception as e:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    #         error="Internal Server Error",
+    #         message=f"An error occurred: {str(e)}"
+    #     )

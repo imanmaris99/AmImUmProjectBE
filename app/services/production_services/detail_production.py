@@ -6,8 +6,10 @@ from fastapi import HTTPException, status
 
 from app.models.production_model import ProductionModel
 from app.dtos import production_dtos
+from app.dtos.error_response_dtos import ErrorResponseDto
 
 from app.utils.result import build, Result
+from app.utils.error_parser import find_errr_from_args
 
 def detail_production(
         db: Session, 
@@ -21,11 +23,19 @@ def detail_production(
 
         # Check if product was found
         if not production_model:
-            return build(error=HTTPException(
+            return build(error= HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                error="Not Found",
-                message=f"Production with id {production_id} not found"
+                detail=ErrorResponseDto(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    error="Not Found",
+                    message=f"Production with ID {production_id} not found"
+                ).dict()
             ))
+            # return build(error=HTTPException(
+            #     status_code=status.HTTP_404_NOT_FOUND,
+            #     error="Not Found",
+            #     message=f"Production with id {production_id} not found"
+            # ))
 
         # Convert the product to ProductDetailDTO
         production_detail_dto = production_dtos.DetailProductionDto(
@@ -47,14 +57,39 @@ def detail_production(
 
     except SQLAlchemyError as e:
         db.rollback()
-        return build(error=HTTPException(
+        return build(error= HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            error="Conflict",
-            message=f"Database conflict: {str(e)}"
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_409_CONFLICT,
+                error="Conflict",
+                message=f"Database conflict: {str(e)}"
+            ).dict()
         ))
+    
+    except HTTPException as http_ex:
+        db.rollback()  
+        return build(error=http_ex)
+        
     except Exception as e:
-        return build(error=HTTPException(
+        return build(error= HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            error="Internal Server Error",
-            message=f"Internal Server Error: {str(e)}"
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                error="Internal Server Error",
+                message=f"An error occurred: {str(e)}"            
+            ).dict()
         ))
+    
+    # except SQLAlchemyError as e:
+    #     db.rollback()
+    #     return build(error=HTTPException(
+    #         status_code=status.HTTP_409_CONFLICT,
+    #         error="Conflict",
+    #         message=f"Database conflict: {str(e)}"
+    #     ))
+    # except Exception as e:
+    #     return build(error=HTTPException(
+    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    #         error="Internal Server Error",
+    #         message=f"Internal Server Error: {str(e)}"
+    #     ))

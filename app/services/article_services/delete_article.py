@@ -5,8 +5,8 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.models.article_model import ArticleModel
 from app.dtos.article_dtos import DeleteArticleDto, InfoDeleteArticleDto, DeleteArticleResponseDto
+from app.dtos.error_response_dtos import ErrorResponseDto
 
-from app.utils import optional
 from app.utils.result import build, Result
 from app.utils.error_parser import find_errr_from_args
 
@@ -28,11 +28,19 @@ def delete_article(
     try:
         article = db.query(ArticleModel).filter(ArticleModel.id == article_data.article_id).first()
         if not article:
-            return build(error=HTTPException(
+            return build(error= HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                error="Not Found",
-                message=f"Article with ID {article_data.article_id} not found"
+                detail=ErrorResponseDto(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    error="Not Found",
+                    message=f"Article with ID {article_data.article_id} not found"
+                ).dict()
             ))
+            # return build(error=HTTPException(
+            #     status_code=status.HTTP_404_NOT_FOUND,
+            #     error="Not Found",
+            #     message=f"Article with ID {article_data.article_id} not found"
+            # ))
         
         # Simpan informasi pengguna sebelum dihapus
         article_delete_info = InfoDeleteArticleDto(
@@ -53,19 +61,40 @@ def delete_article(
             data=article_delete_info
         ))
     
-    except SQLAlchemyError as e:
-        print(e)
+    except SQLAlchemyError:
         db.rollback()
-        return build(error=HTTPException(
+        return build(error= HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            error="Conflict",
-            message=f"Database conflict: {find_errr_from_args("articles", str(e.args))}"
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_409_CONFLICT,
+                error="Conflict",
+                message=f"Database conflict: {find_errr_from_args("articles", str(e.args))}"
+            ).dict()
         ))
     
     except Exception as e:
-        print(e)
-        return build(error=HTTPException(
+        return build(error= HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            error="Internal Server Error",
-            message=f"An error occurred: {str(e)}"
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                error="Internal Server Error",
+                message=f"An error occurred: {str(e)}"            
+            ).dict()
         ))
+    
+    # except SQLAlchemyError as e:
+    #     print(e)
+    #     db.rollback()
+    #     return build(error=HTTPException(
+    #         status_code=status.HTTP_409_CONFLICT,
+    #         error="Conflict",
+    #         message=f"Database conflict: {find_errr_from_args("articles", str(e.args))}"
+    #     ))
+    
+    # except Exception as e:
+    #     print(e)
+    #     return build(error=HTTPException(
+    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    #         error="Internal Server Error",
+    #         message=f"An error occurred: {str(e)}"
+    #     ))

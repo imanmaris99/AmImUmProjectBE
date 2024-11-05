@@ -1,9 +1,12 @@
 from fastapi import HTTPException, status
+
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
+
 from app.models.pack_type_model import PackTypeModel
 from app.dtos.pack_type_dtos import PackTypeCreateDto, PackTypeInfoDto, PackTypeResponseCreateDto
-from app.utils import optional
+from app.dtos.error_response_dtos import ErrorResponseDto
+
 from app.utils.result import build, Result
 
 def create_type(
@@ -43,22 +46,48 @@ def create_type(
         ))
     
     except SQLAlchemyError as e:
-        db.rollback()  # Rollback untuk semua error SQLAlchemy umum lainnya
-        return build(error=HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            error="Internal Server Error",
-            message=f"An error occurred : {str(e)}"
+        db.rollback()
+        return build(error= HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_409_CONFLICT,
+                error="Conflict",
+                message=f"Database conflict: {str(e)}"
+            ).dict()
         ))
     
     except HTTPException as http_ex:
-        db.rollback()  # Rollback jika terjadi error dari Firebase
-        # Langsung kembalikan error dari Firebase tanpa membuat response baru
+        db.rollback()  
         return build(error=http_ex)
-
+    
     except Exception as e:
-        db.rollback()  # Rollback untuk error tak terduga
-        return build(error=HTTPException(
+        db.rollback()
+        return build(error= HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            error="Internal Server Error",
-            message=f"Unexpected error: {str(e)}"
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                error="Internal Server Error",
+                message=f"An error occurred: {str(e)}"            
+            ).dict()
         ))
+
+    # except SQLAlchemyError as e:
+    #     db.rollback()  # Rollback untuk semua error SQLAlchemy umum lainnya
+    #     return build(error=HTTPException(
+    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    #         error="Internal Server Error",
+    #         message=f"An error occurred : {str(e)}"
+    #     ))
+    
+    # except HTTPException as http_ex:
+    #     db.rollback()  # Rollback jika terjadi error dari Firebase
+    #     # Langsung kembalikan error dari Firebase tanpa membuat response baru
+    #     return build(error=http_ex)
+
+    # except Exception as e:
+    #     db.rollback()  # Rollback untuk error tak terduga
+    #     return build(error=HTTPException(
+    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    #         error="Internal Server Error",
+    #         message=f"Unexpected error: {str(e)}"
+    #     ))

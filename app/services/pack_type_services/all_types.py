@@ -8,6 +8,7 @@ from typing import List, Type
 
 from app.models.pack_type_model import PackTypeModel
 from app.dtos.pack_type_dtos import VariantProductDto, PackTypeEditInfoResponseDto
+from app.dtos.error_response_dtos import ErrorResponseDto
 
 from app.utils import optional
 from app.utils.result import build, Result
@@ -26,9 +27,17 @@ def all_types(
         if not pack_types:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                error="Not Found",
-                message="No information about type or variant products found"
+                detail=ErrorResponseDto(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    error="Not Found",
+                    message=f"info about all variants of product not found"
+                ).dict()
             )
+            # raise HTTPException(
+            #     status_code=status.HTTP_404_NOT_FOUND,
+            #     error="Not Found",
+            #     message="No information about type or variant products found"
+            # )
 
         # Konversi produk menjadi DTO
         types_dto = [
@@ -48,25 +57,50 @@ def all_types(
         ]
 
         return build(data=types_dto)
-
+    
     except SQLAlchemyError as e:
-        print(e)
         db.rollback()
-        return build(error=HTTPException(
+        return build(error= HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            error="Conflict",
-            message=f"Database conflict: {str(e)}"
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_409_CONFLICT,
+                error="Conflict",
+                message=f"Database conflict: {str(e)}"
+            ).dict()
         ))
     
     except HTTPException as http_ex:
-        db.rollback()  # Rollback jika terjadi error dari Firebase
-        # Langsung kembalikan error dari Firebase tanpa membuat response baru
+        db.rollback()  
         return build(error=http_ex)
     
     except Exception as e:
-        print(e)
-        return build(error=HTTPException(
+        return build(error= HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            error="Internal Server Error",
-            message=f"An error occurred: {str(e)}"
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                error="Internal Server Error",
+                message=f"An error occurred: {str(e)}"            
+            ).dict()
         ))
+    
+    # except SQLAlchemyError as e:
+    #     print(e)
+    #     db.rollback()
+    #     return build(error=HTTPException(
+    #         status_code=status.HTTP_409_CONFLICT,
+    #         error="Conflict",
+    #         message=f"Database conflict: {str(e)}"
+    #     ))
+    
+    # except HTTPException as http_ex:
+    #     db.rollback()  # Rollback jika terjadi error dari Firebase
+    #     # Langsung kembalikan error dari Firebase tanpa membuat response baru
+    #     return build(error=http_ex)
+    
+    # except Exception as e:
+    #     print(e)
+    #     return build(error=HTTPException(
+    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    #         error="Internal Server Error",
+    #         message=f"An error occurred: {str(e)}"
+    #     ))

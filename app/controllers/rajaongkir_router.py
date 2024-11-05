@@ -43,6 +43,11 @@ def read_shipping_cost(request: ShippingCostRequest):
     # - Berat barang harus dalam satuan gram.
     # - Pilih salah satu kurir yang tersedia (jne, pos, tiki).
     
-    result = get_shipping_cost(request.origin, request.destination, request.weight, request.courier)    
+    result = get_shipping_cost(
+        request_data=request
+    )    
+        
+    if result.error:
+        raise result.error
     
     return result.unwrap()  

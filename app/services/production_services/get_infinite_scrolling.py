@@ -1,12 +1,18 @@
 from fastapi import HTTPException, status
+
 from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
+
 from typing import Dict, Any
 
 from app.models.production_model import ProductionModel
 from app.dtos import production_dtos
+from app.dtos.error_response_dtos import ErrorResponseDto
+
 from app.utils.result import build, Result
+from app.utils.error_parser import find_errr_from_args
+
 
 def get_infinite_scrolling(
         db: Session, skip: int = 0, limit: int = 6
@@ -24,9 +30,17 @@ def get_infinite_scrolling(
         if not product_bies:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                error="Not Found",
-                message="No information about productions found"
+                detail=ErrorResponseDto(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    error="Not Found",
+                    message="No information about productions found."
+                ).dict()
             )
+            # raise HTTPException(
+            #     status_code=status.HTTP_404_NOT_FOUND,
+            #     error="Not Found",
+            #     message="No information about productions found"
+            # )
 
         # Hitung total_records
         total_records = db.execute(select(func.count()).select_from(ProductionModel)).scalar()
@@ -59,22 +73,49 @@ def get_infinite_scrolling(
         return build(data=response_data)
 
     except SQLAlchemyError as e:
-        print(e)
         db.rollback()
-        return build(error=HTTPException(
+        return build(error= HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            error="Conflict",
-            message=f"Database conflict: {str(e)}"
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_409_CONFLICT,
+                error="Conflict",
+                message=f"Database conflict: {str(e)}"
+            ).dict()
         ))
     
     except HTTPException as http_ex:
-        db.rollback()
+        db.rollback()  # Rollback jika terjadi error dari Firebase
+        # Langsung kembalikan error dari Firebase tanpa membuat response baru
         return build(error=http_ex)
     
     except Exception as e:
-        print(e)
-        return build(error=HTTPException(
+        db.rollback()
+        return build(error= HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            error="Internal Server Error",
-            message=f"An error occurred: {str(e)}"
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                error="Internal Server Error",
+                message=f"An error occurred: {str(e)}"            
+            ).dict()
         ))
+    
+    # except SQLAlchemyError as e:
+    #     print(e)
+    #     db.rollback()
+    #     return build(error=HTTPException(
+    #         status_code=status.HTTP_409_CONFLICT,
+    #         error="Conflict",
+    #         message=f"Database conflict: {str(e)}"
+    #     ))
+    
+    # except HTTPException as http_ex:
+    #     db.rollback()
+    #     return build(error=http_ex)
+    
+    # except Exception as e:
+    #     print(e)
+    #     return build(error=HTTPException(
+    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    #         error="Internal Server Error",
+    #         message=f"An error occurred: {str(e)}"
+    #     ))
