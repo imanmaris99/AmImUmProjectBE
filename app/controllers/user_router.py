@@ -305,7 +305,10 @@ async def google_login(google_login_req: user_dtos.GoogleLoginRequest, db: Sessi
     },
     summary="Send password reset email"
 )
-def forgot_password(payload: user_dtos.ForgotPasswordDto, db: Session = Depends(get_db)):    
+def forgot_password(
+    payload: user_dtos.ForgotPasswordDto, 
+    db: Session = Depends(get_db)
+):    
     """
     # Lupa Password #
 
@@ -329,14 +332,30 @@ def forgot_password(payload: user_dtos.ForgotPasswordDto, db: Session = Depends(
     """
     # Implementasi send_reset_password_request yang mengirim email dengan token
     result = user_services.send_reset_password_request(db, payload)  # Pass the DTO directly
+        
+    if result.error:
+        raise result.error
+    
     return result.unwrap()
 
 
 ## == USER - CONFIRM_NEW_PASSWORD == ##
 @router.post(
     "/password-reset/confirm",
-    response_model=user_dtos.ConfirmResetPasswordResponseDto,
+    response_model=user_dtos.ResetPasswordResponseDto,
     responses={
+        status.HTTP_400_BAD_REQUEST: {
+            "description": "Invalid password criteria",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 400,
+                        "error": "Bad Request",
+                        "message": "Password must meet the required criteria."
+                    }
+                }
+            }
+        },
         status.HTTP_404_NOT_FOUND: {
             "description": "Email not found",
             "content": {
@@ -349,14 +368,14 @@ def forgot_password(payload: user_dtos.ForgotPasswordDto, db: Session = Depends(
                 }
             }
         },
-        status.HTTP_400_BAD_REQUEST: {
-            "description": "Invalid password criteria",
+        status.HTTP_406_NOT_ACCEPTABLE: {
+            "description": "Invalid reset-code criteria",
             "content": {
                 "application/json": {
                     "example": {
-                        "status_code": 400,
-                        "error": "Bad Request",
-                        "message": "Password must meet the required criteria."
+                        "status_code": 406,
+                        "error": "Verification code not allowed",
+                        "message": "Invalid verification code."
                     }
                 }
             }
@@ -376,7 +395,10 @@ def forgot_password(payload: user_dtos.ForgotPasswordDto, db: Session = Depends(
     },
     summary="Confirm password reset"
 )
-def confirm_reset_password(payload: user_dtos.ConfirmResetPasswordDto, db: Session = Depends(get_db)):
+def confirm_reset_password(
+    payload: user_dtos.ResetPasswordDto, 
+    db: Session = Depends(get_db)
+):
     """
     # Konfirmasi Reset Password #
 
@@ -396,16 +418,26 @@ def confirm_reset_password(payload: user_dtos.ConfirmResetPasswordDto, db: Sessi
 
     **Return:**
 
-    - **404 Not Found**: Email tidak ditemukan.
-        - Terjadi ketika email yang diberikan tidak terdaftar.
     - **400 Bad Request**: Password tidak memenuhi kriteria.
         - Terjadi ketika password baru tidak memenuhi syarat seperti panjang minimal 8 karakter, mengandung huruf besar, kecil, angka, dan simbol.
+    - **404 Not Found**: Email tidak ditemukan.
+        - Terjadi ketika email yang diberikan tidak terdaftar.
+    - **406 Not Acceptable**: Code verifikasi tidak sesuai.
+        - Terjadi ketika code verifikasi tidak sesuai dengan yang dikirimkan ke email yang terdaftar.
     - **500 Internal Server Error**: Gagal reset password.
         - Terjadi ketika ada kesalahan di sisi server saat melakukan reset password.
+    
     """
-    result = user_services.confirm_password_reset(payload=payload, db=db)
+    result = user_services.confirm_password_reset(
+        payload=payload, 
+        db=db
+    )
 
+    if result.error:
+        raise result.error
+    
     return result.unwrap()  # Return the success response if no error
+
 
 # == USER - GET_USER_PROFILE == ##
 @router.get(

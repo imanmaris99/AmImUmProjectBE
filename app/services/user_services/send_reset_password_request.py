@@ -3,11 +3,11 @@ from fastapi import HTTPException, status
 from app.dtos import user_dtos
 from app.utils import optional
 from firebase_admin import auth
-
 from app.models.user_model import UserModel
 from app.utils.firebase_utils import send_email_reset_password
+from app.libs.verification_code import generate_verification_code
 
-ALLOWED_DOMAINS = {"gmail.com", "yahoo.com", "outlook.com"}  # Tambahkan domain yang didukung
+ALLOWED_DOMAINS = {"gmail.com", "yahoo.com", "outlook.com"}
 
 def is_allowed_email_domain(email: str) -> bool:
     domain = email.split('@')[-1]
@@ -21,14 +21,11 @@ def send_reset_password_request(db: Session, payload: user_dtos.ForgotPasswordDt
             detail={
                 "status_code": status.HTTP_400_BAD_REQUEST,
                 "error": "Bad Request",
-                "message": (
-                    f"The provided email domain is not supported."
-                    f"Supported email domains are: {', '.join(ALLOWED_DOMAINS)}"
-                )
+                "message": "Supported email domains are: " + ', '.join(ALLOWED_DOMAINS)
             }
         )
-    
-    # Cari pengguna di database berdasarkan email
+
+    # Cari user di database
     user = db.query(UserModel).filter(UserModel.email == payload.email).first()
     if not user:
         raise HTTPException(
@@ -41,38 +38,23 @@ def send_reset_password_request(db: Session, payload: user_dtos.ForgotPasswordDt
         )
 
     try:
-        # Pastikan pengguna terdaftar di Firebase
-        firebase_user = auth.get_user_by_email(payload.email)
+        # Verifikasi keberadaan user di Firebase
+        auth.get_user_by_email(payload.email)
 
-        # Buat link reset password dari Firebase
-        reset_link = auth.generate_password_reset_link(payload.email)
+        # Generate kode verifikasi reset password
+        verification_code = generate_verification_code()
+        user.verification_code = verification_code
+        db.commit()
 
-        # Kirim email reset password ke pengguna dengan penanganan error tambahan
-        try:
-            send_email_reset_password(payload.email, reset_link)
-        except ConnectionError as e:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail={
-                    "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    "error": "Internal Server Error",
-                    "message": "Connection to email server failed. Please try again later."
-                }
-            )
-        except Exception as e:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail={
-                    "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    "error": "Internal Server Error",
-                    "message": f"Failed to send reset password email: {str(e)}"
-                }
-            )
+        # Buat link reset password menggunakan kode verifikasi kustom
+        reset_link = f"https://amimumprojectbe-production.up.railway.app/user/reset-password?code={verification_code}&email={payload.email}"
 
-        # Respons sukses jika email berhasil dikirim
+        # Kirim email reset password
+        send_email_reset_password(payload.email, reset_link)
+
         return optional.build(data=user_dtos.ForgotPasswordResponseDto(
             status_code=status.HTTP_200_OK,
-            message="Password reset email has been sent.",
+            message=f"Password reset email has been sent in this email {payload.email}.",
             data=payload
         ))
 
@@ -94,7 +76,6 @@ def send_reset_password_request(db: Session, payload: user_dtos.ForgotPasswordDt
                 "message": f"Unexpected error occurred: {str(e)}"
             }
         )
-
 
 
 

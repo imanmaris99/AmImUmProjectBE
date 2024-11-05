@@ -54,7 +54,7 @@ def delete_production(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_409_CONFLICT,
                 error="Conflict",
-                message=f"Database conflict: {find_errr_from_args("articles", str(e.args))}"
+                message=f"Database conflict: {find_errr_from_args("productions", str(e.args))}"
             ).dict()
         ))
     

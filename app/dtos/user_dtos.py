@@ -74,13 +74,13 @@ class EmailVerificationResponseDto(BaseModel):
 
 
 class ResetPasswordDto(BaseModel):
-    oob_code: str
     email: EmailStr 
+    code: str
     new_password: str
 
 class ResetPasswordResponseDto(BaseModel):
     status_code: int = Field(default=200)
-    message: str = Field(default="Password reset email has been sent.")
+    message: str = Field(default="Your password has been reset successfully")
     data: ResetPasswordDto
 
 class ForgotPasswordDto(BaseModel):

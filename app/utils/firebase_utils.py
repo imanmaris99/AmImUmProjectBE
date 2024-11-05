@@ -30,6 +30,7 @@ else:
 # if not firebase_admin._apps:
 #     firebase_admin.initialize_app(cred)
 
+
 # Fungsi untuk membuat user di Firebase
 def create_firebase_user(email: str, password: str):
     """Membuat pengguna baru di Firebase Authentication."""
@@ -362,7 +363,7 @@ def send_email_reset_password(to_email: str, reset_link: str):
             <div class="email-body">
                 <h2>Halo {to_email},</h2>
                 <p>Anda telah meminta untuk mereset kata sandi Anda. Klik tombol di bawah ini untuk mengatur ulang kata sandi Anda:</p>
-                <p><a href="{url_reset}" class="reset-button">Reset Password</a></p>
+                <p><a href="{reset_link}" class="reset-button">Reset Password</a></p>
                 <p>Jika tombol tidak berfungsi, Anda juga dapat mengklik tautan di bawah ini:</p>
                 <p><a href="{reset_link}">{reset_link}</a></p>
                 <p>Jika Anda tidak meminta pengaturan ulang kata sandi, abaikan email ini.</p>
