@@ -47,11 +47,7 @@ def create_firebase_user(email: str, password: str):
 
             ).dict()
         )
-        # raise HTTPException(
-        #     status_code=status.HTTP_400_BAD_REQUEST,
-        #     error="Bad Request",
-        #     message="The email address is already in use by another account."
-        # )
+
     
     except Exception as e:
         raise HTTPException(
@@ -62,11 +58,7 @@ def create_firebase_user(email: str, password: str):
                 message=f"Error creating user in Firebase: {str(e)}"
             ).dict()
         )
-        # raise HTTPException(
-        #     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        #     error="Internal Server Error",
-        #     message=f"Error creating user in Firebase: {str(e)}"
-        # )
+
 
 # Fungsi untuk autentikasi pengguna di Firebase
 def authenticate_firebase_user(email: str, password: str):
@@ -84,11 +76,7 @@ def authenticate_firebase_user(email: str, password: str):
                 message="User with the provided email does not exist in Firebase."
             ).dict()
         )
-        # raise HTTPException(
-        #     status_code=status.HTTP_404_NOT_FOUND,
-        #     error="Not Found",
-        #     message="User with the provided email does not exist in Firebase."
-        # )
+
     
     except Exception as e:
         raise HTTPException(
@@ -99,11 +87,7 @@ def authenticate_firebase_user(email: str, password: str):
                 message=f"Error authenticating user in Firebase: {str(e)}"
             ).dict()
         )
-        # raise HTTPException(
-        #     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        #     error="Internal Server Error",
-        #     message=f"Error authenticating user in Firebase: {str(e)}"
-        # )
+
 
 def send_email(to_email: str, subject: str, body: str, html: bool = False):
     """Mengirim email melalui SMTP dengan opsi HTML atau teks biasa."""
@@ -140,14 +124,7 @@ def send_email(to_email: str, subject: str, body: str, html: bool = False):
                 message=f"Error sending email: {str(e)}"
             ).dict()
         )
-        # raise HTTPException(
-        #     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        #     detail={
-        #         "status_code": 500,
-        #         "error": "Internal Server Error",
-        #         "message": f"Error sending email: {str(e)}"
-        #     }
-        # )
+
 
 def send_email_verification(to_email: str, verification_link: str, firstname: str):
     """Mengirim email verifikasi dengan tautan berformat HTML, logo, dan alamat di footer."""
@@ -155,7 +132,7 @@ def send_email_verification(to_email: str, verification_link: str, firstname: st
     
     firstname = firstname.capitalize()
 
-    url_verification = "https://yakuse.vercel.app/login"
+    # url_verification = "https://yakuse.vercel.app/login"
 
     # URL logo toko (sesuaikan dengan URL gambar logo kamu)
     logo_url = "https://amimumprojectbe-production.up.railway.app/images/logo_toko_amimum.png"
@@ -237,7 +214,7 @@ def send_email_verification(to_email: str, verification_link: str, firstname: st
             <div class="email-body">
                 <h2>Halo {firstname},</h2>
                 <p>Terima kasih telah mendaftar di AmImUm Herbal! Untuk mengaktifkan akun Anda, silakan verifikasi email Anda dengan mengklik tombol di bawah ini:</p>
-                <p><a href="{url_verification}" class="verify-button">Verifikasi Email</a></p>
+                <p><a href="{verification_link}" class="verify-button">Verifikasi Email</a></p>
                 <p>Jika tombol tidak berfungsi, Anda juga dapat mengklik tautan di bawah ini:</p>
                 <p><a href="{verification_link}">{verification_link}</a></p>
                 <p class="team-message">Dikirim oleh, <br> AmImUm Herbal Team</p>
@@ -267,11 +244,37 @@ def send_email_verification(to_email: str, verification_link: str, firstname: st
                 message=f"Gagal mengirim email verifikasi ke {to_email}: {str(e)}"
             ).dict()
         )
-        # raise HTTPException(
-        #     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        #     error="Internal Server Error",
-        #     message=f"Gagal mengirim email verifikasi ke {to_email}: {str(e)}"
-        # )
+
+
+def send_verification_email(firebase_user, firstname, verification_code):
+    """Mengirim email verifikasi ke pengguna Firebase."""
+    try:
+        # Ambil email dan UID dari objek firebase_user
+        email = firebase_user.email
+        uid = firebase_user.uid  # Ambil UID dari objek pengguna
+        
+        if not email:
+            raise ValueError("Email address is empty.")
+
+        # # Menghasilkan tautan verifikasi berdasarkan UID
+        # verification_link = auth.generate_email_verification_link(email)
+        # Buat tautan verifikasi yang berisi kode verifikasi dan email user
+        verification_link = f"https://amimumprojectbe-production.up.railway.app/user/verify?code={verification_code}&email={email}"
+
+
+        # Kirim email verifikasi menggunakan tautan yang dihasilkan
+        send_email_verification(email, verification_link, firstname)
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                error="Internal Server Error",
+                message=f"Error sending verification email: {str(e)}"
+            ).dict()
+        )
+
 
 def send_email_reset_password(to_email: str, reset_link: str):
     """Mengirim email reset password dengan tautan dalam format HTML."""
@@ -383,46 +386,11 @@ def send_email_reset_password(to_email: str, reset_link: str):
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=ErrorResponseDto(
+            detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
                 message=f"Gagal mengirim email reset password ke {to_email}: {str(e)}"
             ).dict()
         )
-        # raise HTTPException(
-        #     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        #     error="Internal Server Error",
-        #     message=f"Gagal mengirim email reset password ke {to_email}: {str(e)}"
-        # )
 
-def send_verification_email(firebase_user, firstname):
-    """Mengirim email verifikasi ke pengguna Firebase."""
-    try:
-        # Ambil email dan UID dari objek firebase_user
-        email = firebase_user.email
-        uid = firebase_user.uid  # Ambil UID dari objek pengguna
-        
-        if not email:
-            raise ValueError("Email address is empty.")
-
-        # Menghasilkan tautan verifikasi berdasarkan UID
-        verification_link = auth.generate_email_verification_link(email)
-
-        # Kirim email verifikasi menggunakan tautan yang dihasilkan
-        send_email_verification(email, verification_link, firstname)
-
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=ErrorResponseDto(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                error="Internal Server Error",
-                message=f"Error sending verification email: {str(e)}"
-            ).dict()
-        )
-        # raise HTTPException(
-        #     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        #     error="Internal Server Error",
-        #     message=f"Error sending verification email: {str(e)}"
-        # )
 

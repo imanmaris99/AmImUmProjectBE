@@ -85,12 +85,34 @@ def create_user(user: user_dtos.UserCreateDto, db: Session = Depends(get_db)):
     """
     result = user_services.create_user(db, user)
     
-    return {
-    "status_code": status.HTTP_201_CREATED,
-    "message": "User successfully created",
-    "data": result.unwrap()
-}
+    if result.error:
+        raise result.error  # Mengangkat kesalahan jika ada
 
+    return result.unwrap()  # Mengembalikan data dari service
+
+#     return {
+#     "status_code": status.HTTP_201_CREATED,
+#     "message": "User successfully created",
+#     "data": result.unwrap()
+# }
+
+@router.post(
+        "/verify-email", 
+        response_model=user_dtos.EmailVerificationResponseDto
+    )
+def verify_email(
+    verification_request: user_dtos.EmailVerificationRequestDto, 
+    db: Session = Depends(get_db)):
+    result = user_services.verify_user_email(
+        verification_request.code, 
+        verification_request.email, 
+        db
+    )
+    
+    if result.error:
+        raise result.error  # Mengangkat kesalahan jika ada
+
+    return result.unwrap()  # Mengembalikan data dari service
 
 ## == USER - LOGIN == ##
 @router.post(

@@ -1,20 +1,21 @@
+# app/services/create_user.py
+
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from fastapi import HTTPException, status
 
 from app.utils.firebase_utils import create_firebase_user, send_verification_email
-
 from app.models.user_model import UserModel
 from app.dtos import user_dtos
-from app.libs import password_lib
-from app.utils import optional, error_parser
-
 from app.dtos.error_response_dtos import ErrorResponseDto
+from app.libs import password_lib
+from app.libs.verification_code import generate_verification_code
+from app.utils import optional
 
 def create_user(
         db: Session, 
         user: user_dtos.UserCreateDto
-    ) -> optional.Optional[UserModel, Exception]:
+    ) -> optional.Optional[user_dtos.UserResponseDto, Exception]:
     try:
         # Validasi input email dan password
         if not user.email or not user.password:
@@ -40,6 +41,9 @@ def create_user(
                 ).dict()
             )
 
+        # Generate kode verifikasi
+        verification_code = generate_verification_code()
+
         # Membuat instance user baru
         user_model = UserModel(
             firstname=user.firstname,
@@ -49,16 +53,40 @@ def create_user(
             phone=user.phone,
             hash_password=password_lib.get_password_hash(password=user.password),
             firebase_uid=firebase_user.uid,
-            role="customer"
+            role="customer",
+            is_active=False,  # Set is_active ke False saat pendaftaran
+            verification_code=verification_code  # Simpan kode verifikasi
         )
 
         db.add(user_model)
         db.commit()
         db.refresh(user_model)
 
-        send_verification_email(firebase_user, user.firstname)
+        # Kirim email verifikasi
+        send_verification_email(firebase_user, user.firstname, verification_code)
 
-        return optional.build(data=user_model)
+        # Mempersiapkan response data yang sudah sesuai dengan DTO
+        user_data_dto = user_dtos.UserCreateResponseDto(
+            id=user_model.id,
+            firebase_uid=user_model.firebase_uid,
+            firstname=user_model.firstname,
+            lastname=user_model.lastname,
+            gender=user_model.gender,
+            email=user_model.email,
+            phone=user_model.phone,
+            address=user_model.address,
+            photo_url=user_model.photo_url,
+            role=user_model.role,
+            is_active=user_model.is_active,
+            created_at=user_model.created_at,
+            updated_at=user_model.updated_at
+        )
+
+        return optional.build(data=user_dtos.UserResponseDto(
+            status_code=status.HTTP_201_CREATED,
+            message=f"Account is not yet active. Verification email has been sent to {user.email}.",
+            data=user_data_dto
+        ))
 
     except IntegrityError as ie:
         db.rollback()
@@ -78,15 +106,16 @@ def create_user(
             ).dict()
         )
 
-    except SQLAlchemyError:
-        return optional.build(error= HTTPException(
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=ErrorResponseDto(
                 status_code=status.HTTP_409_CONFLICT,
                 error="Conflict",
                 message=f"Database conflict: {str(e)}"
             ).dict()
-        ))
+        )
     
     except HTTPException as e:
         # Menangani error yang dilempar oleh Firebase atau proses lainnya
@@ -101,6 +130,7 @@ def create_user(
                 message=f"Unexpected error: {str(e)}"
             ).dict()
         ))
+
     # except SQLAlchemyError:
     #     db.rollback()
     #     raise HTTPException(

@@ -15,3 +15,5 @@ from .change_password import change_password
 from .update_profile import user_edit
 from .update_photo import update_my_photo
 from .get_user_profile import get_user_profile
+
+from .verify_user_email import verify_user_email

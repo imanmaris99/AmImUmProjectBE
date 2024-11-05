@@ -21,7 +21,8 @@ class UserModel(Base):
     photo_url = Column(String(255), nullable=True)
     role = Column(String(50), nullable=False)
     firebase_uid = Column(String(50), nullable=True)
-    is_active = Column(Boolean, default=True)
+    is_active = Column(Boolean, default=False)
+    verification_code = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     

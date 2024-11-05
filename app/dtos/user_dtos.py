@@ -1,18 +1,38 @@
 from typing import Optional, Literal
 from datetime import datetime
 
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, validator
+
+import re
 
 from app.libs.jwt_lib import jwt_dto 
 
 
+# class UserCreateDto(BaseModel):
+#     firstname: str = Field(default="firstname")
+#     lastname: str = Field(default="lastname")
+#     gender: Literal['male', 'female'] = Field(default='male')
+#     email: EmailStr = Field(default="Example@Example.com")
+#     phone: str = Field(default="+6289965342543")
+#     password: str = Field(default="password")
+
 class UserCreateDto(BaseModel):
-    firstname: str = Field(default="firstname")
-    lastname: str = Field(default="lastname")
-    gender: Literal['male', 'female'] = Field(default='male')
-    email: EmailStr = Field(default="Example@Example.com")
-    phone: str = Field(default="+6289965342543")
-    password: str = Field(default="password")
+    firstname: str = Field(..., description="First name of the user")
+    lastname: str = Field(..., description="Last name of the user")
+    gender: Literal['male', 'female'] = Field(..., description="Gender of the user")
+    email: EmailStr = Field(..., description="Email address of the user")
+    phone: str = Field(..., description="Phone number of the user, must start with +62 and contain 10-11 digits after that")
+    password: str = Field(..., description="Password for the user account")
+
+    @validator('phone')
+    def validate_phone(cls, value):
+        pattern = r"^\+62\d{10,11}$"
+        if not re.match(pattern, value):
+            raise ValueError("Phone number must start with +62 and contain 10-11 digits after that")
+        return value
+    
+    # Fields with `...` (Ellipsis) will make the field required with no default values.
+    # Validation will fail if any of these fields are missing or if the input is empty.
 
 class UserCreateResponseDto(BaseModel):
     id: str
@@ -34,6 +54,25 @@ class UserResponseDto(BaseModel):
     message: str = Field(default="Your user account has been create")
     data: UserCreateResponseDto  # Atau Anda bisa membuat model terpisah untuk data yang lebih terstruktur
 
+class EmailVerificationRequestDto(BaseModel):
+    code: str = Field(..., description="verification code from email")
+    email: EmailStr = Field(..., description="Email address of the user")
+
+class EmailInfoVerificationRequestDto(BaseModel):
+    code: str
+    email: EmailStr 
+    firstname: Optional[str]
+    lastname: Optional[str]
+    gender: Optional[str]
+    role: Optional[str]
+    is_active: bool 
+
+class EmailVerificationResponseDto(BaseModel):
+    status_code: int 
+    message: str 
+    data: EmailInfoVerificationRequestDto  # Atau Anda bisa membuat model terpisah untuk data yang lebih terstruktur
+
+
 class ResetPasswordDto(BaseModel):
     oob_code: str
     email: EmailStr 
@@ -45,7 +84,7 @@ class ResetPasswordResponseDto(BaseModel):
     data: ResetPasswordDto
 
 class ForgotPasswordDto(BaseModel):
-    email: EmailStr = Field(default="myemail@gmail.com")
+    email: EmailStr = Field(..., description="Email address of the user")
     
 class ForgotPasswordResponseDto(BaseModel):
     status_code: int = Field(default=200)
@@ -53,8 +92,8 @@ class ForgotPasswordResponseDto(BaseModel):
     data: ForgotPasswordDto
 
 class ConfirmResetPasswordDto(BaseModel):
-    email: EmailStr = Field(default="myemail@gmail.com")
-    new_password: str = Field(default="Password@3")
+    email: EmailStr = Field(..., description="Email address of the user")
+    new_password: str = Field(..., description="Password for the user account")
 
 class ConfirmResetPasswordResponseDto(BaseModel):
     status_code: int = Field(default=201)
@@ -83,8 +122,8 @@ class UserEditPhotoProfileResponseDto(BaseModel):
     data: UserEditPhotoProfileDto
 
 class UserLoginPayloadDto(BaseModel):
-    email: EmailStr = Field(default="Example@Example.com")
-    password: str = Field(default="somePassword")
+    email: EmailStr = Field(..., description="Email address of the user")
+    password: str = Field(..., description="Password of the user")
 
 class UserLoginResponseDto(BaseModel):
     status_code: int = Field(default=200)
