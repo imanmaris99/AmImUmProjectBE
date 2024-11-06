@@ -38,10 +38,31 @@ def validate_user_data(user: user_dtos.UserCreateDto):
             }
         )
 
-# Fungsi untuk membuat user di Firebase
-def create_firebase_user_account(user: user_dtos.UserCreateDto):
+# Fungsi untuk membuat instance UserModel dan menyimpannya ke database
+def save_user_to_db(db: Session, user: user_dtos.UserCreateDto) -> UserModel:
+    verification_code = generate_verification_code()
+
+    # Membuat instance user baru
+    user_model = UserModel(
+        firstname=user.firstname,
+        lastname=user.lastname,
+        gender=user.gender,
+        email=user.email,
+        phone=user.phone,
+        hash_password=password_lib.get_password_hash(password=user.password),
+        role="customer",
+        is_active=False,  # Set is_active ke False saat pendaftaran
+        verification_code=verification_code  # Simpan kode verifikasi
+    )
+    db.add(user_model)
+    db.commit()
+    db.refresh(user_model)
+    return user_model, verification_code
+
+# Fungsi untuk membuat akun Firebase
+def create_firebase_user_account(user: user_dtos.UserCreateDto) -> dict:
     firebase_user = create_firebase_user(user.email, user.password)
-    if firebase_user is None:
+    if not firebase_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ErrorResponseDto(
@@ -52,55 +73,27 @@ def create_firebase_user_account(user: user_dtos.UserCreateDto):
         )
     return firebase_user
 
-# Fungsi untuk membuat instance UserModel dan menyimpannya ke database
-def save_user_to_db(db: Session, user: user_dtos.UserCreateDto, firebase_user, verification_code: str) -> UserModel:
-    user_model = UserModel(
-        firstname=user.firstname,
-        lastname=user.lastname,
-        gender=user.gender,
-        email=firebase_user.email,
-        phone=user.phone,
-        hash_password=password_lib.get_password_hash(password=user.password),
-        firebase_uid=firebase_user.uid,
-        role="customer",
-        is_active=False,
-        verification_code=verification_code
-    )
-    db.add(user_model)
-    db.commit()
-    db.refresh(user_model)
-    return user_model
-
-# Fungsi untuk membuat instance UserModel dan menyimpannya ke database
-def save_admin_to_db(db: Session, user: user_dtos.UserCreateDto, firebase_user, verification_code: str) -> UserModel:
-    user_model = UserModel(
-        firstname=user.firstname,
-        lastname=user.lastname,
-        gender=user.gender,
-        email=firebase_user.email,
-        phone=user.phone,
-        hash_password=password_lib.get_password_hash(password=user.password),
-        firebase_uid=firebase_user.uid,
-        role="admin",
-        is_active=False,
-        verification_code=verification_code
-    )
-    db.add(user_model)
-    db.commit()
-    db.refresh(user_model)
-    return user_model
-
 # Fungsi utama untuk membuat user baru - customer
 def create_user(db: Session, user: user_dtos.UserCreateDto) -> optional.Optional[user_dtos.UserResponseDto, Exception]:
     try:
         validate_user_data(user)
+
+        # Simpan data user ke database
+        user_model, verification_code = save_user_to_db(db, user)
+
+        # Buat akun Firebase
         firebase_user = create_firebase_user_account(user)
-        verification_code = generate_verification_code()
 
-        user_model = save_user_to_db(db, user, firebase_user, verification_code)
+        # Update Firebase UID ke database setelah berhasil buat akun di Firebase
+        user_model.firebase_uid = firebase_user.uid
+        user_model.email = firebase_user.email
+        db.commit()
+        db.refresh(user_model)
 
+        # Kirim email verifikasi
         send_verification_email(firebase_user, user.firstname, verification_code)
 
+        # Mempersiapkan response data yang sudah sesuai dengan DTO
         user_data_dto = user_dtos.UserCreateResponseDto(
             id=user_model.id,
             firebase_uid=user_model.firebase_uid,
@@ -142,6 +135,7 @@ def create_user(db: Session, user: user_dtos.UserCreateDto) -> optional.Optional
         return optional.build(error=e)
 
     except Exception as e:
+        db.rollback()
         return optional.build(error=HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorResponseDto(
@@ -150,6 +144,25 @@ def create_user(db: Session, user: user_dtos.UserCreateDto) -> optional.Optional
                 message=f"Unexpected error: {str(e)}"
             ).dict()
         ))
+
+# Fungsi untuk membuat instance UserModel dan menyimpannya ke database
+def save_admin_to_db(db: Session, user: user_dtos.UserCreateDto, firebase_user, verification_code: str) -> UserModel:
+    user_model = UserModel(
+        firstname=user.firstname,
+        lastname=user.lastname,
+        gender=user.gender,
+        email=firebase_user.email,
+        phone=user.phone,
+        hash_password=password_lib.get_password_hash(password=user.password),
+        firebase_uid=firebase_user.uid,
+        role="admin",
+        is_active=False,
+        verification_code=verification_code
+    )
+    db.add(user_model)
+    db.commit()
+    db.refresh(user_model)
+    return user_model
 
 # Fungsi utama untuk membuat user baru - admin
 def create_admin(db: Session, user: user_dtos.UserCreateDto) -> optional.Optional[user_dtos.UserResponseDto, Exception]:

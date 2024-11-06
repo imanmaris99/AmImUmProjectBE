@@ -47,7 +47,7 @@ def send_reset_password_request(db: Session, payload: user_dtos.ForgotPasswordDt
         db.commit()
 
         # Buat link reset password menggunakan kode verifikasi kustom
-        reset_link = f"https://amimumprojectbe-production.up.railway.app/user/reset-password?code={verification_code}&email={payload.email}"
+        reset_link = f"https://amimumprojectbe-production.up.railway.app/user/password-reset/confirm?email={payload.email}&code={verification_code}"
 
         # Kirim email reset password
         send_email_reset_password(payload.email, reset_link)

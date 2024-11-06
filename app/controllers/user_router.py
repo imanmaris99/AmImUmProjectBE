@@ -90,11 +90,6 @@ def create_user(user: user_dtos.UserCreateDto, db: Session = Depends(get_db)):
 
     return result.unwrap()  # Mengembalikan data dari service
 
-#     return {
-#     "status_code": status.HTTP_201_CREATED,
-#     "message": "User successfully created",
-#     "data": result.unwrap()
-# }
 
 @router.post(
         "/verify-email", 
@@ -740,8 +735,8 @@ async def update_only_photo(
 async def change_password(
         payload: user_dtos.ChangePasswordDto,
         jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],
-        db: Session = Depends(get_db)):
-    
+        db: Session = Depends(get_db)
+):
     """
     # Ganti Password #
 
@@ -774,15 +769,7 @@ async def change_password(
     if result.error:
         raise result.error
 
-    return result.unwrap()  # Return the success response if no error
-
-    # return {
-    #     "message": "Password has been changed successfully",
-    #     "data": {
-    #         "old_password": user.old_password,
-    #         "new_password": user.new_password
-    #     }
-    # }
+    return result.unwrap()  
 
 
 

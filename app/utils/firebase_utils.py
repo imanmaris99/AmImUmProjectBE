@@ -259,7 +259,7 @@ def send_verification_email(firebase_user, firstname, verification_code):
         # # Menghasilkan tautan verifikasi berdasarkan UID
         # verification_link = auth.generate_email_verification_link(email)
         # Buat tautan verifikasi yang berisi kode verifikasi dan email user
-        verification_link = f"https://amimumprojectbe-production.up.railway.app/user/verify?code={verification_code}&email={email}"
+        verification_link = f"https://amimumprojectbe-production.up.railway.app/user/verify-email?code={verification_code}&email={email}"
 
 
         # Kirim email verifikasi menggunakan tautan yang dihasilkan
