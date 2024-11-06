@@ -16,10 +16,10 @@ class CityDto(BaseModel):
 
 # DTO untuk request biaya kirim
 class ShippingCostRequest(BaseModel):
-    origin: int = Field(default=497, description="ID kota atau kabupaten asal")
-    destination: int = Field(default=455, description="ID kota atau kabupaten tujuan")
-    weight: int = Field(default=1000, description="Berat dalam gram")
-    courier: Literal['jne', 'pos', 'tiki'] = Field(default='jne')
+    origin: int = Field(..., description="ID kota atau kabupaten asal")
+    destination: int = Field(..., description="ID kota atau kabupaten tujuan")
+    weight: int = Field(..., description="Berat dalam gram")
+    courier: Literal['jne', 'pos', 'tiki'] = Field(..., description="Kurir jasa Kirim")
 
 # DTO untuk detail biaya pengiriman
 class ShippingCostDetailDto(BaseModel):

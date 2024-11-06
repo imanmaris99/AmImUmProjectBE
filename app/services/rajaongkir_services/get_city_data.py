@@ -1,78 +1,52 @@
-from typing import List, Optional
-
+from typing import List
 from fastapi import HTTPException, status
 
-from app.utils.rajaongkir_utils import send_get_request, send_post_request
-from app.dtos.rajaongkir_dtos import CityDto, ShippingCostDto, ShippingCostDetailDto
+from app.utils.rajaongkir_utils import send_get_request
+from app.dtos.rajaongkir_dtos import CityDto
 from app.dtos.error_response_dtos import ErrorResponseDto
-
 from app.libs.rajaongkir_config import Config
-
 from app.utils import optional
 
-def get_city_data() -> optional.Optional[List[CityDto], HTTPException]:
-    """Mengambil data kota dari API RajaOngkir."""
-    headers = {
-        'key': Config.RAJAONGKIR_API_KEY
-    }
-
-    url = "/starter/city"
-
-    response = send_get_request(Config.RAJAONGKIR_API_HOST, url, headers)
-
-    # Cek apakah respons dari API adalah format yang diharapkan
-    if not isinstance(response, dict) or "rajaongkir" not in response:        
-        return optional.build(error= HTTPException(
+# Fungsi untuk validasi respons dari API RajaOngkir
+def validate_response(response: dict):
+    if not isinstance(response, dict) or "rajaongkir" not in response:
+        raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Invalid response from RajaOngkir API"            
+                message="Invalid response from RajaOngkir API"
             ).dict()
-        ))
-        # return optional.build(error=HTTPException(
-        #     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        #     error="Internal Server Error",
-        #     message="Invalid response from RajaOngkir API"
-        # ))
-    
-    cities = response.get("rajaongkir", {}).get("results", [])
+        )
 
+    cities = response.get("rajaongkir", {}).get("results", [])
     if not cities:
-        return optional.build(error= HTTPException(
+        raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=ErrorResponseDto(
                 status_code=status.HTTP_404_NOT_FOUND,
                 error="Not Found",
-                message=f"Info about cities not found"
+                message="Info about cities not found"
             ).dict()
-        ))
-        # return optional.build(error=HTTPException(
-        #     status_code=status.HTTP_404_NOT_FOUND,
-        #     error="Not Found",
-        #     message="No cities found"
-        # ))
-    
-    # Cek apakah provinces adalah list dan bukan string
+        )
+
     if not isinstance(cities, list):
-        return optional.build(error= HTTPException(
+        raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message="Unexpected format in cities data"           
+                message="Unexpected format in cities data"
             ).dict()
-        ))
-        # return optional.build(error=HTTPException(
-        #     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        #     error="Internal Server Error",
-        #     message="Unexpected format in cities data"
-        # ))
+        )
 
-    # Membuat DTO untuk setiap kota
+    return cities
+
+# Fungsi untuk mengonversi data kota ke dalam CityDto
+def parse_city_data(cities: List[dict]) -> List[CityDto]:
     city_dtos = []
     for c in cities:
-        if isinstance(c, dict) and "city_id" in c and "province_id" in c and "province" in c and "type" in c and "city_name" in c and "postal_code" in c:
+        if all(key in c for key in ("city_id", "province_id", "province", "type", "city_name", "postal_code")):
             city_dtos.append(CityDto(
                 city_id=c["city_id"],
                 province_id=c["province_id"],
@@ -82,18 +56,113 @@ def get_city_data() -> optional.Optional[List[CityDto], HTTPException]:
                 postal_code=c["postal_code"]
             ))
         else:
-            return optional.build(error= HTTPException(
+            raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=ErrorResponseDto(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     error="Internal Server Error",
-                    message="Unexpected data format for a province"          
+                    message="Unexpected data format for a city"
                 ).dict()
-            ))
-            # return optional.build(error=HTTPException(
-            #     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            #     error="Internal Server Error",
-            #     message="Unexpected data format for a province"
-            # ))
+            )
+    return city_dtos
 
-    return optional.build(data=city_dtos)
+# Fungsi utama untuk mendapatkan data kota dari API RajaOngkir
+def get_city_data() -> optional.Optional[List[CityDto], HTTPException]:
+    headers = {'key': Config.RAJAONGKIR_API_KEY}
+    url = "/starter/city"
+
+    response = send_get_request(Config.RAJAONGKIR_API_HOST, url, headers)
+    
+    try:
+        cities = validate_response(response)
+        city_dtos = parse_city_data(cities)
+        return optional.build(data=city_dtos)
+        
+    except HTTPException as e:
+        return optional.build(error=e)
+
+
+
+
+
+
+
+# from typing import List, Optional
+
+# from fastapi import HTTPException, status
+
+# from app.utils.rajaongkir_utils import send_get_request, send_post_request
+# from app.dtos.rajaongkir_dtos import CityDto, ShippingCostDto, ShippingCostDetailDto
+# from app.dtos.error_response_dtos import ErrorResponseDto
+
+# from app.libs.rajaongkir_config import Config
+
+# from app.utils import optional
+
+# def get_city_data() -> optional.Optional[List[CityDto], HTTPException]:
+#     """Mengambil data kota dari API RajaOngkir."""
+#     headers = {
+#         'key': Config.RAJAONGKIR_API_KEY
+#     }
+
+#     url = "/starter/city"
+
+#     response = send_get_request(Config.RAJAONGKIR_API_HOST, url, headers)
+
+#     # Cek apakah respons dari API adalah format yang diharapkan
+#     if not isinstance(response, dict) or "rajaongkir" not in response:        
+#         return optional.build(error= HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail=ErrorResponseDto(
+#                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#                 error="Internal Server Error",
+#                 message=f"Invalid response from RajaOngkir API"            
+#             ).dict()
+#         ))
+
+#     cities = response.get("rajaongkir", {}).get("results", [])
+
+#     if not cities:
+#         return optional.build(error= HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail=ErrorResponseDto(
+#                 status_code=status.HTTP_404_NOT_FOUND,
+#                 error="Not Found",
+#                 message=f"Info about cities not found"
+#             ).dict()
+#         ))
+
+#     # Cek apakah provinces adalah list dan bukan string
+#     if not isinstance(cities, list):
+#         return optional.build(error= HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail=ErrorResponseDto(
+#                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#                 error="Internal Server Error",
+#                 message="Unexpected format in cities data"           
+#             ).dict()
+#         ))
+
+#     # Membuat DTO untuk setiap kota
+#     city_dtos = []
+#     for c in cities:
+#         if isinstance(c, dict) and "city_id" in c and "province_id" in c and "province" in c and "type" in c and "city_name" in c and "postal_code" in c:
+#             city_dtos.append(CityDto(
+#                 city_id=c["city_id"],
+#                 province_id=c["province_id"],
+#                 province=c["province"],
+#                 type=c["type"],
+#                 city_name=c["city_name"],
+#                 postal_code=c["postal_code"]
+#             ))
+#         else:
+#             return optional.build(error= HTTPException(
+#                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#                 detail=ErrorResponseDto(
+#                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#                     error="Internal Server Error",
+#                     message="Unexpected data format for a province"          
+#                 ).dict()
+#             ))
+
+#     return optional.build(data=city_dtos)

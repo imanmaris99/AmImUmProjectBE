@@ -1,6 +1,7 @@
+from fastapi import HTTPException, status
+
 import firebase_admin
 from firebase_admin import credentials, auth, initialize_app
-from fastapi import HTTPException, status
 
 import smtplib
 from email.mime.text import MIMEText
@@ -48,7 +49,6 @@ def create_firebase_user(email: str, password: str):
 
             ).dict()
         )
-
     
     except Exception as e:
         raise HTTPException(
@@ -77,7 +77,6 @@ def authenticate_firebase_user(email: str, password: str):
                 message="User with the provided email does not exist in Firebase."
             ).dict()
         )
-
     
     except Exception as e:
         raise HTTPException(
@@ -230,8 +229,8 @@ def send_email_verification(to_email: str, verification_link: str, firstname: st
         </div>
     </body>
     </html>
-    """
 
+    """
     try:
         # Mengirim email dengan format HTML
         send_email(to_email, subject, body, html=True)
