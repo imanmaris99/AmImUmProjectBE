@@ -1,11 +1,15 @@
 from fastapi import HTTPException, status
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, DataError, IntegrityError
+
 from typing import List, Type
 
 from app.models.rating_model import RatingModel
 from app.dtos.rating_dtos import MyRatingListDto
+from app.dtos.error_response_dtos import ErrorResponseDto
+
 from app.utils.result import build, Result
 
 def my_rating_list(
@@ -26,8 +30,11 @@ def my_rating_list(
         if not rate_model:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                error="Not Found",
-                message=f"list rate of products from this user ID : {user_id} not found"
+                detail=ErrorResponseDto(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    error="Not Found",
+                    message=f"list rate of products from this user ID : {user_id} not found"
+                ).dict()
             )
 
         # Konversi produk ke DTO
@@ -49,8 +56,11 @@ def my_rating_list(
         db.rollback()
         return build(error=HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            error="Conflict",
-            message=f"Database integrity error: {str(ie)}"
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_409_CONFLICT,
+                error="Conflict",
+                message=f"Database integrity error: {str(ie)}"
+            ).dict()
         ))
 
     # Error SQLAlchemy untuk data input yang tidak sesuai tipe
@@ -58,17 +68,22 @@ def my_rating_list(
         db.rollback()
         return build(error=HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            error="Unprocessable Entity",
-            message=f"Data error: {str(de)}"
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                error="Unprocessable Entity",
+                message=f"Data error: {str(de)}"
+            ).dict()
         ))
 
     except SQLAlchemyError as e:
-        print(e)
         db.rollback()
-        return build(error=HTTPException(
+        return build(error= HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            error="Conflict",
-            message=f"Database conflict: {str(e)}"
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_409_CONFLICT,
+                error="Conflict",
+                message=f"Database conflict: {str(e)}"
+            ).dict()
         ))
     
     except HTTPException as http_ex:
@@ -78,14 +93,20 @@ def my_rating_list(
     except (ValueError, TypeError) as te:
         return build(error=HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            error="Unprocessable Entity",
-            message=f"Invalid input: {str(te)}"
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                error="Unprocessable Entity",
+                message=f"Invalid input: {str(te)}"
+            ).dict()
         ))
     
     except Exception as e:
-        print(e)
-        return build(error=HTTPException(
+        db.rollback()
+        return build(error= HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            error="Internal Server Error",
-            message=f"An error occurred: {str(e)}"
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                error="Internal Server Error",
+                message=f"An error occurred: {str(e)}"            
+            ).dict()
         ))

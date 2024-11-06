@@ -34,11 +34,6 @@ def update_product(
                     message=f"Info about product with ID {product_id_update.product_id} not found"
                 ).dict()
             ))
-            # return build(error=HTTPException(
-            #     status_code=status.HTTP_404_NOT_FOUND,
-            #     error="Not Found",
-            #     message="Product not found"
-            # ))
         
         # Update atribut product jika ada
         for attr, value in product_update.model_dump().items():
@@ -91,19 +86,3 @@ def update_product(
             ).dict()
         ))
     
-    # except SQLAlchemyError as e:
-    #     print(e)
-    #     db.rollback()
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_409_CONFLICT,
-    #         error="Conflict",
-    #         message=f"Database conflict: {find_errr_from_args("articles", str(e.args))}"
-    #     ))
-    
-    # except Exception as e:
-    #     print(e)
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         error="Internal Server Error",
-    #         message=f"An error occurred: {str(e)}"
-    #     ))

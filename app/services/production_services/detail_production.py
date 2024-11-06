@@ -31,11 +31,6 @@ def detail_production(
                     message=f"Production with ID {production_id} not found"
                 ).dict()
             ))
-            # return build(error=HTTPException(
-            #     status_code=status.HTTP_404_NOT_FOUND,
-            #     error="Not Found",
-            #     message=f"Production with id {production_id} not found"
-            # ))
 
         # Convert the product to ProductDetailDTO
         production_detail_dto = production_dtos.DetailProductionDto(
@@ -79,17 +74,4 @@ def detail_production(
                 message=f"An error occurred: {str(e)}"            
             ).dict()
         ))
-    
-    # except SQLAlchemyError as e:
-    #     db.rollback()
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_409_CONFLICT,
-    #         error="Conflict",
-    #         message=f"Database conflict: {str(e)}"
-    #     ))
-    # except Exception as e:
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         error="Internal Server Error",
-    #         message=f"Internal Server Error: {str(e)}"
-    #     ))
+

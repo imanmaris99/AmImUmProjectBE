@@ -32,11 +32,6 @@ def delete_product(
                     message=f"Info about product with ID {product_data.product_id} not found"
                 ).dict()
             ))
-            # return build(error=HTTPException(
-            #     status_code=status.HTTP_404_NOT_FOUND,
-            #     error="Not Found",
-            #     message="Product not found"
-            # ))
         
         # Simpan informasi pengguna sebelum dihapus
         product_delete_info = InfoDeleteProductDto(
@@ -80,17 +75,3 @@ def delete_product(
             ).dict()
         ))
     
-    # except SQLAlchemyError as e:
-    #     db.rollback()
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_409_CONFLICT,
-    #         error="Conflict",
-    #         message=f"Database conflict: {str(e)}"
-    #     ))
-    
-    # except Exception as e:
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         error="Internal Server Error",
-    #         message=f"An error occurred: {str(e)}"
-    #     ))

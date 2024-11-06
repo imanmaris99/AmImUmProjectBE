@@ -66,19 +66,4 @@ def create_production(
                 message=f"An error occurred: {str(e)}"            
             ).dict()
         ))
-    
-    # except SQLAlchemyError as e:
-    #     db.rollback()  # Rollback untuk semua error SQLAlchemy umum lainnya
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         error="Internal Server Error",
-    #         message= f"An error occurred while creating the user: {str(e)}"
-    #     ))
-    
-    # except Exception as e:
-    #     db.rollback()  # Rollback untuk error tak terduga
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         error="Internal Server Error",
-    #         message=f"Unexpected error: {str(e)}"
-    #     ))
+

@@ -60,6 +60,7 @@ def create_product(
         return build(error=http_ex)
     
     except Exception as e:
+        db.rollback()
         return build(error= HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorResponseDto(
@@ -68,24 +69,3 @@ def create_product(
                 message=f"An error occurred: {str(e)}"            
             ).dict()
         ))
-
-    # except SQLAlchemyError as e:
-    #     db.rollback()  # Rollback untuk semua error SQLAlchemy umum lainnya
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         error="Internal Server Error",
-    #         message=f"An error occurred : {str(e)}"
-    #     ))
-    
-    # except HTTPException as http_ex:
-    #     db.rollback()  # Rollback jika terjadi error dari Firebase
-    #     # Langsung kembalikan error dari Firebase tanpa membuat response baru
-    #     return build(error=http_ex)
-
-    # except Exception as e:
-    #     db.rollback()  # Rollback untuk error tak terduga
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         error="Internal Server Error",
-    #         message=f"Unexpected error: {str(e)}"
-    #     ))

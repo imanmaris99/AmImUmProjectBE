@@ -30,11 +30,6 @@ def search_product_of_id_production(
                     message= f"Production ID {production_id} must be provided."
                 ).dict()
             )
-            # raise HTTPException(
-            #     status_code=status.HTTP_400_BAD_REQUEST,
-            #     error= "Bad Request",
-            #     message= "Production ID must be provided."
-            # )
 
         search_query = f"%{product_name}%"
         # Query untuk mengambil produk berdasarkan product_by_id
@@ -64,11 +59,7 @@ def search_product_of_id_production(
                         message= f"No products found for production ID {production_id}."
                     ).dict()
                 )
-                # raise HTTPException(
-                #     status_code=status.HTTP_404_NOT_FOUND,
-                #     error= "Not Found",
-                #     message= f"No products found for production ID {production_id}."
-                # )
+
             else:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -78,11 +69,7 @@ def search_product_of_id_production(
                         message= f"No products found with name containing '{product_name}' for production ID {production_id}."
                     ).dict()
                 )
-                # raise HTTPException(
-                #     status_code=status.HTTP_404_NOT_FOUND,
-                #     error= "Not Found",
-                #     message= f"No products found with name containing '{product_name}' for production ID {production_id}."
-                # )
+
 
         # Konversi produk ke DTO
         all_products_dto = [
@@ -122,23 +109,3 @@ def search_product_of_id_production(
                 message=f"An error occurred: {str(e)}"            
             ).dict()
         ))
-
-    # except SQLAlchemyError as e:
-    #     print(e)
-    #     db.rollback()
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_409_CONFLICT,
-    #         error="Conflict",
-    #         message=f"Database conflict: {str(e)}"
-    #     ))
-    
-    # except HTTPException as http_ex:
-    #     return build(error=http_ex)
-    
-    # except Exception as e:
-    #     print(e)
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         error="Internal Server Error",
-    #         message=f"An error occurred: {str(e)}"
-    #     ))

@@ -53,11 +53,6 @@ def search_product_discount(
                     message=f"No product have a discount found with name containing '{product_name}'."
                 ).dict()
             )
-            # raise HTTPException(
-            #     status_code=status.HTTP_404_NOT_FOUND,
-            #     error="Not Found",
-            #     message=f"No product have a discount found with name containing '{product_name}'."
-            # )
 
         # # Jika tidak ada produk ditemukan, kembalikan list kosong
         # if not product_model:
@@ -102,22 +97,4 @@ def search_product_discount(
             ).dict()
         ))
     
-    # except SQLAlchemyError as e:
-    #     print(e)
-    #     db.rollback()
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_409_CONFLICT,
-    #         error="Conflict",
-    #         message=f"Database conflict: {str(e)}"
-    #     ))
-    
-    # except HTTPException as http_ex:
-    #     return build(error=http_ex)
-    
-    # except Exception as e:
-    #     print(e)
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         error="Internal Server Error",
-    #         message=f"An error occurred: {str(e)}"
-    #     ))
+

@@ -34,11 +34,6 @@ def get_product_by_id(
                     message=f"Info about product with ID {product_id} not found"
                 ).dict()
             ))
-            # return build(error=HTTPException(
-            #     status_code=status.HTTP_404_NOT_FOUND,
-            #     error="Not Found",
-            #     message=f"Product with id {product_id} not found"
-            # ))
 
         # Convert the product to ProductDetailDTO
         product_detail_dto = ProductDetailDTO(
@@ -89,17 +84,3 @@ def get_product_by_id(
                 message=f"An error occurred: {str(e)}"            
             ).dict()
         ))
-
-    # except SQLAlchemyError as e:
-    #     db.rollback()
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_409_CONFLICT,
-    #         error="Conflict",
-    #         message=f"Database conflict: {str(e)}"
-    #     ))
-    # except Exception as e:
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         error="Internal Server Error",
-    #         message=f"Internal Server Error: {str(e)}"
-    #     ))

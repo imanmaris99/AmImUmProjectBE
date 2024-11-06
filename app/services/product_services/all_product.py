@@ -31,18 +31,13 @@ def all_product(
 
         if not product_model:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
+                status_code=status.HTTP_204_NO_CONTENT,
                 detail=ErrorResponseDto(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    error="Not Found",
+                    status_code=status.HTTP_204_NO_CONTENT,
+                    error="Not content Found",
                     message=f"info about list of all products not found"
                 ).dict()
             )
-            # raise HTTPException(
-            #     status_code=status.HTTP_404_NOT_FOUND,
-            #     error="Not Found",
-            #     message="List products not found"
-            # )
 
         # Konversi produk menjadi DTO, cek `all_variants` agar tidak menyebabkan error jika None
         all_products_dto = [
@@ -84,22 +79,3 @@ def all_product(
             ).dict()
         ))
 
-    # except SQLAlchemyError as e:
-    #     print(e)
-    #     db.rollback()
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_409_CONFLICT,
-    #         error="Conflict",
-    #         message=f"Database conflict: {str(e)}"
-    #     ))
-    
-    # except HTTPException as http_ex:
-    #     return build(error=http_ex)
-    
-    # except Exception as e:
-    #     print(e)
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         error="Internal Server Error",
-    #         message=f"An error occurred: {str(e)}"
-    #     ))

@@ -39,11 +39,6 @@ def all_product_by_id_production(
                     message=f"info about list products from Production with ID {production_id} not found"
                 ).dict()
             )
-            # raise HTTPException(
-            #     status_code=status.HTTP_404_NOT_FOUND,
-            #     error="Not Found",
-            #     message=f"list products from this id {production_id} not found"
-            # )
 
         # Konversi produk ke DTO
         all_products_dto = [
@@ -85,22 +80,3 @@ def all_product_by_id_production(
             ).dict()
         ))
 
-    # except SQLAlchemyError as e:
-    #     print(e)
-    #     db.rollback()
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_409_CONFLICT,
-    #         error="Conflict",
-    #         message=f"Database conflict: {str(e)}"
-    #     ))
-    
-    # except HTTPException as http_ex:
-    #     return build(error=http_ex)
-    
-    # except Exception as e:
-    #     print(e)
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         error="Internal Server Error",
-    #         message=f"An error occurred: {str(e)}"
-    #     ))
