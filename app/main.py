@@ -44,6 +44,7 @@ app.include_router(controllers.product_router.router)
 app.include_router(controllers.pack_type_router.router)
 app.include_router(controllers.rating_router.router)
 app.include_router(controllers.wishlist_router.router)
+app.include_router(controllers.cart_router.router)
 app.include_router(controllers.rajaongkir_router.router)
 
 

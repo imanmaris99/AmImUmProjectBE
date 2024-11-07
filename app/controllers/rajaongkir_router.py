@@ -6,8 +6,6 @@ from app.services.rajaongkir_services import get_province_data, get_city_data, g
 from app.dtos.rajaongkir_dtos import ProvinceDto, CityDto, ShippingCostRequest, ShippingCostDto
 from app.dtos.error_response_dtos import ErrorResponseDto
 
-from app.utils.optional import build
-
 
 router = APIRouter(
     prefix="/rajaongkir",

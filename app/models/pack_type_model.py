@@ -36,6 +36,16 @@ class PackTypeModel(sql_alchemy_lib.Base):
         return self.products.name if self.products else ""
 
     @property
+    def promo(self):
+        if not self.products or self.products.price is None:
+            return Decimal(0)
+        slice_price = Decimal(self.products.price)
+        if self.discount:
+            promo_value = Decimal(self.discount)  # Ubah diskon ke Decimal
+            return round(slice_price * (promo_value / Decimal(100)), 2)
+        return slice_price
+
+    @property
     def discounted_price(self):
         if not self.products or self.products.price is None:
             return Decimal(0)
