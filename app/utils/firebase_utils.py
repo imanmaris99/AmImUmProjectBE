@@ -126,7 +126,7 @@ def send_email(to_email: str, subject: str, body: str, html: bool = False):
         )
 
 
-def send_email_verification(to_email: str, verification_link: str, firstname: str):
+def send_email_verification(to_email: str, verification_code: str, verification_link: str, firstname: str):
     """Mengirim email verifikasi dengan tautan berformat HTML, logo, dan alamat di footer."""
     subject = "Email Verification"
     
@@ -152,6 +152,7 @@ def send_email_verification(to_email: str, verification_link: str, firstname: st
                 margin: auto;
                 box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             }}
+
             .email-header {{
                 background-color: #28a745;
                 color: white;
@@ -159,15 +160,18 @@ def send_email_verification(to_email: str, verification_link: str, firstname: st
                 padding: 15px;
                 border-radius: 8px 8px 0 0;
             }}
+
             .email-body {{
                 padding: 20px;
                 background-color: white;
                 border-radius: 0 0 8px 8px;
             }}
+
             .email-body h2 {{
                 margin-bottom: 10px;
                 color: #28a745;
             }}
+
             .verify-button {{
                 display: inline-block;
                 background-color: #28a745;
@@ -178,6 +182,7 @@ def send_email_verification(to_email: str, verification_link: str, firstname: st
                 font-weight: bold;
                 font-size: 16px;
             }}
+
             .email-footer {{
                 display: flex;
                 margin-top: 20px;
@@ -187,23 +192,64 @@ def send_email_verification(to_email: str, verification_link: str, firstname: st
                 color: #888;
                 align-items: center;
             }}
+
             .email-footer img {{
                 max-width: 80px; /* Membatasi lebar maksimum logo */
                 height: auto;    /* Memastikan tinggi logo otomatis sesuai proporsinya */
                 object-fit: contain; /* Menjaga proporsi logo agar tidak terdistorsi */
                 margin-right: 10px;
             }}
+
             .team-message {{
                 margin-top: 15px;
                 font-size: 14px;
                 color: #555;
                 font-style: italic;
             }}
+
             .footer-text p {{
                 text-align: left;
                 font-size: 12px;
                 flex-grow: 1;
             }}
+
+            .code-container {{
+                display: block; /* Supaya tombol bisa berada di tengah */
+                text-align: center;
+                justify-content: space-between;
+                background-color: #eef6ee;
+                padding: 15px;
+                margin: 20px 0;
+                border-radius: 6px;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            }}
+
+            .code {{
+                font-family: 'Courier New', Courier, monospace;
+                font-size: large;
+                word-break: break-word;
+                margin-right: 10px;
+            }}
+
+            .verify-button {{
+                display: inline-block; /* Menyebabkan lebar tombol sesuai dengan isi */
+                background-color: #6fcf97; /* Warna hijau lebih soft */
+                color: white;
+                padding: 10px 20px; /* Padding lebih lembut */
+                text-decoration: none;
+                border-radius: 5px;
+                font-weight: bold;
+                font-size: 16px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Bayangan lebih lembut */
+                transition: background-color 0.3s ease;
+                text-align: center;
+                margin: 0 auto; /* Agar tombol tetap berada di tengah */
+            }}
+
+            .verify-button:hover {{
+                background-color: #5ebd7d; /* Warna *hover* yang lebih soft */
+            }}
+
         </style>
     </head>
     <body>
@@ -213,10 +259,20 @@ def send_email_verification(to_email: str, verification_link: str, firstname: st
             </div>
             <div class="email-body">
                 <h2>Halo {firstname},</h2>
-                <p>Terima kasih telah mendaftar di AmImUm Herbal! Untuk mengaktifkan akun Anda, silakan verifikasi email Anda dengan mengklik tombol di bawah ini:</p>
+                <p>Terima kasih telah mendaftar di AmImUm Herbal! Untuk mengaktifkan akun Anda, silakan salin kode verifikasi berikut di aplikasi kami:</p>
+
+                <!-- Menampilkan kode verifikasi -->
+                <div class="code-container">
+                    <span class="code">{verification_code}</span>
+                </div>
+                <p>Salin kode di atas untuk melanjutkan verifikasi.</p>
+
+                <p>Setelah kode berhasil disalin, silakan verifikasi email Anda dengan mengklik tombol di bawah ini:</p>
                 <p><a href="{verification_link}" class="verify-button">Verifikasi Email</a></p>
+
                 <p>Jika tombol tidak berfungsi, Anda juga dapat mengklik tautan di bawah ini:</p>
                 <p><a href="{verification_link}">{verification_link}</a></p>
+
                 <p class="team-message">Dikirim oleh, <br> AmImUm Herbal Team</p>
             </div>
             <div class="email-footer">
@@ -263,7 +319,7 @@ def send_verification_email(firebase_user, firstname, verification_code):
 
 
         # Kirim email verifikasi menggunakan tautan yang dihasilkan
-        send_email_verification(email, verification_link, firstname)
+        send_email_verification(email, verification_code, verification_link, firstname)
 
     except Exception as e:
         raise HTTPException(
@@ -276,7 +332,7 @@ def send_verification_email(firebase_user, firstname, verification_code):
         )
 
 
-def send_email_reset_password(to_email: str, reset_link: str):
+def send_email_reset_password(to_email: str, verification_code: str, reset_link: str):
     """Mengirim email reset password dengan tautan dalam format HTML."""
     
     subject = "Reset Password"
@@ -352,6 +408,43 @@ def send_email_reset_password(to_email: str, reset_link: str):
                 font-size: 12px;
                 flex-grow: 1;
             }}
+
+            .code-container {{
+                display: block; /* Supaya tombol bisa berada di tengah */
+                text-align: center;
+                justify-content: space-between;
+                background-color: #eef6ee;
+                padding: 15px;
+                margin: 20px 0;
+                border-radius: 6px;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            }}
+
+            .code {{
+                font-family: 'Courier New', Courier, monospace;
+                font-size: large;
+                word-break: break-word;
+                margin-right: 10px;
+            }}
+
+            .reset-button {{
+                display: inline-block; /* Menyebabkan lebar tombol sesuai dengan isi */
+                background-color: #6fcf97; /* Warna hijau lebih soft */
+                color: white;
+                padding: 10px 20px; /* Padding lebih lembut */
+                text-decoration: none;
+                border-radius: 5px;
+                font-weight: bold;
+                font-size: 16px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Bayangan lebih lembut */
+                transition: background-color 0.3s ease;
+                text-align: center;
+                margin: 0 auto; /* Agar tombol tetap berada di tengah */
+            }}
+
+            .reset-button:hover {{
+                background-color: #5ebd7d; /* Warna *hover* yang lebih soft */
+            }}
         </style>
     </head>
     <body>
@@ -361,8 +454,18 @@ def send_email_reset_password(to_email: str, reset_link: str):
             </div>
             <div class="email-body">
                 <h2>Halo {to_email},</h2>
-                <p>Anda telah meminta untuk mereset kata sandi Anda. Klik tombol di bawah ini untuk mengatur ulang kata sandi Anda:</p>
+                <p>Anda telah meminta untuk mereset kata sandi Anda. 
+                silakan salin kode verifikasi berikut untuk mengatur ulang kata sandi Anda:</p>
+
+                <!-- Menampilkan kode verifikasi -->
+                <div class="code-container">
+                    <span class="code">{verification_code}</span>
+                </div>
+                <p>Salin kode di atas untuk melanjutkan verifikasi.</p>
+
+                <p>Setelah kode berhasil disalin, silakan verifikasi password baru Anda dengan mengklik tombol di bawah ini:</p>
                 <p><a href="{reset_link}" class="reset-button">Reset Password</a></p>
+
                 <p>Jika tombol tidak berfungsi, Anda juga dapat mengklik tautan di bawah ini:</p>
                 <p><a href="{reset_link}">{reset_link}</a></p>
                 <p>Jika Anda tidak meminta pengaturan ulang kata sandi, abaikan email ini.</p>

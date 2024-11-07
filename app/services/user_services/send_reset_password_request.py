@@ -50,7 +50,7 @@ def send_reset_password_request(db: Session, payload: user_dtos.ForgotPasswordDt
         reset_link = f"https://amimumprojectbe-production.up.railway.app/user/password-reset/confirm?email={payload.email}&code={verification_code}"
 
         # Kirim email reset password
-        send_email_reset_password(payload.email, reset_link)
+        send_email_reset_password(payload.email, verification_code, reset_link)
 
         return optional.build(data=user_dtos.ForgotPasswordResponseDto(
             status_code=status.HTTP_200_OK,
