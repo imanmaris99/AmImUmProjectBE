@@ -21,14 +21,25 @@ class CartResponseCreateDto(BaseModel):
     message: str = Field(default="Your wishlist for the product has been saved")
     data: CartInfoCreateDto
 
+class CartInfoDetailDto(BaseModel):
+    id: int
+    product_name: Optional[str] = None
+    variant_info: Optional[Dict[str, Any]]
+    quantity: int
+    is_active: bool
+    created_at: datetime
+
+class CartProductTotalDto(BaseModel):
+    all_item_active_prices: Optional[float] = 0
+    all_promo_active_prices: Optional[float] = 0
+    total_all_active_prices: Optional[float] = 0
+
 class AllCartResponseCreateDto(BaseModel):
     status_code: int = Field(default=200)
     message: str = Field(default="Your all of products wishlist success to access")
     total_records: int = Field(default=3)
-    data: List[CartInfoCreateDto]
-    all_item_active_prices: float
-    all_promo_active_prices: float
-    total_all_active_prices: float
+    data: List[CartInfoDetailDto]
+    total_prices: CartProductTotalDto  # Pastikan tipe ini sesuai dengan data yang dikirim
     
 
 class UpdateByIdCartDto(BaseModel):

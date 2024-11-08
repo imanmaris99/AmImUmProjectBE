@@ -23,7 +23,7 @@ class CartProductModel(Base):
         back_populates="",
     )
 
-    pack_type: Mapped[list["PackTypeModel"]] = relationship(
+    pack_type: Mapped["PackTypeModel"] = relationship(
         "PackTypeModel", 
         back_populates="", 
     )
@@ -85,19 +85,18 @@ class CartProductModel(Base):
         # Jika ada promo, gunakan harga setelah diskon, jika tidak, harga tanpa diskon
         return self.total_price_with_discount if self.promo else self.total_price_no_discount
         
+    # Mengambil info varian berdasarkan `variant_id` yang dipilih
     @property
     def variant_info(self) -> Optional[Dict[str, Any]]:
-        return {
-            pack_type_dtos.VariantProductDto(
-                id=variant.id,
-                product=variant.product,
-                name=variant.name,
-                img=variant.img,
-                variant=variant.variant,
-                expiration=variant.expiration,
-                stock=variant.stock,
-                discount=variant.discount,
-                discounted_price=float(variant.discounted_price),
-                updated_at=variant.updated_at
-            ).model_dump() for variant in self.pack_type
-        }
+        if not self.pack_type:
+            return None
+
+        # Mengembalikan satu variant berdasarkan relasi `variant_id`
+        variant = self.pack_type
+        return pack_type_dtos.VariantProductCartDto(
+            id=variant.id,
+            variant=variant.variant,
+            name=variant.name,
+            img=variant.img,
+            discount=variant.discount,
+        ).model_dump()

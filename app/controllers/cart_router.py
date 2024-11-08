@@ -43,3 +43,20 @@ def post_my_item_of_cart(
         raise result.error
 
     return result.unwrap()
+
+
+@router.get(
+    "/my-cart",
+    response_model=cart_dtos.AllCartResponseCreateDto,
+    status_code=status.HTTP_200_OK,
+)
+async def get_my_cart(
+    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],
+    db: Session = Depends(get_db)
+):
+    result = cart_services.my_cart(db, jwt_token.id)
+
+    if result.error:
+        raise result.error
+    
+    return result.unwrap()

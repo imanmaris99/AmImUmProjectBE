@@ -82,3 +82,11 @@ class DeletePackTypeResponseDto(BaseModel):
     status_code: int = Field(default=200)
     message: str = Field(default="Your pack and variant type product has been deleted")
     data: InfoDeletePackTypeDto
+
+
+class VariantProductCartDto(BaseModel):
+    id: int
+    variant: Optional[str]
+    name: str
+    img: Optional[str] = None
+    discount: Optional[float] = None
