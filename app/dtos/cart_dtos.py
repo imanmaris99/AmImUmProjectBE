@@ -51,6 +51,17 @@ class UpdateQuantityItemDto(BaseModel):
 class UpdateActivateItemDto(BaseModel):
     is_active: bool 
 
+class UpdateInfoCartItemDto(BaseModel):
+    id: int
+    product_name: Optional[str] = None
+    variant_product: Optional[str] = None
+    quantity: int
+    is_active: bool
+
+class CartInfoUpdateResponseDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="Updated info about your Cart successed")
+    data: UpdateInfoCartItemDto
 
 class DeleteByIdCartDto(BaseModel):
     cart_id: int

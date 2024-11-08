@@ -10,7 +10,7 @@ from app.dtos import cart_dtos
 
 from app.dtos.error_response_dtos import ErrorResponseDto
 
-from app.services.cart_services import get_cart_total
+from app.services.cart_services.support_function import get_cart_total, handle_db_error
 from app.services.cart_services.total_records import get_total_records
 
 from app.utils.result import build, Result
@@ -82,15 +82,7 @@ def my_cart(
         ))
     
     except SQLAlchemyError as e:
-        db.rollback()
-        return build(error=HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=ErrorResponseDto(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                error="Internal Server Error",
-                message=f"Database error: {str(e)}"
-            ).dict()
-        ))
+        return handle_db_error(db, e)
     
     except Exception as e:
         db.rollback()

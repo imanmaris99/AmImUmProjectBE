@@ -1,4 +1,3 @@
-# services/article_service.py
 
 from typing import Type
 

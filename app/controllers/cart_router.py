@@ -60,3 +60,72 @@ async def get_my_cart(
         raise result.error
     
     return result.unwrap()
+
+
+@router.put(
+        "/edit-quantity/{cart_id}", 
+        response_model=cart_dtos.CartInfoUpdateResponseDto,
+        status_code=status.HTTP_200_OK
+    )
+def update_my_quantity_item(
+        cart: cart_dtos.UpdateByIdCartDto,
+        quantity_update: cart_dtos.UpdateQuantityItemDto,
+        jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],
+        db: Session = Depends(get_db)
+):
+    result = cart_services.update_quantity_item(
+        db, 
+        cart=cart, 
+        quantity_update=quantity_update, 
+        user_id=jwt_token.id
+    )
+
+    if result.error:
+        raise result.error
+
+    return result.data
+
+@router.put(
+        "/edit-activate/{cart_id}", 
+        response_model=cart_dtos.CartInfoUpdateResponseDto,
+        status_code=status.HTTP_200_OK
+    )
+def update_my_activate_item(
+        cart: cart_dtos.UpdateByIdCartDto,
+        activate_update: cart_dtos.UpdateActivateItemDto,
+        jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],
+        db: Session = Depends(get_db)
+):
+    result = cart_services.update_activate_item(
+        db, 
+        cart=cart, 
+        activate_update=activate_update, 
+        user_id=jwt_token.id
+    )
+
+    if result.error:
+        raise result.error
+
+    return result.data
+
+
+@router.delete(
+        "/delete/{cart_id}",
+        response_model=cart_dtos.DeleteCartResponseDto,
+        status_code=status.HTTP_200_OK
+    )
+def delete_my_item_cart(
+        cart: cart_dtos.DeleteByIdCartDto,
+        jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],
+        db: Session = Depends(get_db)
+):
+    result = cart_services.delete_item(
+        db, 
+        cart=cart, 
+        user_id=jwt_token.id
+    )
+
+    if result.error:
+        raise result.error
+
+    return result.unwrap()
