@@ -46,17 +46,3 @@ def get_user_by_email(db: Session, user_email: str) -> optional.Optional[Type[Us
             ).dict()
         ))
 
-# def get_user_by_email(db: Session, user_email: str) -> optional.Optional[Type[UserModel], HTTPException]:
-#     def user_filter(user_model: Type[UserModel]):
-#         return user_model.email.like(f"{user_email}")
-
-#     user_opt = get_user_by_property(db=db, filter_property=user_filter)
-
-#     if user_opt.data:
-#         return user_opt
-
-#     return optional.build(error=HTTPException(
-#         status_code=status.HTTP_404_NOT_FOUND,
-#         error="Not Found",
-#         message="email is not register"
-#     ))

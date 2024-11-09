@@ -10,31 +10,34 @@ from app.models.rating_model import RatingModel
 from app.dtos.rating_dtos import RatingCreateOfIdProductDto, RatingCreateDto, RatingInfoCreateDto, RatingResponseCreateDto
 from app.dtos.error_response_dtos import ErrorResponseDto
 
+from app.services.rating_services.support_function import handle_db_error
+
 from app.utils.result import build, Result
 
 def create_rating(
         db: Session, 
-        product_id: uuid.UUID,
+        # product_id: uuid.UUID,
+        rate: RatingCreateOfIdProductDto,
         create_rate: RatingCreateDto,
         user_id: str
 ) -> Result[RatingModel, Exception]:
     try:
         # Cek apakah product_id ada di tabel products
-        product = db.query(ProductModel).filter(ProductModel.id == str(product_id)).first()
+        product = db.query(ProductModel).filter(ProductModel.id == str(rate.product_id)).first()
         if not product:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=ErrorResponseDto(
                     status_code=status.HTTP_404_NOT_FOUND,
                     error="Not Found",
-                    message="Information about product with ID {product_id} not found."
+                    message=f"Information about product with ID {str(rate.product_id)} not found."
                 ).dict()
             )
 
         rate_instance = RatingModel(
             **create_rate.model_dump()
         )
-        rate_instance.product_id = str(product_id)  # Konversi UUID ke string
+        rate_instance.product_id = str(rate.product_id)  # Konversi UUID ke string
         rate_instance.user_id = user_id
         db.add(rate_instance)
         db.commit()
@@ -55,16 +58,8 @@ def create_rating(
             data=create_rate_response
         ))
 
-    except SQLAlchemyError:
-        db.rollback()
-        return build(error= HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=ErrorResponseDto(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                error="Internal Server Error",
-                message=f"An error occured : {str(e)}"
-            ).dict()
-        ))
+    except SQLAlchemyError as e:
+        return handle_db_error(db, e)
 
     except HTTPException as http_ex:
         db.rollback()  # Rollback jika terjadi error dari Firebase

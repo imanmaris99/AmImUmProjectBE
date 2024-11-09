@@ -27,11 +27,6 @@ def update_stock(
                     message=f"Info about variant product with ID {type_id_update.type_id} not found"
                 ).dict()
             ))
-            # return build(error=HTTPException(
-            #     status_code=status.HTTP_404_NOT_FOUND,
-            #     error="Not Found",
-            #     message="Type/ Variant not found"
-            # ))
         
         # Update atribut stock dan discount jika ada
         for attr, value in type_update.model_dump().items():
@@ -80,20 +75,4 @@ def update_stock(
                 message=f"An error occurred: {str(e)}"            
             ).dict()
         ))
-        
-    # except SQLAlchemyError as e:
-    #     print(e)
-    #     db.rollback()
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_409_CONFLICT,
-    #         error="Conflict",
-    #         message=f"Database conflict: {find_errr_from_args("articles", str(e.args))}"
-    #     ))
-    
-    # except Exception as e:
-    #     print(e)
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         error="Internal Server Error",
-    #         message=f"An error occurred: {str(e)}"
-    #     ))
+

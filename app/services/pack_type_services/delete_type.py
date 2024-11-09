@@ -7,6 +7,8 @@ from app.models.pack_type_model import PackTypeModel
 from app.dtos.pack_type_dtos import DeletePackTypeDto, InfoDeletePackTypeDto, DeletePackTypeResponseDto
 from app.dtos.error_response_dtos import ErrorResponseDto
 
+from app.services.pack_type_services.support_function import handle_db_error
+
 from app.utils.result import build, Result
 
 
@@ -26,12 +28,7 @@ def delete_type(
                     message=f"Info about variant product with ID {variant_data.type_id} not found"
                 ).dict()
             ))
-            # return build(error=HTTPException(
-            #     status_code=status.HTTP_404_NOT_FOUND,
-            #     error="Not Found",
-            #     message="Type or variant not found"
-            # ))
-        
+
         # Simpan informasi pengguna sebelum dihapus
         variant_delete_info = InfoDeletePackTypeDto(
             type_id= type.id,
@@ -49,15 +46,7 @@ def delete_type(
         ))
     
     except SQLAlchemyError as e:
-        db.rollback()
-        return build(error= HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=ErrorResponseDto(
-                status_code=status.HTTP_409_CONFLICT,
-                error="Conflict",
-                message=f"Database conflict: {str(e)}"
-            ).dict()
-        ))
+        return handle_db_error(db, e)
     
     except HTTPException as http_ex:
         db.rollback()  
@@ -72,18 +61,3 @@ def delete_type(
                 message=f"An error occurred: {str(e)}"            
             ).dict()
         ))
-    
-    # except SQLAlchemyError as e:
-    #     db.rollback()
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_409_CONFLICT,
-    #         error="Conflict",
-    #         message=f"Database conflict: {str(e)}"
-    #     ))
-    
-    # except Exception as e:
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         error="Internal Server Error",
-    #         message=f"An error occurred: {str(e)}"
-    #     ))

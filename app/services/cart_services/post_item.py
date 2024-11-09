@@ -7,8 +7,11 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.models.product_model import ProductModel
 from app.models.pack_type_model import PackTypeModel
 from app.models.cart_product_model import CartProductModel
+
 from app.dtos import cart_dtos
 from app.dtos.error_response_dtos import ErrorResponseDto
+
+from app.services.cart_services.support_function import handle_db_error
 
 from app.utils.result import build, Result
 
@@ -85,15 +88,7 @@ def post_item(
         ))
 
     except SQLAlchemyError as e:
-        db.rollback()
-        return build(error= HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=ErrorResponseDto(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"
-            ).dict()
-        ))
+        return handle_db_error(db, e)
 
     except HTTPException as http_ex:
         db.rollback()  # Rollback jika terjadi HTTPException

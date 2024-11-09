@@ -31,13 +31,6 @@ def get_user_by_property(
                 message=f"User not found"
             ).dict()
         ))
-        # return optional.build(error=HTTPException(
-        #     status_code=status.HTTP_404_NOT_FOUND,
-        #     detail={
-        #         "status_code": status.HTTP_404_NOT_FOUND,
-        #         "message": "User not found."
-        #     }
-        # ))
 
     except SQLAlchemyError as e:
         # Menangani error database
@@ -50,19 +43,3 @@ def get_user_by_property(
             ).dict()
         ))
 
-
-
-
-# def get_user_by_property(
-#     db: Session, filter_property: Callable[[Type[UserModel]], BinaryExpression[bool]]) \
-#     -> optional.Optional[Type[UserModel], HTTPException]:
-#     user_model: Type[UserModel] = db.query(UserModel).filter(filter_property(UserModel)).first()
-
-#     if user_model:
-#         return optional.build(data=user_model)
-#     else:
-#         return optional.build(error=HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             error="Not Found",
-#             message="user not found"
-#         ))

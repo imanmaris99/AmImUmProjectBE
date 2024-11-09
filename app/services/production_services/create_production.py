@@ -8,6 +8,8 @@ from app.models.production_model import ProductionModel
 from app.dtos import production_dtos
 from app.dtos.error_response_dtos import ErrorResponseDto
 
+from app.services.production_services.support_function import handle_db_error
+
 from app.utils.result import build, Result
 
     
@@ -40,16 +42,8 @@ def create_production(
             data=production_data
         ))
     
-    except SQLAlchemyError:
-        db.rollback()
-        return build(error= HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=ErrorResponseDto(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                error="Internal Server Error",
-                message=f"Database Error: Failed to create production. {str(e)}"
-            ).dict()
-        ))
+    except SQLAlchemyError as e:
+        return handle_db_error(db, e)
     
     except HTTPException as http_ex:
         db.rollback()  # Rollback jika terjadi error dari Firebase

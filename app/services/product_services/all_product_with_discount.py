@@ -11,6 +11,8 @@ from app.models.pack_type_model import PackTypeModel  # Pastikan diimpor
 from app.dtos.product_dtos import AllProductInfoDTO
 from app.dtos.error_response_dtos import ErrorResponseDto
 
+from app.services.product_services.support_function import handle_db_error
+
 from app.utils.result import build, Result
 
 def all_product_with_discount(
@@ -63,15 +65,7 @@ def all_product_with_discount(
         return build(data=all_products_dto)
 
     except SQLAlchemyError as e:
-        db.rollback()
-        return build(error= HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=ErrorResponseDto(
-                status_code=status.HTTP_409_CONFLICT,
-                error="Conflict",
-                message=f"Database conflict: {str(e)}"
-            ).dict()
-        ))
+        return handle_db_error(db, e)
     
     except HTTPException as http_ex:
         db.rollback()  # Rollback jika terjadi error dari Firebase

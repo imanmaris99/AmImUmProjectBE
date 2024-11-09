@@ -1,10 +1,11 @@
+import uuid
 from pydantic import BaseModel, Field
 from typing import Any, Dict, Optional, List
 from datetime import datetime
 
 
 class WishlistCreateOfIdProductDto(BaseModel):
-    product_id: str
+    product_id: uuid.UUID
 
 class WishlistInfoCreateDto(BaseModel):
     id: int

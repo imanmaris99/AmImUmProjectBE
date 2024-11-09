@@ -86,11 +86,7 @@ def login_with_google(db: Session, id_token: str):
                     message="Data value is too long for one of the fields."
                 ).dict()
             )
-            # raise HTTPException(
-            #     status_code=status.HTTP_400_BAD_REQUEST,
-            #     error="Bad Request",
-            #     message="Data value is too long for one of the fields."
-            # )
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorResponseDto(
@@ -99,11 +95,6 @@ def login_with_google(db: Session, id_token: str):
                 message="Database error occurred: " + str(e)            
             ).dict()
         )
-        # raise HTTPException(
-        #     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        #     error="Internal Server Error",
-        #     message="Database error occurred: " + str(e)
-        # )
     
     except FirebaseError as e:
         return optional.build(error=HTTPException(
@@ -114,12 +105,7 @@ def login_with_google(db: Session, id_token: str):
                 message="Invalid token or login failed :" + str(e)
             ).dict()
         ))
-        # return optional.build(error=HTTPException(
-        #     status_code=status.HTTP_401_UNAUTHORIZED,
-        #     error="Unauthorized",
-        #     message="Invalid token or login failed :" + str(e)
-        # ))
-    
+
     except Exception as e:
         return optional.build(error=HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -129,9 +115,3 @@ def login_with_google(db: Session, id_token: str):
                 message="An unexpected error occurred :" + str(e)
             ).dict()
         ))
-    # except Exception as e:
-    #     return optional.build(error=HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         error="Internal Server Error",
-    #         message="An unexpected error occurred :" + str(e)
-    #     ))

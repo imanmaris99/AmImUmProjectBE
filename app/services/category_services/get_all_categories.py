@@ -24,11 +24,6 @@ def get_all_categories(
                     message="Categories not found"
                 ).dict()
             )
-            # raise HTTPException(
-            #     status_code=status.HTTP_404_NOT_FOUND,
-            #     error="Not Found",
-            #     message="No categories found"
-            # )
 
         # Konversi kategori ke DTO
         response_data = [
@@ -56,13 +51,4 @@ def get_all_categories(
                 message=f"An error occurred: {str(e)}"            
             ).dict()
         ))
-    
-    # except HTTPException as e:
-    #     raise e
 
-    # except Exception as e:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         error="Internal Server Error",
-    #         message=f"An error occurred: {str(e)}"
-    #     )

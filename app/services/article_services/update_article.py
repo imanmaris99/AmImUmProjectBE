@@ -28,12 +28,7 @@ def update_article(
                     message=f"Articles with ID {article_id_update.article_id} not found"
                 ).dict()
             ))
-            # return build(error=HTTPException(
-            #     status_code=status.HTTP_404_NOT_FOUND,
-            #     error="Not Found",
-            #     message="Artikel tidak ditemukan"
-            # ))
-        
+
         # Update atribut artikel
         for attr, value in article_update.model_dump().items():
             setattr(article, attr, value)
@@ -71,18 +66,3 @@ def update_article(
                 message=f"An error occurred: {str(e)}"            
             ).dict()
         ))
-    # except SQLAlchemyError as e:
-    #     db.rollback()  # Rollback untuk error SQLAlchemy
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_409_CONFLICT,
-    #         error="Conflict",
-    #         message=f"Database conflict: {find_errr_from_args('articles', str(e.args))}"
-    #     ))
-    
-    # except Exception as e:
-    #     db.rollback()  # Rollback untuk error tak terduga
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         error="Internal Server Error",
-    #         message=f"An error occurred: {str(e)}"
-    #     ))

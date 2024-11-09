@@ -26,11 +26,6 @@ async def update_my_photo(
                     message=f"User with ID {user_id} not found."
                 ).dict()
             )
-            # raise HTTPException(
-            #     status_code=status.HTTP_404_NOT_FOUND,
-            #     error="Not Found", 
-            #     message="User not found"
-            # )
 
         # Langkah 2: Validasi file jika ada
         if file:
@@ -59,12 +54,7 @@ async def update_my_photo(
                         message="Failed to upload image."                    
                     ).dict()
                 )
-                # raise HTTPException(
-                #     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
-                #     error="Internal Server Error",
-                #     message="Failed to upload image."
-                # )
-            
+
             # Update photo_url pada user
             user_model.photo_url = public_url           
 
@@ -108,20 +98,6 @@ async def update_my_photo(
                 message=f"An error occurred: {str(e)}"
             ).dict()
         ))
-    
-    # except SQLAlchemyError as e:
-    #     db.rollback()
-    #     raise HTTPException(
-    #         status_code=status.HTTP_409_CONFLICT,
-    #         error="Conflict",
-    #         message=f"Database conflict: {str(e)}"
-    #     )
-
-    # except Exception as e:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         error="Internal Server Error",
-    #         message=f"An error occurred: {str(e)}"
-    #     )
+   
 
 

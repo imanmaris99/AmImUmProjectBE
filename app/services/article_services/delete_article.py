@@ -36,12 +36,7 @@ def delete_article(
                     message=f"Article with ID {article_data.article_id} not found"
                 ).dict()
             ))
-            # return build(error=HTTPException(
-            #     status_code=status.HTTP_404_NOT_FOUND,
-            #     error="Not Found",
-            #     message=f"Article with ID {article_data.article_id} not found"
-            # ))
-        
+
         # Simpan informasi pengguna sebelum dihapus
         article_delete_info = InfoDeleteArticleDto(
             article_id= article.id,
@@ -81,20 +76,3 @@ def delete_article(
                 message=f"An error occurred: {str(e)}"            
             ).dict()
         ))
-    
-    # except SQLAlchemyError as e:
-    #     print(e)
-    #     db.rollback()
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_409_CONFLICT,
-    #         error="Conflict",
-    #         message=f"Database conflict: {find_errr_from_args("articles", str(e.args))}"
-    #     ))
-    
-    # except Exception as e:
-    #     print(e)
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         error="Internal Server Error",
-    #         message=f"An error occurred: {str(e)}"
-    #     ))

@@ -29,11 +29,6 @@ def get_user_profile(
                     message=f"User with this ID {user_id} not found"
                 ).dict()
             ))
-            # return build(error=HTTPException(
-            #     status_code=status.HTTP_404_NOT_FOUND, 
-            #     error="Not Found",
-            #     message="User not found"
-            # ))
 
         # Buat instance dari UserCreateResponseDto
         user_response = user_dtos.UserCreateResponseDto(
@@ -82,10 +77,4 @@ def get_user_profile(
             ).dict()
         ))
 
-    # except Exception as e:
-    #     return HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         error="Internal Server Error",
-    #         message=f"An error occurred: {str(e)}"
-    #     )
 

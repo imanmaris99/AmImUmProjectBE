@@ -51,14 +51,6 @@ def create_article(
                 message=f"Database Error: Failed to create article. {str(e)}"
             ).dict()
         ))
-
-    # except SQLAlchemyError as e:
-    #     db.rollback()  # Rollback untuk semua error SQLAlchemy umum lainnya
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         error="Internal Server Error",
-    #         message="Database Error: Failed to create article."
-    #     ))
     
     except HTTPException as http_ex:
         db.rollback()  # Rollback jika terjadi error dari Firebase
@@ -74,11 +66,3 @@ def create_article(
                 message=f"Unexpected error: {str(e)}"            
             ).dict()
         ))
-    
-    # except Exception as e:
-    #     db.rollback()  # Rollback untuk error tak terduga
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         error="Internal Server Error",
-    #         message=f"Unexpected error: {str(e)}"
-    #     ))

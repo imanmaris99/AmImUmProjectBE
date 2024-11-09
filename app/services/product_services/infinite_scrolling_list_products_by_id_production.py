@@ -10,6 +10,8 @@ from app.models.product_model import ProductModel
 from app.dtos import product_dtos
 from app.dtos.error_response_dtos import ErrorResponseDto
 
+from app.services.product_services.support_function import handle_db_error
+
 from app.utils.result import build, Result
 
 
@@ -67,17 +69,9 @@ def infinite_scrolling_list_products_by_id_production(
         )
 
         return build(data=response_data)
-
+    
     except SQLAlchemyError as e:
-        db.rollback()
-        return build(error= HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=ErrorResponseDto(
-                status_code=status.HTTP_409_CONFLICT,
-                error="Conflict",
-                message=f"Database conflict: {str(e)}"
-            ).dict()
-        ))
+        return handle_db_error(db, e)
     
     except HTTPException as http_ex:
         db.rollback()  

@@ -1,10 +1,11 @@
+import uuid
 from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 
 
 class RatingCreateOfIdProductDto(BaseModel):
-    product_id: str
+    product_id: uuid.UUID
 
 class RatingCreateDto(BaseModel):
     rate: Optional[int] = None

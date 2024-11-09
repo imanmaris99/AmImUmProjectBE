@@ -42,12 +42,6 @@ def user_login(db: Session, user: user_dtos.UserLoginPayloadDto) -> optional.Opt
                     message="User with the provided email does not exist."
                 ).dict()
             ))
-            
-            # return optional.build(error=HTTPException(
-            #     status_code=status.HTTP_404_NOT_FOUND,
-            #     error="Not Found",
-            #     message="User with the provided email does not exist."
-            # ))
 
         user_model = user_optional.data  # Mengambil data user dari Optional
         # Log untuk debugging role dan email
@@ -63,11 +57,6 @@ def user_login(db: Session, user: user_dtos.UserLoginPayloadDto) -> optional.Opt
                     message="Your account is not active. Please contact support."
                 ).dict()
             ))
-            # return optional.build(error=HTTPException(
-            #     status_code=status.HTTP_403_FORBIDDEN,
-            #     error="Forbidden",
-            #     message="Your account is not active. Please contact support."
-            # ))
 
         # Verifikasi password (Firebase sudah memverifikasi password di langkah sebelumnya)
         if not password_lib.verify_password(plain_password=user.password, hashed_password=user_model.hash_password):
@@ -79,15 +68,10 @@ def user_login(db: Session, user: user_dtos.UserLoginPayloadDto) -> optional.Opt
                     message="Password does not match."
                 ).dict()
             ))
-            # return optional.build(error=HTTPException(
-            #     status_code=status.HTTP_401_UNAUTHORIZED,
-            #     error="Un Authorization",
-            #     message="Password does not match."
-            # ))
 
         # # Proses selanjutnya, misalnya generate JWT token
         # return optional.build(data=user_model)
-                # Generate JWT token setelah autentikasi berhasil
+        # Generate JWT token setelah autentikasi berhasil
         token_data = {
             "id": user_model.id,
             "role": user_model.role
@@ -129,11 +113,6 @@ def user_login(db: Session, user: user_dtos.UserLoginPayloadDto) -> optional.Opt
                 message=f"An unexpected error occurred: {str(e)}"
             ).dict()
         ))
-        # return optional.build(error=HTTPException(
-        #     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        #     error="Internal Server Error",
-        #     message=f"An unexpected error occurred: {str(e)}"
-        # ))
 
 
 

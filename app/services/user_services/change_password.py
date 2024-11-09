@@ -29,11 +29,6 @@ async def change_password(
                     message=error_message
                 ).dict()
             ))
-            # return optional.build(error=HTTPException(
-            #     status_code=status.HTTP_400_BAD_REQUEST,
-            #     error="Bad Request",
-            #     message=error_message
-            # ))
 
         # Langkah 1: Cari user berdasarkan ID
         user_model = db.query(UserModel).filter(UserModel.id == user_id).first()
@@ -46,11 +41,6 @@ async def change_password(
                     message="User with the provided email does not exist in Database."
                 ).dict()
             )
-            # raise HTTPException(
-            #     status_code=status.HTTP_404_NOT_FOUND, 
-            #     error="Not Found",
-            #     message="User not found"
-            # )
 
         # Langkah 2: Verifikasi password lama
         if not password_lib.verify_password(payload.old_password, user_model.hash_password):
@@ -62,11 +52,6 @@ async def change_password(
                     message="Old password is incorrect"
                 ).dict()
             )
-            # raise HTTPException(
-            #     status_code=status.HTTP_401_UNAUTHORIZED, 
-            #     error="UnAuthorized",
-            #     message="Old password is incorrect"
-            # )
 
         # Langkah 3: Update password baru
         user_model.hash_password = password_lib.get_password_hash(payload.new_password)
@@ -102,18 +87,3 @@ async def change_password(
                 message=f"An unexpected error occurred: {str(e)}"
             ).dict()
         ))
-    
-    # except SQLAlchemyError as e:
-    #     db.rollback()
-    #     return optional.build(error=HTTPException(
-    #         status_code=status.HTTP_409_CONFLICT,
-    #         error="Conflict",
-    #         message=f"Database conflict: {str(e)}"
-    #     ))
-
-    # except Exception as e:
-    #     return optional.build(error=HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         error="Internal Server Error",
-    #         message=f"An error occurred: {str(e)}"
-    #     ))

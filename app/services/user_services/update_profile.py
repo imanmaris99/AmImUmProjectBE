@@ -47,14 +47,6 @@ def user_edit(
                 message=f"Database conflict: {str(e)}"
             ).dict()
         ))
-    # except SQLAlchemyError as e:
-    #     db.rollback()
-    #     return optional.build(error=HTTPException(
-    #         status_code=status.HTTP_409_CONFLICT, 
-    #         error="Conflict",
-    #         message="Database conflict: " + str(e)
-    #         )
-    #     )
 
     except HTTPException as e:
         # Menangani error yang dilempar oleh Firebase atau proses lainnya

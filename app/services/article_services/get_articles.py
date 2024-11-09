@@ -33,11 +33,7 @@ def get_articles(
                     message=f"Articles not found"
                 ).dict()
             ))
-            # return build(error=HTTPException(
-            #     status_code=status.HTTP_404_NOT_FOUND,
-            #     error="Not Found",
-            #     message="No Article found"
-            # ))
+
         return build(data=article)
     
     except SQLAlchemyError:
@@ -60,19 +56,3 @@ def get_articles(
                 message=f"An error occurred: {str(e)}"            
             ).dict()
         ))
-    # except SQLAlchemyError as e:
-    #     print(e)
-    #     db.rollback()
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_409_CONFLICT,
-    #         error="Conflict",
-    #         message=f"Database conflict: {find_errr_from_args("article", str(e.args))}"
-    #     ))
-    
-    # except Exception as e:
-    #     print(e)
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         error="Internal Server Error",
-    #         message=f"An error occurred: {str(e)}"
-    #     ))

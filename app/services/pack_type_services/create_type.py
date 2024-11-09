@@ -7,6 +7,8 @@ from app.models.pack_type_model import PackTypeModel
 from app.dtos.pack_type_dtos import PackTypeCreateDto, PackTypeInfoDto, PackTypeResponseCreateDto
 from app.dtos.error_response_dtos import ErrorResponseDto
 
+from app.services.pack_type_services.support_function import handle_db_error
+
 from app.utils.result import build, Result
 
 def create_type(
@@ -46,15 +48,7 @@ def create_type(
         ))
     
     except SQLAlchemyError as e:
-        db.rollback()
-        return build(error= HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=ErrorResponseDto(
-                status_code=status.HTTP_409_CONFLICT,
-                error="Conflict",
-                message=f"Database conflict: {str(e)}"
-            ).dict()
-        ))
+        return handle_db_error(db, e)
     
     except HTTPException as http_ex:
         db.rollback()  
@@ -71,23 +65,3 @@ def create_type(
             ).dict()
         ))
 
-    # except SQLAlchemyError as e:
-    #     db.rollback()  # Rollback untuk semua error SQLAlchemy umum lainnya
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         error="Internal Server Error",
-    #         message=f"An error occurred : {str(e)}"
-    #     ))
-    
-    # except HTTPException as http_ex:
-    #     db.rollback()  # Rollback jika terjadi error dari Firebase
-    #     # Langsung kembalikan error dari Firebase tanpa membuat response baru
-    #     return build(error=http_ex)
-
-    # except Exception as e:
-    #     db.rollback()  # Rollback untuk error tak terduga
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         error="Internal Server Error",
-    #         message=f"Unexpected error: {str(e)}"
-    #     ))

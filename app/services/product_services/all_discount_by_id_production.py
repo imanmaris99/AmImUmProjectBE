@@ -11,6 +11,8 @@ from app.models.pack_type_model import PackTypeModel
 from app.dtos.product_dtos import AllProductInfoDTO
 from app.dtos.error_response_dtos import ErrorResponseDto
 
+from app.services.product_services.support_function import handle_db_error
+
 from app.utils.result import build, Result
 
 def all_discount_by_id_production(
@@ -53,11 +55,6 @@ def all_discount_by_id_production(
                     message=f"info about discount product from Production with ID {production_id} not found"
                 ).dict()
             ))
-            # return build(error=HTTPException(
-            #     status_code=status.HTTP_404_NOT_FOUND,
-            #     error="Not Found",
-            #     message=f"info about discount product of this brand Production with ID {production_id} not found"
-            # ))
 
         # Konversi produk menjadi DTO
         all_products_discount_by_production_dto = [
@@ -74,15 +71,7 @@ def all_discount_by_id_production(
         return build(data=all_products_discount_by_production_dto)
 
     except SQLAlchemyError as e:
-        db.rollback()
-        return build(error= HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=ErrorResponseDto(
-                status_code=status.HTTP_409_CONFLICT,
-                error="Conflict",
-                message=f"Database conflict: {str(e)}"
-            ).dict()
-        ))
+        return handle_db_error(db, e)
     
     except HTTPException as http_ex:
         db.rollback()  # Rollback jika terjadi error dari Firebase
@@ -97,20 +86,3 @@ def all_discount_by_id_production(
                 message=f"An error occurred: {str(e)}"            
             ).dict()
         ))
-    
-    # except SQLAlchemyError as e:
-    #     print(e)
-    #     db.rollback()
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_409_CONFLICT,
-    #         error="Database conflict",
-    #         message=f"Database conflict: {str(e)}"
-    #     ))
-    
-    # except Exception as e:
-    #     print(e)
-    #     return build(error=HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         error="Internal Server Error",
-    #         message=f"An error occurred: {str(e)}"
-    #     ))

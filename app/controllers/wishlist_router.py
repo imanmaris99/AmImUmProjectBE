@@ -88,7 +88,8 @@ router = APIRouter(
     summary="Add Product to Wishlist"
 )
 def post_my_wishlist(
-    product_id: UUID,
+    # product_id: UUID,
+    wish:wishlist_dtos.WishlistCreateOfIdProductDto,
     jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],
     db: Session = Depends(get_db),
 ):
@@ -111,7 +112,7 @@ def post_my_wishlist(
     """
     result = wishlist_services.post_wishlist(
         db,
-        product_id,
+        wish,
         jwt_token.id
     )
 

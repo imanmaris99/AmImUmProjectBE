@@ -6,3 +6,5 @@ from .get_infinite_scrolling import get_infinite_scrolling
 from .get_all_promo import get_all_promo
 from .detail_production import detail_production
 from .delete_production import delete_production
+
+from .support_function import handle_db_error

@@ -10,6 +10,8 @@ from app.models.wishlist_model import WishlistModel
 from app.dtos import wishlist_dtos
 from app.dtos.error_response_dtos import ErrorResponseDto
 
+from app.services.cart_services.support_function import handle_db_error
+
 from app.utils.result import build, Result
 
 def my_wishlist(
@@ -90,20 +92,12 @@ def my_wishlist(
         ))
 
     except SQLAlchemyError as e:
-        db.rollback()
-        return build(error= HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=ErrorResponseDto(
-                status_code=status.HTTP_409_CONFLICT,
-                error="Conflict",
-                message=f"Database conflict: {str(e)}"
-            ).dict()
-        ))
+        return handle_db_error(db, e)
     
     except HTTPException as http_ex:
         return build(error=http_ex)
     
-        # Error tipe data tidak valid (misal, `skip` atau `limit` bukan integer)
+    # Error tipe data tidak valid (misal, `skip` atau `limit` bukan integer)
     except (ValueError, TypeError) as te:
         return build(error=HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

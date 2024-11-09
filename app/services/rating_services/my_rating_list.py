@@ -10,6 +10,8 @@ from app.models.rating_model import RatingModel
 from app.dtos.rating_dtos import MyRatingListDto
 from app.dtos.error_response_dtos import ErrorResponseDto
 
+from app.services.rating_services.support_function import handle_db_error
+
 from app.utils.result import build, Result
 
 def my_rating_list(
@@ -76,15 +78,7 @@ def my_rating_list(
         ))
 
     except SQLAlchemyError as e:
-        db.rollback()
-        return build(error= HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=ErrorResponseDto(
-                status_code=status.HTTP_409_CONFLICT,
-                error="Conflict",
-                message=f"Database conflict: {str(e)}"
-            ).dict()
-        ))
+        return handle_db_error(db, e)
     
     except HTTPException as http_ex:
         return build(error=http_ex)

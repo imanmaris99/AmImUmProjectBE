@@ -8,6 +8,8 @@ from app.models.product_model import ProductModel
 from app.dtos.product_dtos import DeleteByIdProductDto, InfoDeleteProductDto, DeleteProductResponseDto
 from app.dtos.error_response_dtos import ErrorResponseDto
 
+from app.services.product_services.support_function import handle_db_error
+
 from app.utils.result import build, Result
 
 
@@ -50,19 +52,10 @@ def delete_product(
         ))
     
     except SQLAlchemyError as e:
-        db.rollback()
-        return build(error= HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=ErrorResponseDto(
-                status_code=status.HTTP_409_CONFLICT,
-                error="Conflict",
-                message=f"Database conflict: {str(e)}"
-            ).dict()
-        ))
+        return handle_db_error(db, e)
     
     except HTTPException as http_ex:
         db.rollback()  # Rollback jika terjadi error dari Firebase
-        # Langsung kembalikan error dari Firebase tanpa membuat response baru
         return build(error=http_ex)
     
     except Exception as e:

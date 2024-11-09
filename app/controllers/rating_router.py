@@ -91,7 +91,7 @@ router = APIRouter(
     summary="Create a rating for a specific product"
 )
 def give_a_rate_of_product(
-    product_id: UUID,
+    rate:rating_dtos.RatingCreateOfIdProductDto,
     create_rate: rating_dtos.RatingCreateDto,
     jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],
     db: Session = Depends(get_db),
@@ -114,7 +114,7 @@ def give_a_rate_of_product(
     """
     result = rating_services.create_rating(
         db,
-        product_id,
+        rate,
         create_rate,
         jwt_token.id
     )

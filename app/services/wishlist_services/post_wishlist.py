@@ -13,26 +13,27 @@ from app.dtos.error_response_dtos import ErrorResponseDto
 from app.utils.result import build, Result
 
 def post_wishlist(
-        db: Session, 
-        product_id: uuid.UUID,
-        user_id: str
+    db: Session, 
+    # product_id: uuid.UUID,
+    wish:wishlist_dtos.WishlistCreateOfIdProductDto,
+    user_id: str
 ) -> Result[WishlistModel, Exception]:
     try:
         # Cek apakah product_id ada di tabel products
-        product = db.query(ProductModel).filter(ProductModel.id == str(product_id)).first()
+        product = db.query(ProductModel).filter(ProductModel.id == str(wish.product_id)).first()
         if not product:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=ErrorResponseDto(
                     status_code=status.HTTP_404_NOT_FOUND,
                     error="Not Found",
-                    message="Information about product with ID {product_id} not found."
+                    message=f"Information about product with ID {str(wish.product_id)} not found."
                 ).dict()
             )
 
         # Buat instance baru dari WishlistModel
         wishlist_instance = WishlistModel(
-            product_id=product_id,
+            product_id=str(wish.product_id),
             customer_id=user_id
         )
 
@@ -45,6 +46,7 @@ def post_wishlist(
         post_wishlist_response = wishlist_dtos.WishlistInfoCreateDto(
             id=wishlist_instance.id,
             product_name=product.name,
+            product_variant=wishlist_instance.product_variant,
             created_at=wishlist_instance.created_at
         )
 

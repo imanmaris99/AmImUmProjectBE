@@ -1,4 +1,3 @@
-# app/services/create_user.py
 from fastapi import HTTPException, status
 
 from sqlalchemy.orm import Session
@@ -11,34 +10,24 @@ from app.dtos.error_response_dtos import ErrorResponseDto
 from app.libs import password_lib
 from app.libs.verification_code import generate_verification_code
 
-from app.services.user_services.support_function import create_firebase_user_account, handle_integrity_error, save_user_to_db, validate_user_data
+from app.services.user_services.support_function import create_firebase_user_account, handle_integrity_error, save_admin_to_db, validate_user_data
 
 from app.utils.firebase_utils import create_firebase_user, send_verification_email
 from app.utils.error_parser import is_valid_password
 from app.utils import optional
 
 
-# Fungsi utama untuk membuat user baru - customer
-def create_user(db: Session, user: user_dtos.UserCreateDto) -> optional.Optional[user_dtos.UserResponseDto, Exception]:
+# Fungsi utama untuk membuat user baru - admin
+def create_admin(db: Session, user: user_dtos.UserCreateDto) -> optional.Optional[user_dtos.UserResponseDto, Exception]:
     try:
         validate_user_data(user)
-
-        # Simpan data user ke database
-        user_model, verification_code = save_user_to_db(db, user)
-
-        # Buat akun Firebase
         firebase_user = create_firebase_user_account(user)
+        verification_code = generate_verification_code()
 
-        # Update Firebase UID ke database setelah berhasil buat akun di Firebase
-        user_model.firebase_uid = firebase_user.uid
-        user_model.email = firebase_user.email
-        db.commit()
-        db.refresh(user_model)
+        user_model = save_admin_to_db(db, user, firebase_user, verification_code)
 
-        # Kirim email verifikasi
         send_verification_email(firebase_user, user.firstname, verification_code)
 
-        # Mempersiapkan response data yang sudah sesuai dengan DTO
         user_data_dto = user_dtos.UserCreateResponseDto(
             id=user_model.id,
             firebase_uid=user_model.firebase_uid,
@@ -80,7 +69,6 @@ def create_user(db: Session, user: user_dtos.UserCreateDto) -> optional.Optional
         return optional.build(error=e)
 
     except Exception as e:
-        db.rollback()
         return optional.build(error=HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorResponseDto(
@@ -89,6 +77,4 @@ def create_user(db: Session, user: user_dtos.UserCreateDto) -> optional.Optional
                 message=f"Unexpected error: {str(e)}"
             ).dict()
         ))
-
-   
 
