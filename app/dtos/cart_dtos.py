@@ -37,7 +37,7 @@ class CartProductTotalDto(BaseModel):
 class AllCartResponseCreateDto(BaseModel):
     status_code: int = Field(default=200)
     message: str = Field(default="Your all of products wishlist success to access")
-    total_records: int = Field(default=3)
+    # total_records: int = Field(default=3)
     data: List[CartInfoDetailDto]
     total_prices: CartProductTotalDto  # Pastikan tipe ini sesuai dengan data yang dikirim
     
@@ -75,3 +75,8 @@ class DeleteCartResponseDto(BaseModel):
     status_code: int = Field(default=200)
     message: str = Field(default="One of All list your product item in cart has been deleted")
     data: InfoDeleteCartDto
+
+class AllItemNotificationDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="total product items in your cart have been successfully calculated")
+    total_items: int = Field(default=3)

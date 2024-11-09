@@ -122,6 +122,89 @@ def post_my_wishlist(
     return result.unwrap()
 
 @router.get(
+    "/total-items",
+    response_model=wishlist_dtos.AllItemNotificationDto,
+    status_code=status.HTTP_200_OK,
+    responses={
+        status.HTTP_200_OK: {
+            "description": "User's wishlist retrieved successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 200,
+                        "message": "Your all of products wishlist success calculated",
+                        "total_items": 1,
+                    }
+                }
+            }
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "description": "User not authorized to view wishlist",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 403,
+                        "error": "Forbidden",
+                        "message": "You do not have permission to view this wishlist."
+                    }
+                }
+            }
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Wishlist of Product not found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 404,
+                        "error": "Not Found",
+                        "message": "The Wishlist of product was not found."
+                    }
+                }
+            }
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "description": "Unexpected server error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 500,
+                        "error": "Internal Server Error",
+                        "message": "An unexpected error occurred while retrieving the wishlist."
+                    }
+                }
+            }
+        }
+    },
+    summary="Get User's Total Wishlist Products"
+)
+async def get_total_wishlist(
+    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],
+    db: Session = Depends(get_db)
+):    
+    """
+    # Get User's Total Wishlist Products #
+
+    Endpoint ini mengembalikan kalkulasi total semua daftar produk dalam wishlist pengguna.
+
+    **Parameter:**
+    - **jwt_token** (TokenPayLoad): Token payload yang memberikan akses ke data pengguna.
+    - **db** (Session): Koneksi database untuk mendapatkan data.
+
+    **Return:**
+    - **200 OK**: Berhasil mendapatkan kalkulasi total semua produk dalam wishlist pengguna.
+    - **403 Forbidden**: Pengguna tidak diizinkan untuk mengakses wishlist ini.
+    - **404 Not Found**: Produk Wishlist tidak ditemukan.
+    - **500 Internal Server Error**: Kesalahan tak terduga saat mengambil wishlist.
+    
+    """
+    result = wishlist_services.total_items(db, jwt_token.id)
+
+    if result.error:
+        raise result.error
+    
+    return result.unwrap()
+
+@router.get(
     "/my-products-wishlist",
     response_model=wishlist_dtos.AllWishlistResponseCreateDto,
     status_code=status.HTTP_200_OK,

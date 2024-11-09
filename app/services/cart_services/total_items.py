@@ -10,18 +10,18 @@ from app.dtos import cart_dtos
 
 from app.dtos.error_response_dtos import ErrorResponseDto
 
-from app.services.cart_services.support_function import get_cart_total, handle_db_error
-# from app.services.cart_services.support_function import get_total_records
+from app.services.cart_services.support_function import handle_db_error
+from app.services.cart_services.support_function import get_total_records
 
 from app.utils.result import build, Result
 
 
-def my_cart(
+def total_items(
         db: Session, 
         user_id: str,  
         skip: int = 0, 
         limit: int = 10
-    ) -> Result[cart_dtos.AllCartResponseCreateDto, Exception]:
+    ) -> Result[cart_dtos.AllItemNotificationDto, Exception]:
     try:
         # Query untuk mengambil cart berdasarkan user_id dengan pagination
         cart_items = db.execute(
@@ -42,30 +42,13 @@ def my_cart(
             )
 
         # Hitung total_records
-        # total_records = get_total_records(db, user_id)
-
-        # Konversi cart_items menjadi DTO
-        cart_dto = [
-            cart_dtos.CartInfoDetailDto(
-                id=cart_item.id,
-                product_name=cart_item.product_name,
-                variant_info=cart_item.variant_info,
-                quantity=cart_item.quantity,
-                is_active=cart_item.is_active,
-                created_at=cart_item.created_at
-            )
-            for cart_item in cart_items
-        ]
-
-        cart_total_items_response = get_cart_total(cart_items)
+        total_records = get_total_records(db, user_id)
 
         # Return DTO dengan respons yang telah dibangun
-        return build(data=cart_dtos.AllCartResponseCreateDto(
+        return build(data=cart_dtos.AllItemNotificationDto(
             status_code=status.HTTP_200_OK,
-            message=f"All products in cart for user ID {user_id} accessed successfully",
-            # total_records=total_records,
-            data=cart_dto,
-            total_prices=cart_total_items_response
+            message=f"All products in cart for user ID {user_id} have been successfully calculated",
+            total_items=total_records
         ))
     
     except (IntegrityError, DataError) as db_error:

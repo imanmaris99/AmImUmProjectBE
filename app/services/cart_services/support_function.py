@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -31,6 +31,13 @@ def get_cart_item(db: Session, cart_id: str, user_id: str) -> CartProductModel:
         .where(CartProductModel.id == cart_id, CartProductModel.customer_id == user_id)
     ).scalars().first()
 
+#total product items in your cart have been successfully calculated
+def get_total_records(db: Session, user_id: str):
+    return db.execute(
+        select(func.count())
+        .select_from(CartProductModel)
+        .where(CartProductModel.customer_id == user_id)
+    ).scalar()
 
 # Utility Function for Handling Database Errors
 def handle_db_error(db: Session, error: SQLAlchemyError) -> Result:
