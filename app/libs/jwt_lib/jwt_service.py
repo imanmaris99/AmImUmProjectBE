@@ -22,18 +22,6 @@ if not SECRET_KEY:
 ALGORITHM = "HS256"
 bearer_token = HTTPBearer(description="JWT token for authentication")
 
-
-# Fungsi untuk membuat access token JWT
-# def create_access_token(data: dict, expires_delta: timedelta | None = None) -> AccessTokenDto:
-#     to_encode = data.copy()
-#     expire = (datetime.now(timezone.utc) + expires_delta
-#               if expires_delta
-#               else datetime.now(timezone.utc) + timedelta(weeks=1))  # Default kadaluarsa 1 minggu
-#     to_encode.update({"exp": expire})
-#     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-#     return AccessTokenDto(access_token=encoded_jwt)
-
-
 # Fungsi untuk membuat access token JWT
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> AccessTokenDto:
     to_encode = data.copy()
@@ -100,6 +88,17 @@ async def get_jwt_pyload(token: Annotated[HTTPAuthorizationCredentials, Depends(
             # message="Could not validate credentials hallo",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+# Fungsi untuk mendapatkan user dari token
+def get_current_user(jwt_token: TokenPayLoad = Depends(get_jwt_pyload)):
+    
+    if not jwt_token :     
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+    )        
+    return jwt_token
 
 
 # Fungsi untuk memastikan user memiliki akses sebagai admin
@@ -174,3 +173,17 @@ def verify_reset_password_token(token: str) -> str:
             # error="Bad Request",
             # message="Invalid token."
         )
+
+
+
+
+# Fungsi untuk membuat access token JWT
+# def create_access_token(data: dict, expires_delta: timedelta | None = None) -> AccessTokenDto:
+#     to_encode = data.copy()
+#     expire = (datetime.now(timezone.utc) + expires_delta
+#               if expires_delta
+#               else datetime.now(timezone.utc) + timedelta(weeks=1))  # Default kadaluarsa 1 minggu
+#     to_encode.update({"exp": expire})
+#     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+#     return AccessTokenDto(access_token=encoded_jwt)
+
