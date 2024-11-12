@@ -19,10 +19,18 @@ def create_categories(
         db.commit()
         db.refresh(category_model)
 
+        # Buat DTO response
+        categories_response = category_dtos.AllCategoryResponseDto(
+            id=category_model.id,
+            name=category_model.name,
+            description_list=category_model.description_list,
+            created_at=category_model.created_at
+        )
+
         return optional.build(data=category_dtos.CategoryCreateResponseDto(
             status_code=201,
             message="Create tag categories has been successfully updated",
-            data=tag_category
+            data=categories_response
         ))
     
     except SQLAlchemyError:

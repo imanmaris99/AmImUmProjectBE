@@ -3,15 +3,17 @@ from fastapi import HTTPException, status
 from typing import List
 
 from app.models.tag_category_model import TagCategoryModel
-from app.dtos.category_dtos import AllCategoryResponseDto
+from app.dtos.category_dtos import AllCategoryResponseDto, AllCategoryInfoResponseDto
 from app.dtos.error_response_dtos import ErrorResponseDto
 
 from app.utils.result import build, Result
 
 
 def get_all_categories(
-        db: Session, skip: int = 0, limit: int = 10
-    ) -> Result[List[AllCategoryResponseDto], Exception]:
+        db: Session, 
+        skip: int = 0, 
+        limit: int = 10
+    ) -> Result[AllCategoryInfoResponseDto, Exception]:
     try:
         categories = db.query(TagCategoryModel).offset(skip).limit(limit).all()
 
@@ -35,7 +37,13 @@ def get_all_categories(
             ) for category in categories
         ]
 
-        return build(data=response_data)
+        # return build(data=response_data)
+    
+        return build(data=AllCategoryInfoResponseDto(
+            status_code=status.HTTP_200_OK,
+            message="All List of tag Categories accessed successfully",
+            data=response_data
+        ))
 
     except HTTPException as e:
         # Menangani error yang dilempar oleh Firebase atau proses lainnya

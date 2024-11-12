@@ -105,27 +105,31 @@ def create_categories(
 
 @router.get(
     "/all", 
-    response_model=List[category_dtos.AllCategoryResponseDto],
+    response_model=category_dtos.AllCategoryInfoResponseDto,
     status_code=status.HTTP_200_OK,
     responses={
         status.HTTP_200_OK: {
             "description": "Daftar kategori berhasil diambil",
             "content": {
                 "application/json": {
-                    "example": [
-                        {
-                            "id": 1,
-                            "name": "Jamu Produksi Pabrik",
-                            "description": "menggunakan teknologi yang modern sehingga dapat diproduksi dalam jumlah yang besar dengan kualitas yang baik.",
-                            "created_at": "2024-11-09T10:00:00"
-                        },
-                        {
-                            "id": 2,
-                            "name": "Jamu Produksi Rumahan",
-                            "description": "menggunakan bahan alami langsung dari petani yang dapat diproduksi langsung dalam jumlah terbatas dengan kualitas yang baik.",
-                            "created_at": "2024-11-09T11:00:00"
-                        }
-                    ]
+                    "example": {
+                        "status_code": 200,
+                        "message": "Data berhasil diambil",
+                        "data": [
+                            {
+                                "id": 1,
+                                "name": "Jamu Produksi Pabrik",
+                                "description": "menggunakan teknologi yang modern sehingga dapat diproduksi dalam jumlah yang besar dengan kualitas yang baik.",
+                                "created_at": "2024-11-09T10:00:00"
+                            },
+                            {
+                                "id": 2,
+                                "name": "Jamu Produksi Rumahan",
+                                "description": "menggunakan bahan alami langsung dari petani yang dapat diproduksi langsung dalam jumlah terbatas dengan kualitas yang baik.",
+                                "created_at": "2024-11-09T11:00:00"
+                            }
+                        ]
+                    }
                 }
             }
         },

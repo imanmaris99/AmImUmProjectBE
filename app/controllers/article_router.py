@@ -3,7 +3,7 @@
 from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session
 from typing import List, Annotated
-from app.dtos.article_dtos import ArticleCreateDTO, ArticleIdToUpdateDto, ArticleDataUpdateDTO, ArticleInfoUpdateResponseDto, ArticleResponseDTO, ArticleCreateResponseDto, GetAllArticleDTO, DeleteArticleDto, DeleteArticleResponseDto
+from app.dtos.article_dtos import ArticleCreateDTO, ArticleIdToUpdateDto, ArticleDataUpdateDTO, ArticleInfoUpdateResponseDto, ArticleResponseDTO, ArticleCreateResponseDto, GetAllArticleDTO, AllArticleResponseDto, DeleteArticleDto, DeleteArticleResponseDto
 from app.services import article_services
 from app.libs.sql_alchemy_lib import get_db
 from app.libs.jwt_lib import jwt_dto, jwt_service
@@ -90,33 +90,37 @@ def create_article(
 
 @router.get(
         "/all", 
-        response_model=List[GetAllArticleDTO],
+        response_model=AllArticleResponseDto,
         status_code=status.HTTP_200_OK,
         responses={
         status.HTTP_200_OK: {
             "description": "Daftar semua artikel berhasil diambil",
             "content": {
                 "application/json": {
-                    "example": [
-                        {
-                            "display_id": 1,
-                            "title": "Manfaat Herbal untuk Kesehatan",
-                            "img": "https://example.com/image.jpg",
-                            "description_list": [
-                                "Herbal ini dapat meningkatkan kesehatan jantung.",
-                                "Membantu meningkatkan sistem kekebalan tubuh."
-                            ]
-                        },
-                        {
-                            "display_id": 2,
-                            "title": "Herbal Populer dalam Pengobatan Modern",
-                            "img": "https://example.com/image2.jpg",
-                            "description_list": [
-                                "Herbal ini digunakan dalam pengobatan tradisional.",
-                                "Bermanfaat untuk kesehatan mental dan fisik."
-                            ]
-                        }
-                    ]
+                    "example": {
+                        "status_code": 200,
+                        "message": "Data berhasil diambil",
+                        "data": [
+                            {
+                                "display_id": 1,
+                                "title": "Manfaat Herbal untuk Kesehatan",
+                                "img": "https://example.com/image.jpg",
+                                "description_list": [
+                                    "Herbal ini dapat meningkatkan kesehatan jantung.",
+                                    "Membantu meningkatkan sistem kekebalan tubuh."
+                                ]
+                            },
+                            {
+                                "display_id": 2,
+                                "title": "Herbal Populer dalam Pengobatan Modern",
+                                "img": "https://example.com/image2.jpg",
+                                "description_list": [
+                                    "Herbal ini digunakan dalam pengobatan tradisional.",
+                                    "Bermanfaat untuk kesehatan mental dan fisik."
+                                ]
+                            }
+                        ]
+                    }                                        
                 }
             }
         },

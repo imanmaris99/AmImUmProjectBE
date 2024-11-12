@@ -9,7 +9,6 @@ class ArticleCreateDTO(BaseModel):
     img: Optional[str] = None
     description: str = Field(default="this is good news")
 
-    
 class ArticleIdToUpdateDto(BaseModel):
     article_id:int
 
@@ -43,6 +42,10 @@ class GetAllArticleDTO(BaseModel):
     img: Optional[str] = None
     description_list: list[str]  # Properti untuk deskripsi yang dipisah menjadi list
 
+class AllArticleResponseDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="All list info of articles success to access")
+    data: List[GetAllArticleDTO]
 
 class DeleteArticleDto(BaseModel):
     article_id:int
