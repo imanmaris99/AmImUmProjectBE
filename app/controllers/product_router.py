@@ -110,7 +110,7 @@ def create_product(
 
 @router.get(
         "/all", 
-        response_model=List[product_dtos.AllProductInfoDTO],
+        response_model=product_dtos.AllProductInfoResponseDto,
         status_code=status.HTTP_200_OK,
         responses={
             status.HTTP_200_OK: {
@@ -193,7 +193,7 @@ def read_all_products(
 # get-list-product-by-keyword-search
 @router.get(
         "/{product_name}", 
-        response_model=List[product_dtos.AllProductInfoDTO],
+        response_model=product_dtos.AllProductInfoResponseDto,
         status_code=status.HTTP_200_OK,
         responses={
             status.HTTP_200_OK: {
@@ -284,7 +284,7 @@ def search_product(
 
 @router.get(
         "/all/discount", 
-        response_model=List[product_dtos.AllProductInfoDTO],
+        response_model=product_dtos.AllProductInfoResponseDto,
         status_code=status.HTTP_200_OK,
         responses={
             status.HTTP_200_OK: {
@@ -369,7 +369,7 @@ def read_all_products_with_discount(
 
 @router.get(
     "/production/{production_id}", 
-    response_model=List[product_dtos.AllProductInfoDTO],
+    response_model=product_dtos.AllProductInfoResponseDto,
     status_code=status.HTTP_200_OK,
     responses={
         status.HTTP_200_OK: {
@@ -595,7 +595,7 @@ def get_list_products_by_id_production(
 
 @router.get(
         "/production/{production_id}/{product_name}", 
-        response_model=List[product_dtos.AllProductInfoDTO],
+        response_model=product_dtos.AllProductInfoResponseDto,
         status_code=status.HTTP_200_OK,
         responses={
             status.HTTP_200_OK: {
@@ -683,7 +683,7 @@ def search_product_from_filtering_of_id_production(
 # get-product-discount-by-keyword-search
 @router.get(
         "/discount/name/{product_name}", 
-        response_model=List[product_dtos.AllProductInfoDTO],
+        response_model=product_dtos.AllProductInfoResponseDto,
         status_code=status.HTTP_200_OK,
         responses={
             status.HTTP_200_OK: {
@@ -752,7 +752,7 @@ def search_product_discount(
 
 @router.get(
     "/discount/production/{production_id}", 
-    response_model=List[product_dtos.AllProductInfoDTO]
+    response_model=product_dtos.AllProductInfoResponseDto
 )
 def read_all_products_discount_by_id_production(
     production_id: int,  # Ambil production_id dari path

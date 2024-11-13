@@ -2,7 +2,7 @@ from typing import List, Optional
 from fastapi import HTTPException, status
 
 from app.utils.rajaongkir_utils import send_get_request
-from app.dtos.rajaongkir_dtos import ProvinceDto
+from app.dtos.rajaongkir_dtos import ProvinceDto, AllProvincesResponseCreateDto
 from app.dtos.error_response_dtos import ErrorResponseDto
 from app.libs.rajaongkir_config import Config
 from app.utils import optional
@@ -63,7 +63,7 @@ def parse_province_data(provinces: List[dict]) -> List[ProvinceDto]:
     return province_dtos
 
 # Fungsi utama untuk mendapatkan data provinsi dari API RajaOngkir
-def get_province_data(province_id: Optional[int] = None) -> optional.Optional[List[ProvinceDto], HTTPException]:
+def get_province_data(province_id: Optional[int] = None) -> optional.Optional[AllProvincesResponseCreateDto, HTTPException]:
     headers = {'key': Config.RAJAONGKIR_API_KEY}
     url = "/starter/province"
 
@@ -72,7 +72,14 @@ def get_province_data(province_id: Optional[int] = None) -> optional.Optional[Li
     try:
         provinces = validate_province_response(response)
         province_dtos = parse_province_data(provinces)
-        return optional.build(data=province_dtos)
+
+        # return optional.build(data=province_dtos)
+    
+        return optional.build(data=AllProvincesResponseCreateDto(
+            status_code=status.HTTP_200_OK,
+            message=f"All List of Provinces accessed successfully",
+            data=province_dtos
+        ))
         
     except HTTPException as e:
         return optional.build(error=e)

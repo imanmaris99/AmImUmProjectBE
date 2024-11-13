@@ -7,7 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from typing import List, Type
 
 from app.models.product_model import ProductModel
-from app.dtos.product_dtos import AllProductInfoDTO
+from app.dtos.product_dtos import AllProductInfoDTO, AllProductInfoResponseDto
 from app.dtos.error_response_dtos import ErrorResponseDto
 
 from app.services.product_services.support_function import handle_db_error
@@ -20,7 +20,7 @@ def search_product_of_id_production(
         product_name: str,
         skip: int = 0, 
         limit: int = 10
-    ) -> Result[List[Type[ProductModel]], Exception]:  # Mengembalikan List DTO
+    ) -> Result[AllProductInfoResponseDto, Exception]:  # Mengembalikan List DTO
     try:
         # Memeriksa apakah production_id valid
         if not production_id:
@@ -68,7 +68,7 @@ def search_product_of_id_production(
                     detail=ErrorResponseDto(
                         status_code=status.HTTP_404_NOT_FOUND,
                         error="Not Found",
-                        message= f"No products found with name containing '{product_name}' for production ID {production_id}."
+                        message= f"No products found with name containing '{product_name}' for production ID '{production_id}'."
                     ).dict()
                 )
 
@@ -85,7 +85,14 @@ def search_product_of_id_production(
             for product in product_model
         ]
 
-        return build(data=all_products_dto)
+        # return build(data=all_products_dto)
+    
+        return build(data=AllProductInfoResponseDto(
+            status_code=status.HTTP_200_OK,
+            message=f"All List of product by production ID '{production_id}' with name containing '{product_name}' can accessed successfully",
+            data=all_products_dto
+        ))
+
 
     except SQLAlchemyError as e:
         return handle_db_error(db, e)

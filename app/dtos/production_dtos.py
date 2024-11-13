@@ -47,6 +47,11 @@ class AllProductionsDto(BaseModel):
     category: Optional[str] = None
     created_at: datetime
 
+class AllListProductionResponseDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="All list products from Production or brand successfully retrieved")
+    data: List[AllProductionsDto]
+
 class ArticleListScrollResponseDto(BaseModel):
     data: List[AllProductionsDto]
     remaining_records: int
@@ -63,7 +68,7 @@ class DetailProductionDto(BaseModel):
 
 class ProductionDetailResponseDto(BaseModel):
     status_code: int = Field(default=200)
-    message: str = Field(default="Info aboout Production or brand details successfully retrieved")
+    message: str = Field(default="Info about Production or brand details successfully retrieved")
     data: DetailProductionDto
 
 class AllProductionPromoDto(BaseModel):
@@ -71,6 +76,11 @@ class AllProductionPromoDto(BaseModel):
     name: str
     photo_url: Optional[str] = None
     promo_special: Optional[float] = None
+
+class AllProductionPromoResponseDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="Info about promo from Production or brand successfully retrieved")
+    data: List[AllProductionPromoDto]
 
 class InfoDeleteProductionDto(BaseModel):
     id: int

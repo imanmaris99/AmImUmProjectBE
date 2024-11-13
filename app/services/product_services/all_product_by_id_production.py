@@ -7,7 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from typing import List, Type
 
 from app.models.product_model import ProductModel
-from app.dtos.product_dtos import AllProductInfoDTO, ProductInfoByIdProductionDTO
+from app.dtos.product_dtos import AllProductInfoDTO, ProductInfoByIdProductionDTO, AllProductInfoResponseDto
 from app.dtos.error_response_dtos import ErrorResponseDto
 
 from app.services.product_services.support_function import handle_db_error
@@ -19,13 +19,12 @@ def all_product_by_id_production(
         production_id: int,  
         skip: int = 0, 
         limit: int = 10
-    ) -> Result[List[Type[ProductModel]], Exception]:  # Mengembalikan List DTO
+    ) -> Result[AllProductInfoResponseDto, Exception]:  
     try:
-        # Query untuk mengambil produk berdasarkan product_by_id
         product_model = db.execute(
             select(ProductModel)
             .options(selectinload(ProductModel.pack_type))  # Eager load untuk pack_type
-            .where(ProductModel.product_by_id == production_id)  # Filter dengan production_id
+            .where(ProductModel.product_by_id == production_id)  
             .offset(skip)
             .limit(limit)
         ).scalars().all()
@@ -54,7 +53,13 @@ def all_product_by_id_production(
             for product in product_model
         ]
 
-        return build(data=all_products_dto)
+        # return build(data=all_products_dto)
+    
+        return build(data=AllProductInfoResponseDto(
+            status_code=status.HTTP_200_OK,
+            message=f"All List of product by production with ID {production_id} can accessed successfully",
+            data=all_products_dto
+        ))
 
     except SQLAlchemyError as e:
         return handle_db_error(db, e)

@@ -39,6 +39,11 @@ class AllProductInfoDTO(BaseModel):
     all_variants: List[VariantAllProductDto]
     created_at: datetime
 
+class AllProductInfoResponseDto(BaseModel):
+    status_code: int = Field(default=201)
+    message: str = Field(default="Your product has been create")
+    data: List[AllProductInfoDTO]
+
 class ProductListScrollResponseDto(BaseModel):
     data: List[AllProductInfoDTO]
     has_more: bool  # Indikasi apakah masih ada data lain

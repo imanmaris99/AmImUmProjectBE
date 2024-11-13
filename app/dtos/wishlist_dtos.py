@@ -25,10 +25,12 @@ class AllWishlistResponseCreateDto(BaseModel):
     total_records: int = Field(default=3)
     data: List[WishlistInfoCreateDto]
 
+class TotalItemWishlistDto(BaseModel):
+    total_items: int = Field(default=3)
 class AllItemNotificationDto(BaseModel):
     status_code: int = Field(default=200)
     message: str = Field(default="total product wishlist have been successfully calculated")
-    total_items: int = Field(default=3)
+    data:TotalItemWishlistDto
 
 class DeleteByIdWishlistDto(BaseModel):
     wishlist_id: int

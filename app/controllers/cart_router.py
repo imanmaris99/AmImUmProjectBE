@@ -245,18 +245,6 @@ async def get_my_cart(
     response_model=cart_dtos.AllItemNotificationDto,
     status_code=status.HTTP_200_OK,
     responses={
-        status.HTTP_200_OK: {
-            "description": "User's Product item in Cart retrieved successfully",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "status_code": 200,
-                        "message": "Your all of products item success calculated",
-                        "total_items": 1,
-                    }
-                }
-            }
-        },
         status.HTTP_403_FORBIDDEN: {
             "description": "User not authorized to view cart",
             "content": {

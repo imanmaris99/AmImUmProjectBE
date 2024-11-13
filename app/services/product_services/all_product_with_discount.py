@@ -7,8 +7,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from typing import List, Type
 
 from app.models.product_model import ProductModel
-from app.models.pack_type_model import PackTypeModel  # Pastikan diimpor
-from app.dtos.product_dtos import AllProductInfoDTO
+from app.models.pack_type_model import PackTypeModel  
+from app.dtos.product_dtos import AllProductInfoDTO, AllProductInfoResponseDto
 from app.dtos.error_response_dtos import ErrorResponseDto
 
 from app.services.product_services.support_function import handle_db_error
@@ -19,7 +19,7 @@ def all_product_with_discount(
         db: Session, 
         skip: int = 0, 
         limit: int = 10
-    ) -> Result[List[Type[ProductModel]], Exception]:
+    ) -> Result[AllProductInfoResponseDto, Exception]:
     try:
         # Subquery untuk mendapatkan produk yang memiliki pack type dengan diskon
         subquery = (
@@ -62,7 +62,13 @@ def all_product_with_discount(
             for product in product_model
         ]
 
-        return build(data=all_products_dto)
+        # return build(data=all_products_dto)
+    
+        return build(data=AllProductInfoResponseDto(
+            status_code=status.HTTP_200_OK,
+            message="All List of product with discount can accessed successfully",
+            data=all_products_dto
+        ))
 
     except SQLAlchemyError as e:
         return handle_db_error(db, e)

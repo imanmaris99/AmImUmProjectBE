@@ -6,6 +6,11 @@ class ProvinceDto(BaseModel):
     province_id: int
     province: str
 
+class AllProvincesResponseCreateDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="All Data Provinces from Database success to access")
+    data: List[ProvinceDto]
+
 class CityDto(BaseModel):
     city_id: int
     province_id: int
@@ -14,7 +19,12 @@ class CityDto(BaseModel):
     city_name: str
     postal_code: int
 
-# DTO untuk request biaya kirim
+class AllCitiesResponseCreateDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="All Data Cities from Database success to access")
+    data: List[CityDto]
+
+
 class ShippingCostRequest(BaseModel):
     origin: int = Field(..., description="ID kota atau kabupaten asal")
     destination: int = Field(..., description="ID kota atau kabupaten tujuan")
@@ -27,6 +37,11 @@ class ShippingCostDetailDto(BaseModel):
     description: str
     cost: int
     etd: str
+
+class AllShippingCostResponseCreateDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="All Data shipping cost from Database success to access")
+    data: List[ShippingCostDetailDto]
 
 # DTO untuk Shipping Cost
 class ShippingCostDto(BaseModel):

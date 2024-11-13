@@ -124,28 +124,9 @@ def create_productions(
 
 @router.get(
         "/all", 
-        response_model=List[production_dtos.AllProductionsDto],
+        response_model=production_dtos.AllListProductionResponseDto,
         status_code=status.HTTP_200_OK,
         responses={
-                status.HTTP_200_OK: {
-                    "description": "Berhasil mengambil daftar perusahaan produksi",
-                    "content": {
-                        "application/json": {
-                            "example": [
-                                {
-                                    "id": 0,
-                                    "name": "string",
-                                    "photo_url": "string",
-                                    "description_list": [
-                                        "string"
-                                    ],
-                                    "category": "string",
-                                    "created_at": "2024-11-02T08:10:43.853Z"
-                                }
-                            ]
-                        }
-                    }
-                },
                 status.HTTP_409_CONFLICT: {
                     "description": "Konflik saat mengambil daftar perusahaan produksi",
                     "content": {
@@ -303,24 +284,9 @@ def get_productions(
 
 @router.get(
     "/promo", 
-    response_model=List[production_dtos.AllProductionPromoDto],
+    response_model=production_dtos.AllProductionPromoResponseDto,
     status_code=status.HTTP_200_OK,
     responses={
-        status.HTTP_200_OK: {
-            "description": "Berhasil mengambil daftar promosi untuk produk",
-            "content": {
-                "application/json": {
-                    "example": [
-                        {
-                            "id": 0,
-                            "name": "string",
-                            "photo_url": "string",
-                            "promo_special": 0
-                        }
-                    ]
-                }
-            }
-        },
         status.HTTP_404_NOT_FOUND: {
             "description": "Data promosi tidak ditemukan",
             "content": {

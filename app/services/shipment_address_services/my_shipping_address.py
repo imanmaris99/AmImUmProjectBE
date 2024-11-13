@@ -1,64 +1,66 @@
 from fastapi import HTTPException, status
 
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, DataError, IntegrityError
 
 from typing import List, Type
 
-from app.models.rating_model import RatingModel
-from app.dtos.rating_dtos import MyRatingListDto, AllMyRatingListResponseDto
+from app.models.shipment_address_model import ShipmentAddressModel
+from app.dtos import shipment_address_dtos
 from app.dtos.error_response_dtos import ErrorResponseDto
 
-from app.services.rating_services.support_function import handle_db_error
+from app.services.cart_services.support_function import handle_db_error
 
 from app.utils.result import build, Result
 
-def my_rating_list(
+def my_shipping_address(
         db: Session, 
         user_id: str,  
         skip: int = 0, 
         limit: int = 10
-    ) -> Result[AllMyRatingListResponseDto, Exception]:  # Mengembalikan List DTO
+    ) -> Result[shipment_address_dtos.AllAddressListResponseDto, Exception]:
     try:
-        # Query untuk mengambil produk berdasarkan product_by_id
-        rate_model = db.execute(
-            select(RatingModel)
-            .where(RatingModel.user_id == user_id)  # Filter dengan production_id
+        address_model = db.execute(
+            select(ShipmentAddressModel)
+            .where(ShipmentAddressModel.customer_id == user_id)
             .offset(skip)
             .limit(limit)
         ).scalars().all()
 
-        if not rate_model:
+        if not address_model:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=ErrorResponseDto(
                     status_code=status.HTTP_404_NOT_FOUND,
                     error="Not Found",
-                    message=f"list rate of products from this user ID : {user_id} not found"
+                    message=f"All data shipping address from this user ID : {user_id} not found"
                 ).dict()
             )
 
-        # Konversi produk ke DTO
-        all_rate_products_dto = [
-            MyRatingListDto(
-                id=rate_count.id, 
-                rate=rate_count.rate,
-                review=rate_count.review,
-                product_name=rate_count.product_name,                
-                created_at=rate_count.created_at
-            )
-            for rate_count in rate_model
+        # Konversi wishlist menjadi DTO
+        address_dto = [
+            shipment_address_dtos.ShipmentAddressInfoDto(
+            id=address.id,
+            name=address.name,
+            phone=address.phone,
+            address=address.address,
+            city=address.city,
+            state=address.state,
+            country=address.country,
+            zip_code=address.zip_code,
+            created_at=address.created_at
+        )
+            for address in address_model
         ]
 
-        # return build(data=all_rate_products_dto)
-    
-        return build(data=AllMyRatingListResponseDto(
+        # Return DTO dengan respons yang telah dibangun
+        return build(data=shipment_address_dtos.AllAddressListResponseDto(
             status_code=status.HTTP_200_OK,
-            message="All List of your rating products accessed successfully",
-            data=all_rate_products_dto
+            message=f"All data shipping address from user ID {user_id} accessed successfully",
+            data=address_dto
         ))
-
+    
     # Error SQLAlchemy untuk data yang tidak valid, seperti id tidak ditemukan
     except IntegrityError as ie:
         db.rollback()
@@ -89,7 +91,7 @@ def my_rating_list(
     except HTTPException as http_ex:
         return build(error=http_ex)
     
-        # Error tipe data tidak valid (misal, `skip` atau `limit` bukan integer)
+    # Error tipe data tidak valid (misal, `skip` atau `limit` bukan integer)
     except (ValueError, TypeError) as te:
         return build(error=HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

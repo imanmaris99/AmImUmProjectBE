@@ -115,40 +115,9 @@ def create_types(
 
 @router.get(
     "/all", 
-    response_model=List[pack_type_dtos.VariantProductDto],
+    response_model=pack_type_dtos.AllVariantsProductInfoResponseDto,
     status_code=status.HTTP_200_OK,
     responses={
-        status.HTTP_200_OK: {
-            "description": "Daftar tipe produk berhasil diambil",
-            "content": {
-                "application/json": {
-                    "example": [
-                        {
-                            "id": 1,
-                            "name": "Sachet",
-                            "min_amount": 1,
-                            "variant": "Herbal Powder",
-                            "expiration": "2024-12-31",
-                            "stock": 100,
-                            "discount": 5.0,
-                            "created_by": 1,
-                            "created_at": "2024-10-31T10:00:00"
-                        },
-                        {
-                            "id": 2,
-                            "name": "Gram",
-                            "min_amount": 5,
-                            "variant": "Organic Tea",
-                            "expiration": "2024-12-31",
-                            "stock": 200,
-                            "discount": 10.0,
-                            "created_by": 2,
-                            "created_at": "2024-10-31T10:00:00"
-                        }
-                    ]
-                }
-            }
-        },
         status.HTTP_500_INTERNAL_SERVER_ERROR: {
             "description": "Kesalahan server saat mengambil tipe produk",
             "content": {

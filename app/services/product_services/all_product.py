@@ -7,7 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from typing import List, Type
 
 from app.models.product_model import ProductModel
-from app.dtos.product_dtos import AllProductInfoDTO
+from app.dtos.product_dtos import AllProductInfoDTO, AllProductInfoResponseDto
 from app.dtos.error_response_dtos import ErrorResponseDto
 
 from app.services.product_services.support_function import handle_db_error
@@ -19,15 +19,15 @@ def all_product(
         db: Session, 
         skip: int = 0, 
         limit: int = 10
-    ) -> Result[List[Type[ProductModel]], Exception]:
+    ) -> Result[AllProductInfoResponseDto, Exception]:
     try:
         product_model = (
             db.execute(
                 select(ProductModel)
-                .options(selectinload(ProductModel.pack_type))  # Eager loading untuk pack_type
+                .options(selectinload(ProductModel.pack_type)) 
                 .offset(skip)
                 .limit(limit)
-            ).scalars()  # Mengambil hasil sebagai scalar
+            ).scalars()  
             .all()
         )
 
@@ -41,7 +41,6 @@ def all_product(
                 ).dict()
             )
 
-        # Konversi produk menjadi DTO, cek `all_variants` agar tidak menyebabkan error jika None
         all_products_dto = [
             AllProductInfoDTO(
                 id=product.id, 
@@ -53,14 +52,19 @@ def all_product(
             for product in product_model
         ]
 
-        return build(data=all_products_dto)
+        # return build(data=all_products_dto)
+    
+        return build(data=AllProductInfoResponseDto(
+            status_code=status.HTTP_200_OK,
+            message="All List product can accessed successfully",
+            data=all_products_dto
+        ))
 
     except SQLAlchemyError as e:
         return handle_db_error(db, e)
     
     except HTTPException as http_ex:
-        db.rollback()  # Rollback jika terjadi error dari Firebase
-        # Langsung kembalikan error dari Firebase tanpa membuat response baru
+        db.rollback()  
         return build(error=http_ex)
     
     except Exception as e:

@@ -1,5 +1,6 @@
 from fastapi import HTTPException, status
 
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -16,10 +17,18 @@ from app.utils.result import build, Result
 
 
 def get_all_productions(
-        db: Session, skip: int = 0, limit: int = 10
-    ) -> Result[List[Type[ProductionModel]], Exception]:
+        db: Session, 
+        skip: int = 0, 
+        limit: int = 10
+    ) -> Result[production_dtos.AllListProductionResponseDto, Exception]:
     try:
-        product_bies = db.query(ProductionModel).offset(skip).limit(limit).all()
+        # product_bies = db.query(ProductionModel).offset(skip).limit(limit).all()
+
+        product_bies = db.execute(
+            select(ProductionModel)
+            .offset(skip)
+            .limit(limit)
+        ).scalars().all()
 
         if not product_bies:
             raise HTTPException(
@@ -39,12 +48,18 @@ def get_all_productions(
                 photo_url=production.photo_url,
                 description_list=production.description_list,  # Menggunakan property untuk mendapatkan deskripsi
                 category=production.category,  # Menggunakan property untuk mendapatkan nama kategori
-                created_at=production.created_at.isoformat()  # Ubah ke string ISO 8601
+                created_at=production.created_at
             )
             for production in product_bies
         ]
 
-        return build(data=productions_dto)
+        # return build(data=productions_dto)
+    
+        return build(data=production_dtos.AllListProductionResponseDto(
+            status_code=status.HTTP_200_OK,
+            message="All List productS from this brand accessed successfully",
+            data=productions_dto
+        ))
     
     except SQLAlchemyError as e:
         return handle_db_error(db, e)

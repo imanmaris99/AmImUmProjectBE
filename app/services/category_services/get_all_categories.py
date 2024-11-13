@@ -32,7 +32,7 @@ def get_all_categories(
             AllCategoryResponseDto(
                 id=category.id,
                 name=category.name,
-                description_list=category.description.split("\n"),
+                description_list=category.description_list,
                 created_at=category.created_at
             ) for category in categories
         ]

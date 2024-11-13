@@ -2,7 +2,7 @@ from typing import List
 from fastapi import HTTPException, status
 
 from app.utils.rajaongkir_utils import send_get_request
-from app.dtos.rajaongkir_dtos import CityDto
+from app.dtos.rajaongkir_dtos import CityDto, AllCitiesResponseCreateDto
 from app.dtos.error_response_dtos import ErrorResponseDto
 from app.libs.rajaongkir_config import Config
 from app.utils import optional
@@ -67,7 +67,7 @@ def parse_city_data(cities: List[dict]) -> List[CityDto]:
     return city_dtos
 
 # Fungsi utama untuk mendapatkan data kota dari API RajaOngkir
-def get_city_data() -> optional.Optional[List[CityDto], HTTPException]:
+def get_city_data() -> optional.Optional[AllCitiesResponseCreateDto, HTTPException]:
     headers = {'key': Config.RAJAONGKIR_API_KEY}
     url = "/starter/city"
 
@@ -76,7 +76,14 @@ def get_city_data() -> optional.Optional[List[CityDto], HTTPException]:
     try:
         cities = validate_response(response)
         city_dtos = parse_city_data(cities)
-        return optional.build(data=city_dtos)
+
+        # return optional.build(data=city_dtos)
+
+        return optional.build(data=AllCitiesResponseCreateDto(
+            status_code=status.HTTP_200_OK,
+            message=f"All List of Cities accessed successfully",
+            data=city_dtos
+        ))
         
     except HTTPException as e:
         return optional.build(error=e)

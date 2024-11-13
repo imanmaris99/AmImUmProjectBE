@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, status
 from typing import List
 
 from app.services.rajaongkir_services import get_province_data, get_city_data, get_shipping_cost
-from app.dtos.rajaongkir_dtos import ProvinceDto, CityDto, ShippingCostRequest, ShippingCostDto
+from app.dtos.rajaongkir_dtos import ProvinceDto, AllProvincesResponseCreateDto, CityDto, AllCitiesResponseCreateDto, ShippingCostRequest, ShippingCostDto
 from app.dtos.error_response_dtos import ErrorResponseDto
 
 
@@ -14,22 +14,9 @@ router = APIRouter(
 
 @router.get(
     "/provinces",
-    response_model=List[ProvinceDto],
+    response_model=AllProvincesResponseCreateDto,
     status_code=status.HTTP_200_OK,
     responses={
-        200: {
-            "description": "Berhasil mengambil list semua provinsi.",
-            "content": {
-                "application/json": {
-                    "example": [
-                        {
-                            "province_id": 0,
-                            "province": "string"
-                        }
-                    ]  
-                }
-            }
-        },
         404: {
             "description": "Data tidak ditemukan ",
             "model": ErrorResponseDto,
@@ -82,26 +69,9 @@ def fetch_provinces():
 
 @router.get(
     "/cities", 
-    response_model=List[CityDto],
+    response_model=AllCitiesResponseCreateDto,
     status_code=status.HTTP_200_OK,
     responses={
-        200: {
-            "description": "Berhasil mengambil list kota.",
-            "content": {
-                "application/json": {
-                    "example": [
-                        {
-                            "city_id": 0,
-                            "province_id": 0,
-                            "province": "string",
-                            "type": "string",
-                            "city_name": "string",
-                            "postal_code": 0
-                        }
-                    ]    
-                }
-            }
-        },
         404: {
             "description": "Data tidak ditemukan",
             "model": ErrorResponseDto,

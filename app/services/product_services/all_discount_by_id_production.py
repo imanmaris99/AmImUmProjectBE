@@ -7,8 +7,9 @@ from sqlalchemy.exc import SQLAlchemyError
 from typing import List, Optional, Type
 
 from app.models.product_model import ProductModel
+
 from app.models.pack_type_model import PackTypeModel
-from app.dtos.product_dtos import AllProductInfoDTO
+from app.dtos.product_dtos import AllProductInfoDTO, AllProductInfoResponseDto
 from app.dtos.error_response_dtos import ErrorResponseDto
 
 from app.services.product_services.support_function import handle_db_error
@@ -20,16 +21,14 @@ def all_discount_by_id_production(
         production_id: int,  
         skip: int = 0, 
         limit: int = 10
-    ) -> Result[List[Type[ProductModel]], Exception]:
+    ) -> Result[AllProductInfoResponseDto, Exception]:
     try:
-        # Subquery untuk mendapatkan produk yang memiliki pack type dengan diskon
         subquery = (
             select(PackTypeModel.product_id)
             .filter(PackTypeModel.discount > 0)
             .scalar_subquery()
         )
 
-        # Mengambil produk yang aktif dan memiliki variasi dengan diskon
         product_model = (
             db.execute(
                 select(ProductModel)
@@ -68,8 +67,14 @@ def all_discount_by_id_production(
             for product in product_model
         ]
 
-        return build(data=all_products_discount_by_production_dto)
+        # return build(data=all_products_discount_by_production_dto)
 
+        return build(data=AllProductInfoResponseDto(
+            status_code=status.HTTP_200_OK,
+            message=f"All List of product discount with brand ID {production_id} can accessed successfully",
+            data=all_products_discount_by_production_dto
+        ))
+    
     except SQLAlchemyError as e:
         return handle_db_error(db, e)
     

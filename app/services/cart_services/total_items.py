@@ -44,11 +44,15 @@ def total_items(
         # Hitung total_records
         total_records = get_total_records(db, user_id)
 
+        total_notifications=cart_dtos.TotalItemNotificationDto(
+            total_items=total_records
+        )
+
         # Return DTO dengan respons yang telah dibangun
         return build(data=cart_dtos.AllItemNotificationDto(
             status_code=status.HTTP_200_OK,
             message=f"All products in cart for user ID {user_id} have been successfully calculated",
-            total_items=total_records
+            data=total_notifications
         ))
     
     except (IntegrityError, DataError) as db_error:

@@ -127,24 +127,8 @@ def give_a_rate_of_product(
 
 @router.get(
     "/my-rating-products-list",
-    response_model=List[rating_dtos.MyRatingListDto],
+    response_model=rating_dtos.AllMyRatingListResponseDto,
     responses={
-        status.HTTP_200_OK: {
-            "description": "Daftar rating produk pengguna berhasil diambil",
-            "content": {
-                "application/json": {
-                    "example": [
-                        {
-                            "id": 1,
-                            "rate": 5,
-                            "review": "Produk sangat bagus",
-                            "product_name": "Teh Herbal",
-                            "created_at": "2024-10-31T10:00:00"
-                        }
-                    ]
-                }
-            }
-        },
         status.HTTP_403_FORBIDDEN: {
             "description": "Token tidak valid atau pengguna tidak terautentikasi",
             "content": {

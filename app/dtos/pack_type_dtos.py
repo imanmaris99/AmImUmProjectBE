@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 
@@ -57,7 +57,8 @@ class VariantProductDto(BaseModel):
     discount: Optional[float] = None
     discounted_price: Optional[float] = None
     updated_at: datetime
-    
+
+
 class PackTypeEditInfoResponseDto(BaseModel):
     status_code: int = Field(default=200)
     message: str = Field(default="Edit stock and discount product has been success")
@@ -70,14 +71,16 @@ class VariantAllProductDto(BaseModel):
     discount: Optional[float] = None
     discounted_price: Optional[float] = None
     updated_at: datetime
+class AllVariantsProductInfoResponseDto(BaseModel):
+    status_code: int = Field(default=201)
+    message: str = Field(default="All variants from all products has been create")
+    data: List[VariantAllProductDto]
 
 class DeletePackTypeDto(BaseModel):
     type_id:int
-
 class InfoDeletePackTypeDto(BaseModel):
     type_id: int
     variant: str
-
 class DeletePackTypeResponseDto(BaseModel):
     status_code: int = Field(default=200)
     message: str = Field(default="Your pack and variant type product has been deleted")

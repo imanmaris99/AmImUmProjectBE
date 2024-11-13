@@ -76,7 +76,9 @@ class DeleteCartResponseDto(BaseModel):
     message: str = Field(default="One of All list your product item in cart has been deleted")
     data: InfoDeleteCartDto
 
+class TotalItemNotificationDto(BaseModel):
+    total_items: int = Field(default=3)
 class AllItemNotificationDto(BaseModel):
     status_code: int = Field(default=200)
     message: str = Field(default="total product items in your cart have been successfully calculated")
-    total_items: int = Field(default=3)
+    data: TotalItemNotificationDto

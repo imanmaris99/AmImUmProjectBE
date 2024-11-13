@@ -126,18 +126,6 @@ def post_my_wishlist(
     response_model=wishlist_dtos.AllItemNotificationDto,
     status_code=status.HTTP_200_OK,
     responses={
-        status.HTTP_200_OK: {
-            "description": "User's wishlist retrieved successfully",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "status_code": 200,
-                        "message": "Your all of products wishlist success calculated",
-                        "total_items": 1,
-                    }
-                }
-            }
-        },
         status.HTTP_403_FORBIDDEN: {
             "description": "User not authorized to view wishlist",
             "content": {

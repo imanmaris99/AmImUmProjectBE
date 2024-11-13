@@ -37,3 +37,24 @@ def save_shipping_address(
         raise result.error
     
     return result.unwrap()
+
+
+@router.get(
+    "/my-address",
+    response_model=shipment_address_dtos.AllAddressListResponseDto,
+    status_code=status.HTTP_200_OK,
+    summary="Get all data shipping address in my account"
+)
+async def get_my_shipping_address(
+    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],
+    db: Session = Depends(get_db)
+):
+    result = shipment_address_services.my_shipping_address(
+        db, 
+        jwt_token.id
+    )
+
+    if result.error:
+        raise result.error
+    
+    return result.unwrap()

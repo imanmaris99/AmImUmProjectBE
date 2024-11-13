@@ -37,6 +37,11 @@ class ShipmentAddressResponseDto(BaseModel):
     message: str = Field(default="Your shipping address input has been saved")
     data: ShipmentAddressInfoDto
 
+class AllAddressListResponseDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="All Data courier shipping in your account success to access")
+    data: List[ShipmentAddressInfoDto]
+
 # class CourierIdToUpdateDto(BaseModel):
 #     courier_id:int
 

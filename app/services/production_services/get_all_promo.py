@@ -19,7 +19,7 @@ def get_all_promo(
         db: Session, 
         skip: int = 0, 
         limit: int = 10
-    ) -> Result[List[Type[ProductionModel]], Exception]:
+    ) -> Result[production_dtos.AllProductionPromoResponseDto, Exception]:
     try:
         # Mengambil semua produk dengan promo yang valid
         product_bies = (
@@ -53,7 +53,13 @@ def get_all_promo(
             for prod in product_bies if prod.promo_special > 0  # Hanya ambil produk dengan promo
         ]
 
-        return build(data=info_promo)
+        # return build(data=info_promo)
+    
+        return build(data=production_dtos.AllProductionPromoResponseDto(
+            status_code=status.HTTP_200_OK,
+            message="All List product promo from this brand accessed successfully",
+            data=info_promo
+        ))
 
     except SQLAlchemyError as e:
         return handle_db_error(db, e)

@@ -1,6 +1,6 @@
 import uuid
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 
@@ -47,6 +47,11 @@ class MyRatingListDto(BaseModel):
     product_name: Optional[str] = None
     created_at: datetime
     # updated_at: datetime
+
+class AllMyRatingListResponseDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="updated info rating and review for this product id successfully")
+    data: List[MyRatingListDto]
 
 class ReviewIdToUpdateDto(BaseModel):
     rating_id:int

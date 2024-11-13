@@ -41,11 +41,15 @@ def total_items(
         # Hitung total_records
         total_records = get_total_records(db, user_id)
 
+        quantity_items = wishlist_dtos.TotalItemWishlistDto(
+            total_items=total_records
+        )
+
         # Return DTO dengan respons yang telah dibangun
         return build(data=wishlist_dtos.AllItemNotificationDto(
             status_code=status.HTTP_200_OK,
             message=f"All products wishlist for user ID {user_id} have been successfully calculated",
-            total_items=total_records
+            data=quantity_items
         ))
     
 
