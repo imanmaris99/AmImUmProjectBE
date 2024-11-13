@@ -35,6 +35,7 @@ def create_product(
             instruction=product_instance.instruction,
             price=product_instance.price,
             product_by_id=product_instance.product_by_id,
+            is_active=product_instance.is_active,
             created_at=product_instance.created_at,
             updated_at=product_instance.updated_at
         )
