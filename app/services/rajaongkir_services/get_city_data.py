@@ -88,3 +88,35 @@ def get_city_data() -> optional.Optional[AllCitiesResponseCreateDto, HTTPExcepti
     except HTTPException as e:
         return optional.build(error=e)
 
+def get_city_data_by_keyword(city_name: str = None) -> optional.Optional[AllCitiesResponseCreateDto, HTTPException]:
+    headers = {'key': Config.RAJAONGKIR_API_KEY}
+    url = "/starter/city"
+
+    response = send_get_request(Config.RAJAONGKIR_API_HOST, url, headers)
+    
+    try:
+        cities = validate_response(response)
+        city_dtos = parse_city_data(cities)
+
+        # Jika ada city_name, filter kota berdasarkan nama
+        if city_name:
+            city_dtos = [city for city in city_dtos if city.city_name.lower() == city_name.lower()]
+
+            if not city_dtos:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=ErrorResponseDto(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        error="Not Found",
+                        message=f"Kota dengan nama '{city_name}' tidak ditemukan"
+                    ).dict()
+                )
+
+        return optional.build(data=AllCitiesResponseCreateDto(
+            status_code=status.HTTP_200_OK,
+            message="Daftar kota berhasil diakses",
+            data=city_dtos
+        ))
+
+    except HTTPException as e:
+        return optional.build(error=e)

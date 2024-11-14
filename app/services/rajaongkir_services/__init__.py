@@ -1,3 +1,3 @@
 from .get_province_data import get_province_data
-from .get_city_data import get_city_data
+from .get_city_data import get_city_data, get_city_data_by_keyword
 from .get_shipping_cost import get_shipping_cost

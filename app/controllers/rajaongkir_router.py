@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status
 
 from typing import List
 
-from app.services.rajaongkir_services import get_province_data, get_city_data, get_shipping_cost
+from app.services.rajaongkir_services import get_province_data, get_city_data, get_city_data_by_keyword, get_shipping_cost
 from app.dtos.rajaongkir_dtos import ProvinceDto, AllProvincesResponseCreateDto, CityDto, AllCitiesResponseCreateDto, ShippingCostRequest, ShippingCostDto
 from app.dtos.error_response_dtos import ErrorResponseDto
 
@@ -116,6 +116,26 @@ def fetch_cities():
         
     """ 
     result = get_city_data()
+
+    if result.error:
+        raise result.error
+
+    return result.unwrap()
+
+@router.get(
+    "/cities/by-keyword",
+    response_model=AllCitiesResponseCreateDto,
+    status_code=status.HTTP_200_OK,
+    summary="Mencari kota berdasarkan nama"
+)
+async def search_cities(
+    city_name: str 
+) -> AllCitiesResponseCreateDto:
+    """
+    Endpoint untuk mencari kota berdasarkan nama. Jika tidak ada nama kota yang diberikan,
+    maka akan mengembalikan semua kota.
+    """
+    result= get_city_data_by_keyword(city_name=city_name)
 
     if result.error:
         raise result.error
