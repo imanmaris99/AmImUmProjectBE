@@ -123,17 +123,72 @@ def fetch_cities():
     return result.unwrap()
 
 @router.get(
-    "/cities/by-keyword",
+    "/cities/{city_name}",
     response_model=AllCitiesResponseCreateDto,
     status_code=status.HTTP_200_OK,
-    summary="Mencari kota berdasarkan nama"
+        responses={
+        status.HTTP_200_OK: {
+            "description": "Kota berhasil ditemukan berdasarkan nama",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 200,
+                        "message": "Successfully fetched city data",
+                        "data": [
+                            {
+                                "city_id": 1,
+                                "city_name": "Jakarta",
+                                "province": "DKI Jakarta",
+                                "country": "Indonesia"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Kota tidak ditemukan",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 404,
+                        "error": "Not Found",
+                        "message": "Kota tidak ditemukan dengan kata kunci yang diberikan."
+                    }
+                }
+            }
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "description": "Terjadi kesalahan pada server saat mengambil data kota",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 500,
+                        "error": "Internal Server Error",
+                        "message": "Kesalahan tak terduga saat mengambil data kota."
+                    }
+                }
+            }
+        }
+    },
+    summary="Search some city by keyword name"
 )
 async def search_cities(
     city_name: str 
 ) -> AllCitiesResponseCreateDto:
     """
+    # Mencari Kota Berdasarkan Nama #
+
     Endpoint untuk mencari kota berdasarkan nama. Jika tidak ada nama kota yang diberikan,
     maka akan mengembalikan semua kota.
+
+    **Parameter:**
+    - **city_name** (str): Nama kota yang dicari. Bisa berupa bagian dari nama kota.
+
+    **Return:**
+    - **200 OK**: Kota berhasil ditemukan dan dikembalikan dalam bentuk daftar.
+    - **404 Not Found**: Jika tidak ada kota yang ditemukan berdasarkan kata kunci.
+    - **500 Internal Server Error**: Jika terjadi kesalahan saat mengambil data.
     """
     result= get_city_data_by_keyword(city_name=city_name)
 
