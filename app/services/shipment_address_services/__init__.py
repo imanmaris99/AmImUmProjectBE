@@ -1,3 +1,6 @@
 from .create_shipment_address import create_shipment_address
 from .my_shipping_address import my_shipping_address
+from .update_shipment_address import update_shipment_address
+from .delete_address import delete_address
+
 from .accessible_address import accessible_address

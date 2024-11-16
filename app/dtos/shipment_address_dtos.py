@@ -4,6 +4,8 @@ from typing import List, Optional, Literal
 
 import re
 
+class ShipmentAddressIdToUpdateDto(BaseModel):
+    address_id:int
 
 class ShipmentAddressCreateDto(BaseModel):
     name: str
@@ -42,42 +44,17 @@ class AllAddressListResponseDto(BaseModel):
     message: str = Field(default="All Data courier shipping in your account success to access")
     data: List[ShipmentAddressInfoDto]
 
-# class CourierIdToUpdateDto(BaseModel):
-#     courier_id:int
 
-# class CourierDataWeightUpdateDTO(BaseModel):
-#     courier_name: Literal['jne', 'pos', 'tiki'] = Field(..., description="Kurir jasa Kirim") 
-#     weight: int
+class DeleteAddressDto(BaseModel):
+    address_id:int
 
-# class CourierInfoUpdateWeightResponseDto(BaseModel):
-#     status_code: int = Field(default=200)
-#     message: str = Field(default="updated data weight and courier of shipping successfully")
-#     data: CourierDataWeightUpdateDTO
+class DeleteAddressInfoDto(BaseModel):
+    address_id:int
+    name: str
+    phone: str = Field(..., description="Phone number of the user, must start with +62 and contain 10-11 digits after that")
+    address: Optional[str] = None
 
-# class CourierDataUpdateDTO(BaseModel):
-#     service_type: str
-#     cost: Optional[float] = None
-
-# class CourierInfoUpdateResponseDto(BaseModel):
-#     status_code: int = Field(default=200)
-#     message: str = Field(default="updated data of courier successfully")
-#     data: CourierDataUpdateDTO
-
-# class AllCourierListResponseCreateDto(BaseModel):
-#     status_code: int = Field(default=200)
-#     message: str = Field(default="All Data courier shipping in your account success to access")
-#     data: List[CourierInfoDto]
-
-# class DeleteCourierDto(BaseModel):
-#     courier_id:int
-
-# class DeleteInfoCourierDto(BaseModel):
-#     courier_id: int
-#     courier_name: str
-#     service_type: str
-#     cost: Optional[float] = None
-
-# class DeleteCourierResponseDto(BaseModel):
-#     status_code: int = Field(default=200)
-#     message: str = Field(default="Your courier choice has been deleted")
-#     data: DeleteInfoCourierDto
+class DeleteAddressResponseDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="Your courier choice has been deleted")
+    data: DeleteAddressInfoDto

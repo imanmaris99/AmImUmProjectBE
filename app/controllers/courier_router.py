@@ -423,3 +423,98 @@ def update_my_courier(
         raise result.error
 
     return result.unwrap()
+
+
+@router.delete(
+    "/delete/{courier_id}",
+    response_model=courier_dtos.DeleteCourierResponseDto,
+    status_code=status.HTTP_200_OK,
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Courier item deleted successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 200,
+                        "message": "Your courier with ID 1 has been deleted",
+                        "data": {
+                            "courier_id":1,
+                            "courier_name":"TIKI",
+                            "service_type":"Regular",
+                            "cost":"16000.00"
+                        }
+                    }
+                }
+            }
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Courier item not found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 404,
+                        "error": "Not Found",
+                        "message": "Courier item with the specified ID does not exist."
+                    }
+                }
+            }
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "description": "User not authorized to delete this courier item",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 403,
+                        "error": "Forbidden",
+                        "message": "You do not have permission to delete this courier item."
+                    }
+                }
+            }
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "description": "Unexpected server error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 500,
+                        "error": "Internal Server Error",
+                        "message": "An unexpected error occurred while deleting the wishlist item."
+                    }
+                }
+            }
+        }
+    },
+    summary="Delete Data of Courier"
+)
+def delete_my_courier(
+        request_delete: courier_dtos.DeleteCourierDto,
+        jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],
+        db: Session = Depends(get_db)
+):
+    """
+    # Delete Data Kurir dari Data User yang Login #
+
+    Endpoint ini digunakan untuk menghapus produk tertentu dari wishlist pengguna.
+
+    **Parameter:**
+    - **request_data** (DeleteCourierDto): Data ID courier yang akan dihapus.
+    - **jwt_token** (TokenPayLoad): Token payload yang memberikan akses ke data pengguna.
+    - **db** (Session): Koneksi database untuk menghapus data wishlist.
+
+    **Return:**
+    - **200 OK**: Berhasil menghapus item courier.
+    - **404 Not Found**: Item courier tidak ditemukan.
+    - **403 Forbidden**: Pengguna tidak diizinkan untuk menghapus item courier ini.
+    - **500 Internal Server Error**: Kesalahan tak terduga saat menghapus item courier.
+    
+    """
+    result = courier_services.delete_courier(
+        db, 
+        request_delete, 
+        jwt_token.id
+    )
+
+    if result.error:
+        raise result.error
+
+    return result.unwrap()
