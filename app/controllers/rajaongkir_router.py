@@ -14,7 +14,8 @@ router = APIRouter(
 
 @router.get(
     "/provinces",
-    response_model=AllProvincesResponseCreateDto,
+    # response_model=AllProvincesResponseCreateDto,
+    response_model=List[ProvinceDto],
     status_code=status.HTTP_200_OK,
     responses={
         404: {
@@ -69,7 +70,8 @@ def fetch_provinces():
 
 @router.get(
     "/cities", 
-    response_model=AllCitiesResponseCreateDto,
+    # response_model=AllCitiesResponseCreateDto,
+    response_model=List[CityDto],
     status_code=status.HTTP_200_OK,
     responses={
         404: {

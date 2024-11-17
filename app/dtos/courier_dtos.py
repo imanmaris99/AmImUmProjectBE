@@ -68,3 +68,13 @@ class DeleteCourierResponseDto(BaseModel):
     status_code: int = Field(default=200)
     message: str = Field(default="Your courier choice has been deleted")
     data: DeleteInfoCourierDto
+
+class DataCourierInfoDto(BaseModel):
+    id: int
+    courier_name: str
+    weight: int
+    service_type: Optional[str] = None
+    cost: Optional[float] = None
+    estimated_delivery: Optional[int] = None
+    is_active: bool
+    created_at: datetime

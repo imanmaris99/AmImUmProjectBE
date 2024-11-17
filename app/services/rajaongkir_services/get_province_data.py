@@ -63,7 +63,29 @@ def parse_province_data(provinces: List[dict]) -> List[ProvinceDto]:
     return province_dtos
 
 # Fungsi utama untuk mendapatkan data provinsi dari API RajaOngkir
-def get_province_data(province_id: Optional[int] = None) -> optional.Optional[AllProvincesResponseCreateDto, HTTPException]:
+# def get_province_data(province_id: Optional[int] = None) -> optional.Optional[AllProvincesResponseCreateDto, HTTPException]:
+#     headers = {'key': Config.RAJAONGKIR_API_KEY}
+#     url = "/starter/province"
+
+#     response = send_get_request(Config.RAJAONGKIR_API_HOST, url, headers)
+    
+#     try:
+#         provinces = validate_province_response(response)
+#         province_dtos = parse_province_data(provinces)
+
+#         # return optional.build(data=province_dtos)
+    
+#         return optional.build(data=AllProvincesResponseCreateDto(
+#             status_code=status.HTTP_200_OK,
+#             message=f"All List of Provinces accessed successfully",
+#             data=province_dtos
+#         ))
+        
+#     except HTTPException as e:
+#         return optional.build(error=e)
+
+
+def get_province_data(province_id: Optional[int] = None) -> optional.Optional[List[ProvinceDto], HTTPException]:
     headers = {'key': Config.RAJAONGKIR_API_KEY}
     url = "/starter/province"
 
@@ -73,14 +95,13 @@ def get_province_data(province_id: Optional[int] = None) -> optional.Optional[Al
         provinces = validate_province_response(response)
         province_dtos = parse_province_data(provinces)
 
-        # return optional.build(data=province_dtos)
+        return optional.build(data=province_dtos)
     
-        return optional.build(data=AllProvincesResponseCreateDto(
-            status_code=status.HTTP_200_OK,
-            message=f"All List of Provinces accessed successfully",
-            data=province_dtos
-        ))
+        # return optional.build(data=AllProvincesResponseCreateDto(
+        #     status_code=status.HTTP_200_OK,
+        #     message=f"All List of Provinces accessed successfully",
+        #     data=province_dtos
+        # ))
         
     except HTTPException as e:
         return optional.build(error=e)
-

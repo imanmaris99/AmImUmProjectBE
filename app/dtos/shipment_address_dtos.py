@@ -58,3 +58,14 @@ class DeleteAddressResponseDto(BaseModel):
     status_code: int = Field(default=200)
     message: str = Field(default="Your courier choice has been deleted")
     data: DeleteAddressInfoDto
+
+
+class DataShipmentAddressInfoDto(BaseModel):
+    id: int
+    name: str
+    phone: str = Field(..., description="Phone number of the user, must start with +62 and contain 10-11 digits after that")
+    city: Optional[str] = None
+    state: Optional[str] = None
+    country: Optional[str] = None
+    zip_code: Optional[int] = None
+    created_at: datetime
