@@ -1,58 +1,56 @@
-
-from typing import Type
-
 from fastapi import HTTPException, status
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.models.courier_model import CourierModel
-from app.dtos import courier_dtos
+from app.models.shipment_model import ShipmentModel
+from app.dtos import shipment_dtos
 from app.dtos.error_response_dtos import ErrorResponseDto
 
 from app.utils.error_parser import find_errr_from_args
 from app.utils.result import build, Result
 
-def update_weight(
+
+def delete_shipment(
         db: Session, 
-        courier_update: courier_dtos.CourierIdToUpdateDto,
-        weight_data: courier_dtos.CourierDataWeightUpdateDTO,
+        request_delete: shipment_dtos.ShipmentIdToUpdateDto,
         user_id: str
-        ) -> Result[Type[CourierModel], Exception]:
+        ) -> Result[None, Exception]:
     try:
-        courier_model = db.execute(
-            select(CourierModel)
+        shipment_model = db.execute(
+            select(ShipmentModel)
             .where(
-                CourierModel.id == courier_update.courier_id,
-                CourierModel.customer_id == user_id
+                ShipmentModel.id == request_delete.shipment_id,
+                ShipmentModel.customer_id == user_id
             )  
         ).scalars().first()
-        
-        if not courier_model:
+
+        if not shipment_model:
             return build(error= HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=ErrorResponseDto(
                     status_code=status.HTTP_404_NOT_FOUND,
                     error="Not Found",
-                    message=f"Data of Courier ID {courier_update.courier_id} in User ID {user_id} Not Found"
+                    message=f"Shipment data with shipment ID : {request_delete.shipment_id} not found"
                 ).dict()
             ))
         
-        for attr, value in weight_data.model_dump().items():
-            setattr(courier_model, attr, value)
+        # Simpan informasi pengguna sebelum dihapus
+        shipment_delete_info = shipment_dtos.DeleteShipmentInfoDto(
+            id=shipment_model.id,
+            my_address=shipment_model.my_address,
+            my_courier=shipment_model.my_courier,
+            created_at=shipment_model.created_at
+        )
 
-        # Simpan perubahan ke dalam database   
+        db.delete(shipment_model)
         db.commit()
-        db.refresh(courier_model)
 
-        return build(data=courier_dtos.CourierInfoUpdateWeightResponseDto(
+        return build(data=shipment_dtos.DeleteShipmentInfoResponseDto(
             status_code=status.HTTP_200_OK,
-            message=f"Updated data Courier with ID {courier_update.courier_id} has been success",
-            data=courier_dtos.CourierDataWeightUpdateDTO(
-                courier_name=courier_model.courier_name,
-                weight=courier_model.weight
-            )
+            message=f"Your one data of Shipment with ID {request_delete.shipment_id} has been deleted",
+            data=shipment_delete_info
         ))
     
     except SQLAlchemyError:

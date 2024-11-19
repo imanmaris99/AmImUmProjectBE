@@ -50,7 +50,8 @@ def create_shipment(
             courier_id=shipment.courier_id,
             address_id=shipment.address_id,
             code_tracking=shipment.code_tracking,
-            created_at=shipment.created_at
+            created_at=shipment.created_at,
+            is_active=shipment.is_active
         )
 
         return build(data=shipment_dtos.ShipmentResponseDto(

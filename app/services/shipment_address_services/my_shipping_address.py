@@ -46,6 +46,7 @@ def my_shipping_address(
             phone=address.phone,
             address=address.address,
             city=address.city,
+            city_id=address.city_id,
             state=address.state,
             country=address.country,
             zip_code=address.zip_code,

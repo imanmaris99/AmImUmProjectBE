@@ -23,12 +23,17 @@ class CourierModel(Base):
     
     # Informasi dari API Rajaongkir
     cost = Column(Float, nullable=True)  # Biaya pengiriman
-    estimated_delivery = Column(Integer, nullable=True)  # Estimasi waktu pengiriman (dalam hari)
+    estimated_delivery = Column(String(15), nullable=True) 
     
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     
     # Relationships
     # shipments = relationship("ShipmentModel", back_populates="courier", lazy='select')  # Lazy loading
+    shipments: Mapped["ShipmentModel"] = relationship(
+        "ShipmentModel", 
+        back_populates="courier", 
+        lazy='selectin')  # Optimasi eager loading
+    
     user: Mapped["UserModel"] = relationship(
         "UserModel",
         back_populates=""

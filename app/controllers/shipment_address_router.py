@@ -119,38 +119,6 @@ def save_shipping_address(
     response_model=shipment_address_dtos.AllAddressListResponseDto,
     status_code=status.HTTP_200_OK,
     responses={
-        status.HTTP_200_OK: {
-            "description": "Daftar alamat pengiriman yang terhubung dengan pengguna.",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "status_code": 200,
-                        "data": [
-                            {
-                                "address_id": 1,
-                                "recipient_name": "John Doe",
-                                "address_line": "123 Jalan Utama",
-                                "city": "Jakarta",
-                                "province": "DKI Jakarta",
-                                "postal_code": "12345",
-                                "phone_number": "+62 812 3456 7890",
-                                "is_default": True
-                            },
-                            {
-                                "address_id": 2,
-                                "recipient_name": "Jane Doe",
-                                "address_line": "456 Jalan Samping",
-                                "city": "Bandung",
-                                "province": "Jawa Barat",
-                                "postal_code": "67890",
-                                "phone_number": "+62 813 9876 5432",
-                                "is_default": False
-                            }
-                        ]
-                    }
-                }
-            }
-        },
         status.HTTP_401_UNAUTHORIZED: {
             "description": "Pengguna tidak memiliki otorisasi untuk mengakses resource ini.",
             "content": {
@@ -419,26 +387,6 @@ def delete_my_shipping_address(
     response_model=shipment_address_dtos.ShipmentAddressResponseDto,
     status_code=status.HTTP_200_OK,
     responses={
-        status.HTTP_200_OK: {
-            "description": "Alamat pemilik toko berhasil diambil.",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "status_code": 200,
-                        "message": "Alamat berhasil ditemukan.",
-                        "data": {
-                            "id": "9d899cc1-ec4e-4f54-9e3d-89502657db91",
-                            "street": "Jl. Merdeka No. 123",
-                            "city": "Jakarta",
-                            "province": "DKI Jakarta",
-                            "postal_code": "10110",
-                            "country": "Indonesia",
-                            "updated_at": "2024-11-15T10:00:00"
-                        }
-                    }
-                }
-            }
-        },
         status.HTTP_404_NOT_FOUND: {
             "description": "Alamat tidak ditemukan.",
             "content": {

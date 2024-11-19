@@ -12,6 +12,7 @@ class ShipmentAddressCreateDto(BaseModel):
     phone: str = Field(..., description="Phone number of the user, must start with +62 and contain 10-11 digits after that")
     address: Optional[str] = None
     city: Optional[str] = None
+    city_id: Optional[int] = None
     state: Optional[str] = None
     country: Optional[str] = None
     zip_code: Optional[int] = None
@@ -29,6 +30,7 @@ class ShipmentAddressInfoDto(BaseModel):
     phone: str = Field(..., description="Phone number of the user, must start with +62 and contain 10-11 digits after that")
     address: Optional[str] = None
     city: Optional[str] = None
+    city_id: Optional[int] = None
     state: Optional[str] = None
     country: Optional[str] = None
     zip_code: Optional[int] = None
@@ -44,6 +46,12 @@ class AllAddressListResponseDto(BaseModel):
     message: str = Field(default="All Data courier shipping in your account success to access")
     data: List[ShipmentAddressInfoDto]
 
+class MyShipmentAddressInfoDto(BaseModel):
+    id: int
+    name: str
+    phone: str = Field(..., description="Phone number of the user, must start with +62 and contain 10-11 digits after that")
+    address: Optional[str] = None
+    created_at: datetime
 
 class DeleteAddressDto(BaseModel):
     address_id:int

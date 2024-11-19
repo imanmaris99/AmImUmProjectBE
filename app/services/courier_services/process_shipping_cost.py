@@ -25,6 +25,9 @@ def process_shipping_cost(
             length=request_data.length,
             width=request_data.width,
             height=request_data.height,
+            service_type=request_data.service_type,
+            cost=request_data.cost,
+            estimated_delivery=request_data.estimated_delivery,
             customer_id=user_id,
             is_active=True
         )

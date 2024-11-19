@@ -7,59 +7,61 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.models.shipment_address_model import ShipmentAddressModel
-from app.dtos import shipment_address_dtos
+from app.models.courier_model import CourierModel
+from app.dtos import courier_dtos
 from app.dtos.error_response_dtos import ErrorResponseDto
 
 from app.utils.error_parser import find_errr_from_args
 from app.utils.result import build, Result
 
-def update_shipment_address(
+def update_courier_data(
         db: Session, 
-        update_request: shipment_address_dtos.ShipmentAddressIdToUpdateDto,
-        address_data: shipment_address_dtos.ShipmentAddressCreateDto,
+        courier_update: courier_dtos.CourierIdToUpdateDto,
+        weight_data: courier_dtos.CourierCreateDto,
         user_id: str
-        ) -> Result[Type[ShipmentAddressModel], Exception]:
+        ) -> Result[Type[CourierModel], Exception]:
     try:
-        address_model = db.execute(
-            select(ShipmentAddressModel)
+        courier_model = db.execute(
+            select(CourierModel)
             .where(
-                ShipmentAddressModel.id == update_request.address_id,
-                ShipmentAddressModel.customer_id == user_id
+                CourierModel.id == courier_update.courier_id,
+                CourierModel.customer_id == user_id
             )  
         ).scalars().first()
         
-        if not address_model:
+        if not courier_model:
             return build(error= HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=ErrorResponseDto(
                     status_code=status.HTTP_404_NOT_FOUND,
                     error="Not Found",
-                    message=f"Data of Address with ID {update_request.address_id} in User ID {user_id} Not Found"
+                    message=f"Data of Courier ID {courier_update.courier_id} in User ID {user_id} Not Found"
                 ).dict()
             ))
         
-        for attr, value in address_data.model_dump().items():
-            setattr(address_model, attr, value)
+        for attr, value in weight_data.model_dump().items():
+            setattr(courier_model, attr, value)
 
         # Simpan perubahan ke dalam database   
         db.commit()
-        db.refresh(address_model)
+        db.refresh(courier_model)
 
-        return build(data=shipment_address_dtos.ShipmentAddressResponseDto(
+        return build(data=courier_dtos.CourierResponseDto(
             status_code=status.HTTP_200_OK,
-            message=f"Updated data Address with ID {update_request.address_id} has been success",
-            data=shipment_address_dtos.ShipmentAddressInfoDto(
-                id=address_model.id,
-                name=address_model.name,
-                phone=address_model.phone,
-                address=address_model.address,
-                city=address_model.city,
-                city_id=address_model.city_id,
-                state=address_model.state,
-                country=address_model.country,
-                zip_code=address_model.zip_code,
-                created_at=address_model.created_at
+            message=f"Updated data Courier with ID {courier_update.courier_id} has been success",
+            data=courier_dtos.CourierInfoDto(
+                id=courier_model.id,
+                courier_name=courier_model.courier_name,
+                phone_number=courier_model.phone_number,
+                service_type=courier_model.service_type,
+                weight=courier_model.weight,
+                length=courier_model.length,
+                width=courier_model.width,
+                height=courier_model.height,
+                cost=courier_model.cost,
+                estimated_delivery=courier_model.estimated_delivery,
+                is_active=courier_model.is_active,
+                created_at=courier_model.created_at
             )
         ))
     

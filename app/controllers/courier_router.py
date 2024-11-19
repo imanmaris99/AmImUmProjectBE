@@ -206,138 +206,122 @@ async def get_my_courier(
     return result.unwrap()
 
 
-@router.put(
-    "/edit-service/{courier_id}", 
-    response_model=courier_dtos.CourierInfoUpdateResponseDto,
-    status_code=status.HTTP_200_OK,
-    responses={
-        status.HTTP_200_OK: {
-            "description": "Courier service berhasil diperbarui",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "status_code": 200,
-                        "message": "Courier service successfully updated",
-                        "data": {
-                            "courier_id": 1,
-                            "name": "JNE Express",
-                            "contact_info": "081234567890",
-                            "status": "Active",
-                            "updated_at": "2024-10-31T12:30:00"
-                        }
-                    }
-                }
-            }
-        },
-        status.HTTP_400_BAD_REQUEST: {
-            "description": "Data yang dikirim tidak valid",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "status_code": 400,
-                        "error": "Bad Request",
-                        "message": "Data yang dikirim tidak valid."
-                    }
-                }
-            }
-        },
-        status.HTTP_403_FORBIDDEN: {
-            "description": "Token tidak valid atau pengguna tidak memiliki akses",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "status_code": 403,
-                        "error": "Forbidden",
-                        "message": "Token tidak valid atau pengguna tidak memiliki akses."
-                    }
-                }
-            }
-        },
-        status.HTTP_404_NOT_FOUND: {
-            "description": "Courier dengan ID yang diberikan tidak ditemukan",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "status_code": 404,
-                        "error": "Not Found",
-                        "message": "Courier dengan ID yang diberikan tidak ditemukan."
-                    }
-                }
-            }
-        },
-        status.HTTP_500_INTERNAL_SERVER_ERROR: {
-            "description": "Kesalahan server saat memperbarui layanan kurir",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "status_code": 500,
-                        "error": "Internal Server Error",
-                        "message": "Kesalahan tak terduga saat memperbarui layanan kurir."
-                    }
-                }
-            }
-        }
-    },
-    summary="Update courier service"
-)
-def update_my_courier_service(
-        courier_update: courier_dtos.CourierIdToUpdateDto,
-        courier_data: courier_dtos.CourierDataUpdateDTO,
-        jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],
-        db: Session = Depends(get_db)
-):
-    """
-    # Perbarui Layanan Kurir #
+# @router.put(
+#     "/edit-service/{courier_id}", 
+#     response_model=courier_dtos.CourierInfoUpdateResponseDto,
+#     status_code=status.HTTP_200_OK,
+#     responses={
+#         status.HTTP_200_OK: {
+#             "description": "Courier service berhasil diperbarui",
+#             "content": {
+#                 "application/json": {
+#                     "example": {
+#                         "status_code": 200,
+#                         "message": "Courier service successfully updated",
+#                         "data": {
+#                             "courier_id": 1,
+#                             "name": "JNE Express",
+#                             "contact_info": "081234567890",
+#                             "status": "Active",
+#                             "updated_at": "2024-10-31T12:30:00"
+#                         }
+#                     }
+#                 }
+#             }
+#         },
+#         status.HTTP_400_BAD_REQUEST: {
+#             "description": "Data yang dikirim tidak valid",
+#             "content": {
+#                 "application/json": {
+#                     "example": {
+#                         "status_code": 400,
+#                         "error": "Bad Request",
+#                         "message": "Data yang dikirim tidak valid."
+#                     }
+#                 }
+#             }
+#         },
+#         status.HTTP_403_FORBIDDEN: {
+#             "description": "Token tidak valid atau pengguna tidak memiliki akses",
+#             "content": {
+#                 "application/json": {
+#                     "example": {
+#                         "status_code": 403,
+#                         "error": "Forbidden",
+#                         "message": "Token tidak valid atau pengguna tidak memiliki akses."
+#                     }
+#                 }
+#             }
+#         },
+#         status.HTTP_404_NOT_FOUND: {
+#             "description": "Courier dengan ID yang diberikan tidak ditemukan",
+#             "content": {
+#                 "application/json": {
+#                     "example": {
+#                         "status_code": 404,
+#                         "error": "Not Found",
+#                         "message": "Courier dengan ID yang diberikan tidak ditemukan."
+#                     }
+#                 }
+#             }
+#         },
+#         status.HTTP_500_INTERNAL_SERVER_ERROR: {
+#             "description": "Kesalahan server saat memperbarui layanan kurir",
+#             "content": {
+#                 "application/json": {
+#                     "example": {
+#                         "status_code": 500,
+#                         "error": "Internal Server Error",
+#                         "message": "Kesalahan tak terduga saat memperbarui layanan kurir."
+#                     }
+#                 }
+#             }
+#         }
+#     },
+#     summary="Update courier service"
+# )
+# def update_my_courier_service(
+#         courier_update: courier_dtos.CourierIdToUpdateDto,
+#         courier_data: courier_dtos.CourierDataUpdateDTO,
+#         jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],
+#         db: Session = Depends(get_db)
+# ):
+#     """
+#     # Perbarui Layanan Kurir #
 
-    Endpoint ini memungkinkan pengguna dengan akses admin untuk memperbarui layanan kurir tertentu berdasarkan ID kurir.
+#     Endpoint ini memungkinkan pengguna dengan akses admin untuk memperbarui layanan kurir tertentu berdasarkan ID kurir.
 
-    **Parameter:**
-    - **courier_id** (int): ID kurir yang akan diperbarui.
-    - **courier_update** (CourierIdToUpdateDto): Data pembaruan ID kurir.
-    - **courier_data** (CourierDataUpdateDTO): Data yang akan diperbarui untuk kurir tersebut.
-    - **jwt_token** (TokenPayLoad): Token JWT pengguna untuk memastikan akses yang sah.
+#     **Parameter:**
+#     - **courier_id** (int): ID kurir yang akan diperbarui.
+#     - **courier_update** (CourierIdToUpdateDto): Data pembaruan ID kurir.
+#     - **courier_data** (CourierDataUpdateDTO): Data yang akan diperbarui untuk kurir tersebut.
+#     - **jwt_token** (TokenPayLoad): Token JWT pengguna untuk memastikan akses yang sah.
 
-    **Return:**
-    - **200 OK**: Layanan kurir berhasil diperbarui.
-    - **400 Bad Request**: Data yang dikirim tidak valid.
-    - **403 Forbidden**: Token tidak valid atau pengguna tidak memiliki akses.
-    - **404 Not Found**: Courier dengan ID yang diberikan tidak ditemukan.
-    - **500 Internal Server Error**: Kesalahan server saat memperbarui layanan kurir.
-    """
-    result = courier_services.update_courier(
-        db, 
-        courier_update, 
-        courier_data, 
-        user_id=jwt_token.id
-    )
+#     **Return:**
+#     - **200 OK**: Layanan kurir berhasil diperbarui.
+#     - **400 Bad Request**: Data yang dikirim tidak valid.
+#     - **403 Forbidden**: Token tidak valid atau pengguna tidak memiliki akses.
+#     - **404 Not Found**: Courier dengan ID yang diberikan tidak ditemukan.
+#     - **500 Internal Server Error**: Kesalahan server saat memperbarui layanan kurir.
+#     """
+#     result = courier_services.update_courier(
+#         db, 
+#         courier_update, 
+#         courier_data, 
+#         user_id=jwt_token.id
+#     )
 
-    if result.error:
-        raise result.error
+#     if result.error:
+#         raise result.error
 
-    return result.unwrap()
+#     return result.unwrap()
 
 
 @router.put(
     "/edit-courier/{courier_id}", 
-    response_model=courier_dtos.CourierInfoUpdateWeightResponseDto,
+    response_model=courier_dtos.CourierResponseDto,
     status_code=status.HTTP_200_OK,
     responses={
-        status.HTTP_200_OK: {
-            "description": "Berat pengiriman berhasil diperbarui",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "status_code": 200,
-                        "message": "Courier weight updated successfully",
-                        "data": {
-                            "courier_id": 1,
-                            "new_weight": 1500,
-                            "updated_at": "2024-10-31T12:45:00"
-                        }
-                    }
-                }
-            }
-        },
         status.HTTP_400_BAD_REQUEST: {
             "description": "Data yang diberikan tidak valid atau format tidak sesuai",
             "content": {
@@ -391,7 +375,7 @@ def update_my_courier_service(
 )
 def update_my_courier(
         courier_update: courier_dtos.CourierIdToUpdateDto,
-        weight_data: courier_dtos.CourierDataWeightUpdateDTO,
+        weight_data: courier_dtos.CourierCreateDto,
         jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],
         db: Session = Depends(get_db)
 ):
@@ -412,7 +396,7 @@ def update_my_courier(
     - **404 Not Found**: Kurir tidak ditemukan berdasarkan ID yang diberikan.
     - **500 Internal Server Error**: Kesalahan server saat memperbarui data berat pengiriman.
     """
-    result = courier_services.update_weight(
+    result = courier_services.update_courier_data(
         db, 
         courier_update, 
         weight_data, 

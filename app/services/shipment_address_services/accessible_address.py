@@ -79,6 +79,7 @@ def accessible_address(
             phone=address_model.phone,
             address=address_model.address,
             city=address_model.city,
+            city_id=address_model.city_id,
             state=address_model.state,
             country=address_model.country,
             zip_code=address_model.zip_code,

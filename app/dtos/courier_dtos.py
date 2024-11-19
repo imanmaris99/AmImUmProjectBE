@@ -9,6 +9,9 @@ class CourierCreateDto(BaseModel):
     length: Optional[int] = None
     width: Optional[int] = None
     height: Optional[int] = None
+    service_type: Optional[str] = None
+    cost: Optional[float] = None
+    estimated_delivery: Optional[str] = None
     
 class CourierInfoDto(BaseModel):
     id: int
@@ -20,7 +23,7 @@ class CourierInfoDto(BaseModel):
     width: Optional[int] = None
     height: Optional[int] = None
     cost: Optional[float] = None
-    estimated_delivery: Optional[int] = None
+    estimated_delivery: Optional[str] = None
     is_active: bool
     created_at: datetime
 
@@ -28,6 +31,15 @@ class CourierResponseDto(BaseModel):
     status_code: int = Field(default=201)
     message: str = Field(default="Your courier shipping input has been saved")
     data: CourierInfoDto
+
+class MyCourierInfoDto(BaseModel):
+    id: int
+    courier_name: str
+    weight: int
+    service_type: Optional[str] = None
+    cost: Optional[float] = None
+    estimated_delivery: Optional[str] = None
+    created_at: datetime
 
 class CourierIdToUpdateDto(BaseModel):
     courier_id:int
@@ -75,6 +87,6 @@ class DataCourierInfoDto(BaseModel):
     weight: int
     service_type: Optional[str] = None
     cost: Optional[float] = None
-    estimated_delivery: Optional[int] = None
+    estimated_delivery: Optional[str] = None
     is_active: bool
     created_at: datetime

@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, func
 from sqlalchemy.dialects.mysql import CHAR
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Mapped
 from app.libs.sql_alchemy_lib import Base
 
 class ShipmentAddressModel(Base):
@@ -12,6 +12,7 @@ class ShipmentAddressModel(Base):
     phone = Column(String(20), nullable=False)
     address = Column(String(100), nullable=False)
     city = Column(String(50), nullable=False)
+    city_id = Column(Integer, nullable=True)
     state = Column(String(20), nullable=False)
     country = Column(String(50), nullable=False)
     zip_code = Column(String(10), nullable=False)
@@ -21,3 +22,7 @@ class ShipmentAddressModel(Base):
     # Relationships
     # customer = relationship("UserModel", back_populates="shipment_addresses", lazy='select')  # Lazy loading
     # shipments = relationship("ShipmentModel", back_populates="shipment_address", lazy='select')  # Lazy loading
+    shipments: Mapped["ShipmentModel"] = relationship(
+        "ShipmentModel", 
+        back_populates="shipment_address", 
+        lazy='selectin')  # Optimasi eager loading
