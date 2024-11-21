@@ -34,10 +34,10 @@ class ShipmentModel(Base):
         lazy="selectin"  # Optimized eager loading
     )    
 
-    # ratings: Mapped[list["RatingModel"]] = relationship(
-    #     "RatingModel", 
-    #     back_populates="products", 
-    #     lazy='select')  # Lazy loading
+    order: Mapped[list["OrderModel"]] = relationship(
+        "OrderModel", 
+        back_populates="shipments", 
+        lazy="selectin")  # Lazy loading
 
     user: Mapped["UserModel"] = relationship(
         "UserModel",
@@ -73,6 +73,13 @@ class ShipmentModel(Base):
             created_at=courier_model.created_at
         ).model_dump()
 
+    # Properti untuk harga pengiriman
+    @property
+    def shipping_cost(self):
+        from app.models.courier_model import CourierModel
+        courier_models: CourierModel = self.courier
+        return courier_models.cost if courier_models else ""
+    
     @property
     def user_name(self):
         from app.models.user_model import UserModel

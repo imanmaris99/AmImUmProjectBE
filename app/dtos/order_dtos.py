@@ -1,31 +1,52 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, root_validator
 from typing import List, Optional
 from datetime import datetime
 
-class OrderItemDTO(BaseModel):
-    product_id: int
-    quantity: int
-    price: float
+from app.dtos.order_item_dtos import OrderItemDto
+from app.models.enums import DeliveryTypeEnum
+
 
 class OrderCreateDTO(BaseModel):
-    customer_id: Optional[int]  # Nullable for non-member
-    payment_type: str
-    shipment_id: Optional[int]
-    order_items: List[OrderItemDTO]
+    delivery_type: DeliveryTypeEnum
+    notes: Optional[str] = None
+    shipment_id: Optional[str] = None
 
-class OrderResponseDTO(BaseModel):
-    id: int
+    @root_validator(skip_on_failure=True)
+    def validate_pickup_notes(cls, values):
+        delivery_type = values.get("delivery_type")
+        notes = values.get("notes")
+        
+        if delivery_type == DeliveryTypeEnum.pickup and not notes:
+            raise ValueError("Notes wajib diisi untuk pengiriman tipe pickup.")
+        return values
+    
+class OrderCreateInfoDTO(BaseModel):
+    id: str
     status: str
     total_price: float
-    customer_id: Optional[int]
-    payment_type: str
-    shipment_id: Optional[int]
+    shipment_id: Optional[int] = None
+    delivery_type: DeliveryTypeEnum
+    notes: Optional[str] = None
     created_at: datetime
-    updated_at: datetime
-    order_items: List[OrderItemDTO]
 
-    # class Config:
-    #     orm_mode = True
+class OrderInfoResponseDto(BaseModel):
+    status_code: int = Field(default=201)
+    message: str = Field(default="Your order has been saved")
+    data: OrderCreateInfoDTO
 
-    class Config:
-        from_attributes = True  # Ubah dari orm_mode ke from_attributes
+class GetOrderInfoDto(BaseModel):
+    id: str
+    status: str
+    total_price: float
+    shipment_id: Optional[str] = None
+    delivery_type: DeliveryTypeEnum
+    notes: Optional[str] = None
+    customer_name: Optional[str] = None
+    created_at: datetime
+    shipping_cost:float
+    order_item_lists: List[OrderItemDto]
+
+class GetOrderInfoResponseDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="Information about your order successfully retrieved")
+    data: List[GetOrderInfoDto]

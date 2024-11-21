@@ -48,6 +48,8 @@ app.include_router(controllers.cart_router.router)
 app.include_router(controllers.courier_router.router)
 app.include_router(controllers.shipment_address_router.router)
 app.include_router(controllers.shipment_router.router)
+app.include_router(controllers.order_router.router)
+
 app.include_router(controllers.rajaongkir_router.router)
 
 

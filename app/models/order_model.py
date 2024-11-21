@@ -1,14 +1,19 @@
 import enum
+
 import uuid
 from sqlalchemy import Column, Enum, String, DECIMAL, DateTime, ForeignKey, func
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import relationship, Mapped
+
+from app.dtos import order_dtos
+
 from app.libs.sql_alchemy_lib import Base
+from app.models.enums import DeliveryTypeEnum
 
 
-class DeliveryTypeEnum(enum.Enum):
-    delivery = "delivery"
-    pickup = "pickup"
+# class DeliveryTypeEnum(enum.Enum):
+#     delivery = "delivery"
+#     pickup = "pickup"
 
 class OrderModel(Base):
     __tablename__ = "orders"
@@ -25,43 +30,61 @@ class OrderModel(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     
     # Relationships
-    # customer = relationship(
-    #     "UserModel",
-    #     back_populates="orders",
-    #     lazy='selectin'  # Menggunakan selectin untuk optimasi eager loading
-    # )
-    # shipment = relationship(
-    #     "ShipmentModel",
-    #     back_populates="order",
-    #     lazy='selectin'  # Menggunakan selectin untuk optimasi eager loading
-    # )
-    # order_items = relationship(
-    #     "OrderItemModel",
-    #     back_populates="order",
-    #     lazy='selectin'  # Menggunakan selectin untuk optimasi eager loading jika diperlukan
-    # )
     # payment = relationship(
     #     "PaymentModel",
     #     back_populates="order",
     #     uselist=False,
     #     lazy='selectin'  # Menggunakan selectin untuk optimasi eager loading
     # )
-
-    shipment: Mapped["ShipmentModel"] = relationship(
-        "ShipmentModel", 
-        back_populates="", 
-    )
-
     # cart: Mapped[list["CartProductModel"]] = relationship(
     #     "CartProductModel", 
     #     back_populates="", 
     # )
-    
     user: Mapped["UserModel"] = relationship(
         "UserModel",
         back_populates=""
     )
 
+    shipments: Mapped["ShipmentModel"] = relationship(
+        "ShipmentModel", 
+        back_populates="", 
+    )
+
+    order_items: Mapped[list["OrderItemModel"]] = relationship(
+        "OrderItemModel",
+        back_populates="order",
+        lazy='selectin'  # Menggunakan selectin untuk optimasi eager loading jika diperlukan
+    )
+    
+
     def __repr__(self):
         # Mengonversi UUID biner kembali ke format string untuk representasi yang lebih mudah dibaca
         return f"<Order(id='{self.id}', status='{self.status}', total_price={self.total_price})>"
+    
+
+    @property
+    def customer_name(self) -> str:
+        from app.models.user_model import UserModel
+        user_models: UserModel = self.user
+        return user_models.firstname if user_models else ""
+
+    @property
+    def shipping_cost(self):
+        from app.models.shipment_model import ShipmentModel
+        shipment_models: ShipmentModel = self.shipments
+        return shipment_models.shipping_cost if shipment_models else ""
+
+    @property
+    def order_item_lists(self):
+        return [
+            order_dtos.OrderItemDto(
+                id=order_item.id,
+                product_name=order_item.product_name,
+                variant_product=order_item.variant_product,
+                variant_discount=order_item.variant_discount,
+                quantity=order_item.quantity,
+                price_per_item=order_item.price_per_item,
+                total_price=order_item.total_price,
+                created_at=order_item.created_at
+            ).model_dump() for order_item in self.order_items
+        ] if self.order_items else []

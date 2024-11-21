@@ -1,6 +1,11 @@
+from typing import Any, Dict, Optional
+
 from sqlalchemy import Column, Integer, DECIMAL, DateTime, ForeignKey, String, func
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import relationship, Mapped
+
+from app.dtos import pack_type_dtos
+
 from app.libs.sql_alchemy_lib import Base
 
 class OrderItemModel(Base):
@@ -28,6 +33,10 @@ class OrderItemModel(Base):
     #     back_populates="order_items",
     #     lazy='selectin'  # Menggunakan selectin untuk optimasi eager loading
     # )
+    # user: Mapped["UserModel"] = relationship(
+    #     "UserModel",
+    #     back_populates=""
+    # )
     
     products: Mapped["ProductModel"] = relationship(
         "ProductModel",
@@ -41,15 +50,51 @@ class OrderItemModel(Base):
 
     order: Mapped[list["OrderModel"]] = relationship(
         "OrderModel", 
-        back_populates="", 
+        back_populates="order_items", 
+        lazy="selectin"
     )
     
-    # user: Mapped["UserModel"] = relationship(
-    #     "UserModel",
-    #     back_populates=""
-    # )
-
     def __repr__(self):
         # Mengonversi UUID biner kembali ke format string untuk representasi yang lebih mudah dibaca
         return f"<OrderItem(id={self.id}, quantity={self.quantity}, price={self.price}, product_id='{self.product_id}', order_id='{self.order_id}')>"
     
+
+    @property
+    def product_name(self) -> str:
+        from app.models.product_model import ProductModel
+        products_model: ProductModel = self.products
+        return products_model.name if products_model else ""
+    
+    # Properti untuk harga produk tanpa promo
+    @property
+    def product_price(self):
+        return self.products.price if self.products else 0
+    
+    # Properti untuk variant produk
+    @property
+    def variant_product(self):
+        return self.pack_type.variant if self.pack_type else 0
+
+    @property
+    def variant_discount(self):
+        return self.pack_type.discount if self.pack_type else 0
+
+    # Properti untuk harga promo (diskon)
+    @property
+    def promo(self):
+        return float(self.pack_type.promo) if self.pack_type and self.pack_type.promo else 0
+
+    @property
+    def variant_info(self) -> Optional[Dict[str, Any]]:
+        if not self.pack_type:
+            return None
+
+        # Mengembalikan satu variant berdasarkan relasi `variant_id`
+        variant = self.pack_type
+        return pack_type_dtos.VariantProductCartDto(
+            id=variant.id,
+            variant=variant.variant,
+            name=variant.name,
+            img=variant.img,
+            discount=variant.discount,
+        ).model_dump()
