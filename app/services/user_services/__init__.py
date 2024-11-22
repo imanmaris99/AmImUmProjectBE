@@ -23,4 +23,4 @@ from .update_photo import update_my_photo
 
 from .verify_user_email import verify_user_email
 
-from .support_function import validate_user_data, create_firebase_user_account, save_user_to_db, save_admin_to_db, handle_integrity_error
+from .support_function import validate_user_data, create_firebase_user_account, delete_unverified_users, save_user_to_db, save_admin_to_db, handle_integrity_error

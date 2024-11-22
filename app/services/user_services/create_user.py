@@ -11,7 +11,7 @@ from app.dtos.error_response_dtos import ErrorResponseDto
 from app.libs import password_lib
 from app.libs.verification_code import generate_verification_code
 
-from app.services.user_services.support_function import create_firebase_user_account, handle_integrity_error, save_user_to_db, validate_user_data
+from app.services.user_services.support_function import create_firebase_user_account, handle_integrity_error, save_user_to_db, validate_user_data, delete_unverified_users
 
 from app.utils.firebase_utils import create_firebase_user, send_verification_email
 from app.utils.error_parser import is_valid_password
@@ -37,6 +37,9 @@ def create_user(db: Session, user: user_dtos.UserCreateDto) -> optional.Optional
 
         # Kirim email verifikasi
         send_verification_email(firebase_user, user.firstname, verification_code)
+
+        # **Panggil fungsi untuk menghapus user yang tidak terverifikasi**
+        delete_unverified_users(db)  # Menghapus user yang sudah tidak aktif dalam waktu yang ditentukan
 
         # Mempersiapkan response data yang sudah sesuai dengan DTO
         user_data_dto = user_dtos.UserCreateResponseDto(

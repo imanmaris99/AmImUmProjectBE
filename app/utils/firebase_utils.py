@@ -2,6 +2,7 @@ from fastapi import HTTPException, status
 
 import firebase_admin
 from firebase_admin import credentials, auth, initialize_app
+from firebase_admin.exceptions import FirebaseError
 
 import smtplib
 from email.mime.text import MIMEText
@@ -88,6 +89,43 @@ def authenticate_firebase_user(email: str, password: str):
             ).dict()
         )
 
+def delete_firebase_user(firebase_uid: str) -> None:
+    """
+    Menghapus akun user dari Firebase Authentication.
+
+    Args:
+        firebase_uid (str): UID user di Firebase yang akan dihapus.
+
+    Raises:
+        HTTPException: Jika terjadi kesalahan dalam proses penghapusan akun.
+    """
+    try:
+        # Hapus user berdasarkan Firebase UID
+        auth.delete_user(firebase_uid)
+        print(f"Firebase user with UID {firebase_uid} has been deleted successfully.")
+
+    except FirebaseError as e:
+        # Jika terjadi kesalahan dari Firebase SDK
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
+                "error": "Firebase Error",
+                "message": f"Failed to delete Firebase user: {str(e)}"
+            }
+        )
+
+    except Exception as e:
+        # Jika terjadi kesalahan tak terduga
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
+                "error": "Internal Server Error",
+                "message": f"Unexpected error while deleting Firebase user: {str(e)}"
+            }
+        )
+    
 
 def send_email(to_email: str, subject: str, body: str, html: bool = False):
     """Mengirim email melalui SMTP dengan opsi HTML atau teks biasa."""
