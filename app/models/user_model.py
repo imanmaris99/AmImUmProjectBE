@@ -23,6 +23,7 @@ class UserModel(Base):
     firebase_uid = Column(String(50), nullable=True)
     is_active = Column(Boolean, default=False)
     verification_code = Column(String, nullable=True)
+    verification_expiry = Column(DateTime, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     

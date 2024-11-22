@@ -1,6 +1,8 @@
 # app/services/create_user.py
 from fastapi import HTTPException, status
 
+from datetime import datetime, timedelta
+
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
@@ -25,6 +27,9 @@ def create_user(db: Session, user: user_dtos.UserCreateDto) -> optional.Optional
 
         # Simpan data user ke database
         user_model, verification_code = save_user_to_db(db, user)
+
+        # Set waktu kedaluwarsa verifikasi 10 menit setelah pembuatan akun
+        user_model.verification_expiry = datetime.utcnow() + timedelta(minutes=10)
 
         # Buat akun Firebase
         firebase_user = create_firebase_user_account(user)
@@ -60,9 +65,14 @@ def create_user(db: Session, user: user_dtos.UserCreateDto) -> optional.Optional
 
         return optional.build(data=user_dtos.UserResponseDto(
             status_code=status.HTTP_201_CREATED,
-            message=f"Account is not yet active. Verification email has been sent to {user.email}.",
+            message=(
+                f"Account is not yet active.\n"
+                f"A verification email has been sent to {user.email}.\n"
+                "Please verify your email within 10 minutes to activate your account."
+            ),
             data=user_data_dto
         ))
+
 
     except IntegrityError as ie:
         db.rollback()

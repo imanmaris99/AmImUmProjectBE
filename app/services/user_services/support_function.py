@@ -55,12 +55,13 @@ def create_firebase_user_account(user: user_dtos.UserCreateDto) -> dict:
 
 def delete_unverified_users(db: Session):
     """
-    Menghapus semua user yang tidak melakukan verifikasi dalam waktu 10 menit.
+    Menghapus semua user yang tidak melakukan verifikasi dalam waktu 10 menit
+    setelah pembuatan akun.
     """
-    expiration_time = datetime.utcnow() - timedelta(minutes=5)
+    expiration_time = datetime.utcnow()  # Waktu sekarang untuk perbandingan
     unverified_users = db.query(UserModel).filter(
-        UserModel.is_active == False,  # Hanya untuk user yang tidak aktif
-        UserModel.created_at < expiration_time  # Dibuat lebih dari 10 menit lalu
+        UserModel.is_active == False,  # Hanya untuk user yang tidak aktif (belum diverifikasi)
+        UserModel.verification_expiry < expiration_time  # Jika expired lebih kecil dari waktu sekarang
     ).all()
 
     for user in unverified_users:
