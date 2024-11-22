@@ -19,18 +19,18 @@ load_dotenv()
 
 
 # Mengambil kredensial dari variabel lingkungan
-# firebase_service_account_key = os.getenv('FIREBASE_SERVICE_ACCOUNT_KEY')
+firebase_service_account_key = os.getenv('FIREBASE_SERVICE_ACCOUNT_KEY')
 
-# if firebase_service_account_key and not firebase_admin._apps:
-#     cred = credentials.Certificate(json.loads(firebase_service_account_key))
-#     firebase_admin.initialize_app(cred)
-# else:
-#     raise ValueError("Firebase service account key tidak ditemukan atau sudah diinisialisasi.")
+if firebase_service_account_key and not firebase_admin._apps:
+    cred = credentials.Certificate(json.loads(firebase_service_account_key))
+    firebase_admin.initialize_app(cred)
+else:
+    raise ValueError("Firebase service account key tidak ditemukan atau sudah diinisialisasi.")
 
 # Inisialisasi Firebase
-cred = credentials.Certificate("path/to/serviceAccountKey.json")
-if not firebase_admin._apps:
-    firebase_admin.initialize_app(cred)
+# cred = credentials.Certificate("path/to/serviceAccountKey.json")
+# if not firebase_admin._apps:
+#     firebase_admin.initialize_app(cred)
 
 
 # Fungsi untuk membuat user di Firebase
