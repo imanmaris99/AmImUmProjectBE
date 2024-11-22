@@ -12,7 +12,10 @@ ENV POETRY_VIRTUALENVS_CREATE=false
 FROM base AS build
 
 # Install required packages
-RUN apk add --update --no-cache build-base postgresql-dev musl-dev
+RUN apk add --update --no-cache build-base postgresql-dev musl-dev tzdata
+
+# Set timezone (replace with your desired timezone)
+ENV TZ=Asia/Jakarta
 
 # Set working directory
 WORKDIR /usr/src/app
@@ -41,7 +44,10 @@ ENV VIRTUAL_ENV=/usr/src/app/.venv \
     PATH="/usr/src/app/.venv/bin:$PATH"
 
 # Install production dependencies
-RUN apk add --no-cache postgresql-client
+RUN apk add --no-cache postgresql-client tzdata
+
+# Set timezone (this is also needed in the final stage)
+ENV TZ=Asia/Jakarta
 
 # Set working directory
 WORKDIR /usr/src/app
