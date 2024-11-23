@@ -38,6 +38,7 @@ def verify_user_email(code: str, email: str, db: Session) -> optional.Optional[E
         if user.verification_code == code:
             user.is_active = True
             user.verification_code = None  # Hapus kode verifikasi setelah berhasil diverifikasi
+            user.verification_expiry = None
             db.commit()
             return optional.build(data=EmailVerificationResponseDto(
                 status_code=status.HTTP_200_OK,
