@@ -56,10 +56,15 @@ class OrderModel(Base):
         lazy='selectin'  # Menggunakan selectin untuk optimasi eager loading jika diperlukan
     )
     
-
+    payment: Mapped["PaymentModel"] = relationship(
+        "PaymentModel",
+        back_populates="order",
+        uselist=False,
+        lazy='selectin'  # Menggunakan selectin untuk optimasi eager loading jika diperlukan
+    )
+    
     def __repr__(self):
-        # Mengonversi UUID biner kembali ke format string untuk representasi yang lebih mudah dibaca
-        return f"<Order(id='{self.id}', status='{self.status}', total_price={self.total_price})>"
+        return f"<Order(id={self.id}, status={self.status}, delivery_type={self.delivery_type})>"
     
 
     @property
@@ -67,6 +72,18 @@ class OrderModel(Base):
         from app.models.user_model import UserModel
         user_models: UserModel = self.user
         return user_models.firstname if user_models else ""
+
+    @property
+    def customer_email(self) -> str:
+        from app.models.user_model import UserModel
+        user_models: UserModel = self.user
+        return user_models.email if user_models else ""
+
+    @property
+    def customer_phone(self) -> str:
+        from app.models.user_model import UserModel
+        user_models: UserModel = self.user
+        return user_models.phone if user_models else ""
 
     @property
     def shipping_cost(self):
