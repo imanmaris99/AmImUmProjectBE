@@ -2,6 +2,8 @@ from pydantic import BaseModel, Field, validator
 from typing import Optional, Any
 from app.models.enums import PaymentTypeEnum, TransactionStatusEnum, FraudStatusEnum  # Mengimpor Enum
 
+class PaymentOrderByIdDto(BaseModel):
+    order_id: str  # UUID dari order yang akan dibayar
 
 class PaymentCreateDto(BaseModel):
     order_id: str  # UUID dari order yang akan dibayar
@@ -48,10 +50,10 @@ class PaymentInfoResponseDto(BaseModel):
     data: PaymentMidtransResponseDTO
 
 class InfoTransactionIdDto(BaseModel):
-    transaction_id: str
+    order_id: str
 
 class PaymentNotificationSchemaDto(BaseModel):
-    transaction_id: str
+    order_id: str
     transaction_status: TransactionStatusEnum  # Menggunakan Enum di DTO
     fraud_status: FraudStatusEnum  # Menggunakan Enum di DTO
 

@@ -1,3 +1,4 @@
+import logging
 from fastapi import HTTPException, status
 
 from sqlalchemy import select
@@ -7,7 +8,7 @@ from sqlalchemy.exc import SQLAlchemyError, DataError, IntegrityError
 from app.models.payment_model import PaymentModel
 from app.models.order_model import OrderModel
 
-from app.dtos.payment_dtos import PaymentCreateDto, PaymentMidtransResponseDTO, PaymentInfoResponseDto
+from app.dtos.payment_dtos import PaymentOrderByIdDto, PaymentCreateDto, PaymentMidtransResponseDTO, PaymentInfoResponseDto
 from app.dtos.error_response_dtos import ErrorResponseDto
 
 from app.services.cart_services.support_function import handle_db_error
@@ -16,8 +17,11 @@ from app.libs.midtrans_config import snap
 from app.services.payment_services.support_function import generate_midtrans_payload, validate_midtrans_response
 from app.utils.result import build, Result
 
+# Logger untuk Midtrans
+logger = logging.getLogger("midtrans")
+
 def create_transaction(
-        payment_data: PaymentCreateDto,
+        payment_data: PaymentOrderByIdDto,
         db: Session,
         user_id: str
     ) -> Result[PaymentInfoResponseDto, Exception]:
@@ -58,11 +62,12 @@ def create_transaction(
             )
 
         # Buat payload untuk transaksi Midtrans
-        transaction_payload = generate_midtrans_payload(order, payment_data.payment_type)
+        transaction_payload = generate_midtrans_payload(order)
 
         # Buat transaksi di Midtrans
         try:
             transaction_response = snap.create_transaction(transaction_payload)
+        
         except Exception as e:
             return build(
                 error=HTTPException(
@@ -83,8 +88,7 @@ def create_transaction(
         # Simpan transaksi ke database
         payment = PaymentModel(
             order_id=order.id,
-            transaction_id=transaction_response["transaction_id"],
-            payment_type=payment_data.payment_type,
+            transaction_id="unknown",
             gross_amount=order.total_price,
             transaction_status="pending",
             payment_response=transaction_response,
@@ -95,7 +99,7 @@ def create_transaction(
 
         # Buat DTO response
         payment_callback = PaymentMidtransResponseDTO(
-                transaction_id=transaction_response["transaction_id"],
+                transaction_id="unknown",
                 redirect_url=transaction_response["redirect_url"],
                 token=transaction_response["token"],
                 transaction_status="pending"

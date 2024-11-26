@@ -22,14 +22,14 @@ router = APIRouter(
     status_code=status.HTTP_201_CREATED,
 )
 def create_payment(
-    payment_data: payment_dtos.PaymentCreateDto, 
+    payment_data: payment_dtos.PaymentOrderByIdDto, 
     jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],
     db: Session = Depends(get_db)
 ):
     result = payment_services.create_transaction(
-        db,
-        payment_data, 
-        jwt_token.id
+        payment_data=payment_data, 
+        db=db,
+        user_id=jwt_token.id
     )
 
     if result.error:
