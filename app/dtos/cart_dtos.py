@@ -64,6 +64,11 @@ class CartInfoUpdateResponseDto(BaseModel):
     message: str = Field(default="Updated info about your Cart successed")
     data: UpdateInfoCartItemDto
 
+class CartInfoUpdateAllActivateResponseDto(BaseModel):
+    status_code: int
+    message: str
+    data: list[UpdateInfoCartItemDto]
+
 class DeleteByIdCartDto(BaseModel):
     cart_id: int
 

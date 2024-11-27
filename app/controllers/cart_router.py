@@ -287,7 +287,7 @@ async def get_total_item_in_my_cart(
 
 
 @router.put(
-        "/edit-quantity/{cart_id}", 
+        "/update-quantity/{cart_id}", 
         response_model=cart_dtos.CartInfoUpdateResponseDto,
         status_code=status.HTTP_200_OK
     )
@@ -310,42 +310,24 @@ def update_my_quantity_item(
     return result.data
 
 @router.put(
-    "/edit-activate/{cart_id}", 
+    "/update-activate/{cart_id}", 
     response_model=cart_dtos.CartInfoUpdateResponseDto,
     status_code=status.HTTP_200_OK,
     responses={
-        status.HTTP_200_OK: {
-            "description": "Jumlah produk dalam keranjang berhasil diperbarui",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "status_code": 200,
-                        "message": "Jumlah produk dalam keranjang berhasil diperbarui",
-                        "data": {
-                            "cart_id": "12345abcd",
-                            "product_id": "123e4567-e89b-12d3-a456-426614174000",
-                            "variant_id": "abc123variant",
-                            "quantity": 3,
-                            "updated_at": "2024-11-09T12:30:00"
-                        }
-                    }
-                }
-            }
-        },
         status.HTTP_400_BAD_REQUEST: {
-            "description": "Request tidak valid atau jumlah produk tidak valid",
+            "description": "Request tidak valid",
             "content": {
                 "application/json": {
                     "example": {
                         "status_code": 400,
                         "error": "Bad Request",
-                        "message": "Jumlah produk yang dimasukkan tidak valid atau tidak ada dalam keranjang."
+                        "message": "Item produk yagng akan diaktivasi tidak ada dalam keranjang."
                     }
                 }
             }
         },
         status.HTTP_403_FORBIDDEN: {
-            "description": "User does not have permission to add to wishlist",
+            "description": "User does not have permission",
             "content": {
                 "application/json": {
                     "example": {
@@ -369,19 +351,19 @@ def update_my_quantity_item(
             }
         },
         status.HTTP_500_INTERNAL_SERVER_ERROR: {
-            "description": "Terjadi kesalahan saat memperbarui jumlah produk",
+            "description": "Terjadi kesalahan saat melakukan aktivasi item",
             "content": {
                 "application/json": {
                     "example": {
                         "status_code": 500,
                         "error": "Internal Server Error",
-                        "message": "Terjadi kesalahan saat memperbarui jumlah produk dalam keranjang."
+                        "message": "Terjadi kesalahan saat pembaruan item di kranjang."
                     }
                 }
             }
         }
     },
-    summary="Updated the quantity of product in my Cart"
+    summary="Update activate status of item product in my Cart"
 )
 def update_my_activate_item(
         cart: cart_dtos.UpdateByIdCartDto,
@@ -390,13 +372,13 @@ def update_my_activate_item(
         db: Session = Depends(get_db)
 ):
     """
-    # Memperbarui Jumlah Produk dalam Keranjang #
+    # Aktivasi Status Item Produk dalam Keranjang #
 
-    Endpoint ini memungkinkan pengguna untuk memperbarui jumlah produk yang ada dalam keranjang belanja mereka.
+    Endpoint ini memungkinkan pengguna untuk memperbarui status aktivasi item yang ada di keranjang.
 
     **Parameter:**
     - **cart_id**: ID keranjang produk yang ingin diperbarui.
-    - **quantity_update**: Jumlah produk baru yang ingin diperbarui di keranjang.
+    - **activate_update**: status aktifasi yang ingin diperbarui di keranjang.
 
     **Return:**
     - **200 OK**: Jumlah produk berhasil diperbarui.
@@ -418,6 +400,93 @@ def update_my_activate_item(
 
     return result.data
 
+@router.put(
+    "/update-activate-all", 
+    response_model=cart_dtos.CartInfoUpdateAllActivateResponseDto,
+    responses={
+        status.HTTP_400_BAD_REQUEST: {
+            "description": "Request tidak valid",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 400,
+                        "error": "Bad Request",
+                        "message": "Item produk yagng akan diaktivasi tidak ada dalam keranjang."
+                    }
+                }
+            }
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "description": "User does not have permission",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 403,
+                        "error": "Forbidden",
+                        "message": "User is not authorized."
+                    }
+                }
+            }
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Keranjang tidak ditemukan atau produk tidak ditemukan",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 404,
+                        "error": "Not Found",
+                        "message": "Keranjang atau produk tidak ditemukan."
+                    }
+                }
+            }
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "description": "Terjadi kesalahan saat melakukan aktivasi item",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 500,
+                        "error": "Internal Server Error",
+                        "message": "Terjadi kesalahan saat pembaruan item di kranjang."
+                    }
+                }
+            }
+        }
+    },    
+    summary="Update activate status of all item product in my Cart"
+)
+async def update_all_cart_items(
+    activate_update: cart_dtos.UpdateActivateItemDto,
+    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],
+    db: Session = Depends(get_db)
+
+):
+    """
+    # Memperbarui Semua Status Aktif Item Produk dalam Keranjang #
+
+    Endpoint ini memungkinkan pengguna untuk memperbarui atau update semua cart milik user yang sedang login..
+
+    **Parameter:**
+    - **activate_update**: status aktifasi yang ingin diperbarui di keranjang.
+
+    **Return:**
+    - **200 OK**: Berhasil melakukan pembaruan status aktif item produk di keranjang.
+    - **400 Bad Request**: Jumlah produk tidak valid atau request tidak lengkap.
+    - **403 Forbidden**: Pengguna tidak memiliki akses untuk memperbarui cart.
+    - **404 Not Found**: Produk atau keranjang tidak ditemukan.
+    - **500 Internal Server Error**: Terjadi kesalahan saat memperbarui data.
+    
+    """
+    
+    result = cart_services.update_activate_all_items(
+        db, 
+        activate_update, 
+        user_id=jwt_token.id)
+    
+    if result.error:
+        raise result.error
+
+    return result.data
 
 @router.delete(
     "/delete/{cart_id}",
