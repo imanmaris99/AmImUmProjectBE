@@ -289,14 +289,84 @@ async def get_total_item_in_my_cart(
 @router.put(
         "/update-quantity/{cart_id}", 
         response_model=cart_dtos.CartInfoUpdateResponseDto,
-        status_code=status.HTTP_200_OK
-    )
+        status_code=status.HTTP_200_OK,
+        responses={
+        status.HTTP_400_BAD_REQUEST: {
+            "description": "Permintaan tidak valid, seperti jumlah negatif atau produk tidak ada",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 400,
+                        "error": "Bad Request",
+                        "message": "Jumlah yang dimasukkan tidak valid atau produk tidak ditemukan dalam keranjang."
+                    }
+                }
+            }
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "description": "Token tidak valid atau pengguna tidak diizinkan memperbarui item ini",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 403,
+                        "error": "Forbidden",
+                        "message": "Anda tidak memiliki izin untuk memperbarui item keranjang ini."
+                    }
+                }
+            }
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Item dalam keranjang dengan ID yang diberikan tidak ditemukan",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 404,
+                        "error": "Not Found",
+                        "message": "Item keranjang dengan ID yang diberikan tidak ditemukan."
+                    }
+                }
+            }
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "description": "Kesalahan server saat memperbarui item keranjang",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 500,
+                        "error": "Internal Server Error",
+                        "message": "Kesalahan tak terduga saat memperbarui jumlah item dalam keranjang."
+                    }
+                }
+            }
+        }
+    },
+    summary="Update cart item quantity"
+)
 def update_my_quantity_item(
         cart: cart_dtos.UpdateByIdCartDto,
         quantity_update: cart_dtos.UpdateQuantityItemDto,
         jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],
         db: Session = Depends(get_db)
 ):
+    """
+    # Perbarui Jumlah Item di Keranjang #
+
+    Endpoint ini memungkinkan pengguna memperbarui jumlah item dalam keranjang mereka berdasarkan ID keranjang.
+
+    **Parameter:**
+    - **cart** (UpdateByIdCartDto): Data keranjang, berisi ID keranjang.
+    - **quantity_update** (UpdateQuantityItemDto): Data pembaruan jumlah.
+    - **jwt_token** (TokenPayLoad): Token pengguna untuk memastikan bahwa pengguna memiliki hak akses.
+    - **db** (Session): Objek sesi database.
+
+    **Return:**
+    - **200 OK**: Jumlah item dalam keranjang berhasil diperbarui.
+    - **400 Bad Request**: Data tidak valid atau jumlah negatif.
+    - **403 Forbidden**: Pengguna tidak memiliki izin untuk memperbarui item.
+    - **404 Not Found**: Item dalam keranjang dengan ID yang diberikan tidak ditemukan.
+    - **500 Internal Server Error**: Kesalahan server saat memperbarui item keranjang.
+    
+    """
     result = cart_services.update_quantity_item(
         db, 
         cart=cart, 
@@ -321,7 +391,7 @@ def update_my_quantity_item(
                     "example": {
                         "status_code": 400,
                         "error": "Bad Request",
-                        "message": "Item produk yagng akan diaktivasi tidak ada dalam keranjang."
+                        "message": "Item produk yang akan diaktivasi tidak ada dalam keranjang."
                     }
                 }
             }
@@ -384,7 +454,7 @@ def update_my_activate_item(
     - **200 OK**: Jumlah produk berhasil diperbarui.
     - **400 Bad Request**: Jumlah produk tidak valid atau request tidak lengkap.
     - **403 Forbidden**: Pengguna tidak memiliki akses untuk memperbarui cart.
-    - **404 Not Found**: Produk atau keranjang tidak ditemukan.
+    - **404 Not Found**: Item Produk di keranjang tidak ditemukan.
     - **500 Internal Server Error**: Terjadi kesalahan saat memperbarui data.
     
     """
@@ -411,7 +481,7 @@ def update_my_activate_item(
                     "example": {
                         "status_code": 400,
                         "error": "Bad Request",
-                        "message": "Item produk yagng akan diaktivasi tidak ada dalam keranjang."
+                        "message": "Item produk yang akan diaktivasi tidak ada dalam keranjang."
                     }
                 }
             }
@@ -473,7 +543,7 @@ async def update_all_cart_items(
     - **200 OK**: Berhasil melakukan pembaruan status aktif item produk di keranjang.
     - **400 Bad Request**: Jumlah produk tidak valid atau request tidak lengkap.
     - **403 Forbidden**: Pengguna tidak memiliki akses untuk memperbarui cart.
-    - **404 Not Found**: Produk atau keranjang tidak ditemukan.
+    - **404 Not Found**: Item Produk di keranjang tidak ditemukan.
     - **500 Internal Server Error**: Terjadi kesalahan saat memperbarui data.
     
     """
