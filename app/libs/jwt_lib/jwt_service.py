@@ -29,7 +29,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> A
     # Set expiration time
     expire = (datetime.now(timezone.utc) + expires_delta
               if expires_delta
-              else datetime.now(timezone.utc) + timedelta(weeks=1))  # Default expiration 1 week    
+              else datetime.now(timezone.utc) + timedelta(days=1))  
    
     # Convert the expiration time to Unix timestamp
     exp_timestamp = int(expire.timestamp())
@@ -42,6 +42,27 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> A
     
     # Return the access token wrapped in a DTO
     return AccessTokenDto(access_token=encoded_jwt, exp=exp_readable)
+
+def create_refresh_token(data: dict, expires_delta: timedelta | None = None) -> AccessTokenDto:
+    to_encode = data.copy()
+
+    # Set expiration time (default: 7 days)
+    expire = (datetime.now(timezone.utc) + expires_delta
+              if expires_delta
+              else datetime.now(timezone.utc) + timedelta(days=7))
+    
+    # Convert the expiration time to Unix timestamp
+    exp_timestamp = int(expire.timestamp())
+    exp_readable = expire.strftime("%Y-%m-%d %H:%M:%S")  # Convert to human-readable format
+    
+    to_encode.update({"exp": exp_timestamp})
+    
+    # Encode the JWT
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    
+    # Return the access token wrapped in a DTO
+    return AccessTokenDto(access_token=encoded_jwt, exp=exp_readable)
+
 
 # Fungsi untuk memvalidasi token JWT dan mengembalikan payload
 async def get_jwt_pyload(token: Annotated[HTTPAuthorizationCredentials, Depends(bearer_token)]) -> TokenPayLoad:

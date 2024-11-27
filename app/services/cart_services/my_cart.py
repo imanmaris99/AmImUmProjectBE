@@ -49,6 +49,7 @@ def my_cart(
             cart_dtos.CartInfoDetailDto(
                 id=cart_item.id,
                 product_name=cart_item.product_name,
+                product_price=cart_item.product_price,
                 variant_info=cart_item.variant_info,
                 quantity=cart_item.quantity,
                 is_active=cart_item.is_active,
