@@ -135,32 +135,6 @@ def post_my_item_of_cart(
     response_model=cart_dtos.AllCartResponseCreateDto,
     status_code=status.HTTP_200_OK,
     responses={
-        status.HTTP_200_OK: {
-            "description": "Keranjang belanja berhasil diambil",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "status_code": 200,
-                        "message": "Your all of products wishlist success to access",
-                        "data": [
-                            {
-                            "id": 0,
-                            "product_name": "string",
-                            "variant_info": {},
-                            "quantity": 0,
-                            "is_active": True,
-                            "created_at": "2024-11-09T11:25:49.061Z"
-                            }
-                        ],
-                        "total_prices": {
-                            "all_item_active_prices": 0,
-                            "all_promo_active_prices": 0,
-                            "total_all_active_prices": 0
-                        }
-                    }
-                }
-            }
-        },
         status.HTTP_400_BAD_REQUEST: {
             "description": "Request tidak valid, misalnya tidak ada produk di keranjang",
             "content": {
