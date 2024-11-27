@@ -68,7 +68,7 @@ def create_refresh_token(data: dict, expires_delta: timedelta | None = None) -> 
 async def get_jwt_pyload(token: Annotated[HTTPAuthorizationCredentials, Depends(bearer_token)]) -> TokenPayLoad:
     try:
         payload = jwt.decode(jwt=token.credentials, key=SECRET_KEY, algorithms=[ALGORITHM])
-        print(f"Decoded JWT payload: {payload}")
+        # print(f"Decoded JWT payload: {payload}")
 
         if "id" not in payload or "role" not in payload:
             raise HTTPException(
@@ -124,7 +124,7 @@ def get_current_user(jwt_token: TokenPayLoad = Depends(get_jwt_pyload)):
 
 # Fungsi untuk memastikan user memiliki akses sebagai admin
 def admin_access_required(jwt_token: TokenPayLoad = Depends(get_jwt_pyload)):
-    print(f"Verifying access: User role - {jwt_token.role}") 
+    # print(f"Verifying access: User role - {jwt_token.role}") 
     if not jwt_token or jwt_token.role != "admin":     
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
