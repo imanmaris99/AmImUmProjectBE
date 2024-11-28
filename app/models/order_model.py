@@ -86,10 +86,10 @@ class OrderModel(Base):
         return user_models.phone if user_models else ""
 
     @property
-    def shipping_cost(self):
+    def shipping_cost(self) -> float:
         from app.models.shipment_model import ShipmentModel
         shipment_models: ShipmentModel = self.shipments
-        return shipment_models.shipping_cost if shipment_models else ""
+        return shipment_models.shipping_cost if shipment_models else 0.0
 
     @property
     def order_item_lists(self):

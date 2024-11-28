@@ -37,13 +37,13 @@ class OrderInfoResponseDto(BaseModel):
 class GetOrderInfoDto(BaseModel):
     id: str
     status: str
-    total_price: float
+    total_price: Optional[float] = 0.0
     shipment_id: Optional[str] = None
     delivery_type: DeliveryTypeEnum
     notes: Optional[str] = None
     customer_name: Optional[str] = None
     created_at: datetime
-    shipping_cost:float
+    shipping_cost: Optional[float] = None
     order_item_lists: List[OrderItemDto]
 
 class GetOrderInfoResponseDto(BaseModel):

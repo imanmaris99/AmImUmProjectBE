@@ -44,10 +44,7 @@ def create_order(
             )
 
         # Menghitung total harga order
-        # total_price = sum(item.quantity * item.product_price for item in cart_items)
-        # Mendapatkan total harga keranjang sebagai angka
         cart_total_items_response = get_cart_total(cart_items).total_all_active_prices
-
 
         # Jika delivery_type adalah pickup
         if order_dto.delivery_type == DeliveryTypeEnum.pickup:
@@ -73,12 +70,16 @@ def create_order(
                     detail="Pengiriman tidak valid atau tidak aktif."
                 )
 
+            # Pastikan shipping_cost valid dan berupa angka
             shipping_cost = shipment.shipping_cost
-            if shipping_cost is None:
-                raise HTTPException(
-                    status_code=400, 
-                    detail="Biaya pengiriman tidak valid."
-                )
+            # Tangani jika shipping_cost kosong atau tidak valid
+            if shipping_cost is None or shipping_cost == '':
+                shipping_cost = 0.0  # Set nilai default jika kosong
+            else:
+                try:
+                    shipping_cost = float(shipping_cost)  # Pastikan menjadi float
+                except ValueError:
+                    shipping_cost = 0.0  # Jika tidak bisa diubah menjadi float, set nilai default
 
             # Menghitung total_cost untuk delivery
             total_cost = cart_total_items_response + shipping_cost
@@ -126,7 +127,6 @@ def create_order(
             created_at=order.created_at
         )
 
-        # return order
         return build(data=order_dtos.OrderInfoResponseDto(
             status_code=201,
             message="Your order has been created",
