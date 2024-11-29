@@ -1,26 +1,40 @@
 from fastapi import HTTPException, status
-
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 from sqlalchemy.exc import SQLAlchemyError
-
-from typing import List, Type
+from typing import List
+from datetime import datetime
+import json
 
 from app.models.product_model import ProductModel
 from app.dtos.product_dtos import AllProductInfoDTO, AllProductInfoResponseDto
 from app.dtos.error_response_dtos import ErrorResponseDto
-
 from app.services.product_services.support_function import handle_db_error
-
 from app.utils.result import build, Result
+from app.libs.redis_config import redis_client
 
+# Fungsi utilitas untuk serialisasi JSON
+def custom_json_serializer(obj):
+    if isinstance(obj, datetime):
+        return obj.isoformat()  # Mengubah datetime menjadi string format ISO 8601
+    raise TypeError(f"Type {type(obj)} not serializable")
 
 def all_product(
         db: Session, 
         skip: int = 0, 
         limit: int = 10
     ) -> Result[AllProductInfoResponseDto, Exception]:
+    cache_key = f"products:{skip}:{limit}"
+    
     try:
+        # Cek data di Redis cache
+        cached_data = redis_client.get(cache_key)
+        if cached_data:
+            # Parse JSON dari Redis dan kirim sebagai response
+            cached_response = json.loads(cached_data)
+            return build(data=cached_response)
+
+        # Query ke database jika cache kosong
         product_model = (
             db.execute(
                 select(ProductModel)
@@ -36,11 +50,12 @@ def all_product(
                 status_code=status.HTTP_204_NO_CONTENT,
                 detail=ErrorResponseDto(
                     status_code=status.HTTP_204_NO_CONTENT,
-                    error="Not content Found",
-                    message=f"info about list of all products not found"
+                    error="No content found",
+                    message="Info about list of all products not found"
                 ).dict()
             )
 
+        # Mapping data ke DTO
         all_products_dto = [
             AllProductInfoDTO(
                 id=product.id, 
@@ -52,13 +67,16 @@ def all_product(
             for product in product_model
         ]
 
-        # return build(data=all_products_dto)
-    
-        return build(data=AllProductInfoResponseDto(
+        response_dto = AllProductInfoResponseDto(
             status_code=status.HTTP_200_OK,
             message="All List product can accessed successfully",
             data=all_products_dto
-        ))
+        )
+
+        # Simpan data ke Redis (dengan TTL 60 detik)
+        redis_client.setex(cache_key, 60, json.dumps(response_dto.dict(), default=custom_json_serializer))
+        
+        return build(data=response_dto)
 
     except SQLAlchemyError as e:
         return handle_db_error(db, e)
@@ -68,7 +86,7 @@ def all_product(
         return build(error=http_ex)
     
     except Exception as e:
-        return build(error= HTTPException(
+        return build(error=HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -76,4 +94,3 @@ def all_product(
                 message=f"An error occurred: {str(e)}"            
             ).dict()
         ))
-

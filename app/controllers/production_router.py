@@ -10,8 +10,8 @@ from app.libs.sql_alchemy_lib import get_db
 from app.libs.jwt_lib import jwt_dto, jwt_service
 
 router = APIRouter(
-    prefix="/production",
-    tags=["Production-by"]
+    prefix="/brand",
+    tags=["Brand Production"]
 )
 
 @router.post(

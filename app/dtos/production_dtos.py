@@ -47,6 +47,11 @@ class AllProductionsDto(BaseModel):
     category: Optional[str] = None
     created_at: datetime
 
+    class Config:
+        json_encoders = {
+            datetime: lambda v: v.isoformat()  # Mengubah datetime menjadi format ISO 8601
+        }
+
 class AllListProductionResponseDto(BaseModel):
     status_code: int = Field(default=200)
     message: str = Field(default="All list products from Production or brand successfully retrieved")
@@ -65,6 +70,11 @@ class DetailProductionDto(BaseModel):
     category: Optional[str] = None
     total_product: Optional[int] = None
     created_at: datetime
+
+    class Config:
+        json_encoders = {
+            datetime: lambda v: v.isoformat()  # Mengubah datetime menjadi format ISO 8601
+        }
 
 class ProductionDetailResponseDto(BaseModel):
     status_code: int = Field(default=200)
@@ -90,4 +100,6 @@ class DeleteProdutionResponseDto(BaseModel):
     status_code: int = Field(default=200)
     message: str = Field(default="Info about company some product has been deleted")
     data: InfoDeleteProductionDto
+
+
 

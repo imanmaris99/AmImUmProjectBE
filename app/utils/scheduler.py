@@ -4,6 +4,6 @@ from app.services.user_services import delete_unverified_users
 
 def start_scheduler():
     scheduler = BackgroundScheduler()
-    scheduler.add_job(delete_unverified_users, 'interval', minutes=1, args=[session_local()])
+    scheduler.add_job(delete_unverified_users, 'interval', minutes=5, args=[session_local()])
     scheduler.start()
     return scheduler

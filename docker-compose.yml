@@ -13,6 +13,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+
   app:
     build:
       context: .
@@ -37,6 +38,10 @@ services:
       RAJAONGKIR_API_HOST: ${RAJAONGKIR_API_HOST}
       MIDTRANS_SERVER_KEY: ${MIDTRANS_SERVER_KEY}
       MIDTRANS_CLIENT_KEY: ${MIDTRANS_CLIENT_KEY}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_DB: ${REDIS_DB}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     ports:
       - "8000:8000"
     depends_on:
@@ -44,3 +49,4 @@ services:
 
 volumes:
   postgres_data:
+
