@@ -1,11 +1,20 @@
 from typing import List
+
+import json 
+
 from fastapi import HTTPException, status
 
 from app.utils.rajaongkir_utils import send_get_request
 from app.dtos.rajaongkir_dtos import CityDto, AllCitiesResponseCreateDto
 from app.dtos.error_response_dtos import ErrorResponseDto
+
 from app.libs.rajaongkir_config import Config
+from app.libs.redis_config import custom_json_serializer, redis_client
+
 from app.utils import optional
+
+CACHE_TTL = 3600  # 1 hour TTL for cache
+
 
 # Fungsi untuk validasi respons dari API RajaOngkir
 def validate_response(response: dict):
@@ -89,14 +98,29 @@ def parse_city_data(cities: List[dict]) -> List[CityDto]:
 #         return optional.build(error=e)
     
 def get_city_data() -> optional.Optional[List[CityDto], HTTPException]:
-    headers = {'key': Config.RAJAONGKIR_API_KEY}
-    url = "/starter/city"
-
-    response = send_get_request(Config.RAJAONGKIR_API_HOST, url, headers)
-    
     try:
+        # Cek apakah data kota ada di Redis
+        cached_data = redis_client.get("cities")
+        if cached_data:
+            # Parse data dari Redis
+            city_dtos = [CityDto(**city) for city in json.loads(cached_data)]
+            return optional.build(data=city_dtos)
+        
+        headers = {'key': Config.RAJAONGKIR_API_KEY}
+        url = "/starter/city"
+
+        response = send_get_request(Config.RAJAONGKIR_API_HOST, url, headers)
+    
+    # try:
         cities = validate_response(response)
         city_dtos = parse_city_data(cities)
+
+        # Simpan data di Redis
+        redis_client.setex(
+            "cities", 
+            CACHE_TTL, 
+            json.dumps([city.dict() for city in city_dtos])
+        )
 
         return optional.build(data=city_dtos)
 
@@ -110,15 +134,29 @@ def get_city_data() -> optional.Optional[List[CityDto], HTTPException]:
         return optional.build(error=e)
 
 def get_city_data_by_keyword(city_name: str = None) -> optional.Optional[AllCitiesResponseCreateDto, HTTPException]:
-    headers = {'key': Config.RAJAONGKIR_API_KEY}
-    url = "/starter/city"
-
-    response = send_get_request(Config.RAJAONGKIR_API_HOST, url, headers)
-    
     try:
-        cities = validate_response(response)
-        city_dtos = parse_city_data(cities)
+        # Ambil data kota dari Redis
+        cached_data = redis_client.get("cities")
+        if cached_data:
+            city_dtos = [CityDto(**city) for city in json.loads(cached_data)]
+        else:
+    
+            headers = {'key': Config.RAJAONGKIR_API_KEY}
+            url = "/starter/city"
 
+            response = send_get_request(Config.RAJAONGKIR_API_HOST, url, headers)
+        
+        # try:
+            cities = validate_response(response)
+            city_dtos = parse_city_data(cities)
+
+            # Simpan data di Redis
+            redis_client.setex(
+                "cities", 
+                CACHE_TTL, 
+                json.dumps([city.dict() for city in city_dtos])
+            )
+            
         # Jika ada city_name, filter kota berdasarkan nama
         if city_name:
             city_dtos = [city for city in city_dtos if city.city_name.lower() == city_name.lower()]

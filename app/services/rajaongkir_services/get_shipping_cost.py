@@ -1,10 +1,13 @@
+import hashlib
 from fastapi import HTTPException, status
 
+import json
 
 from app.dtos.rajaongkir_dtos import ShippingCostRequest, ShippingCostDto, ShippingCostDetailDto
 from app.dtos.error_response_dtos import ErrorResponseDto
 
 from app.libs.rajaongkir_config import Config
+from app.libs.redis_config import redis_client
 
 from app.utils.rajaongkir_utils import send_post_request
 from app.utils import optional
@@ -71,7 +74,16 @@ def get_shipping_cost(request_data: ShippingCostRequest) -> optional.Optional[Sh
         "courier": request_data.courier
     }
 
+    # Buat key unik untuk Redis berdasarkan request data
+    redis_key = f"shipping_cost:{hashlib.md5(str(body).encode()).hexdigest()}"
+
     try:
+        # Cek apakah data tersedia di Redis
+        cached_data = redis_client.get(redis_key)
+        if cached_data:
+            # Jika data ditemukan, kembalikan dari cache
+            return optional.build(data=ShippingCostDto.parse_raw(cached_data))
+        
         # Kirim permintaan POST ke API RajaOngkir
         response = send_post_request(
             Config.RAJAONGKIR_API_HOST, 
@@ -83,7 +95,18 @@ def get_shipping_cost(request_data: ShippingCostRequest) -> optional.Optional[Sh
         courier_data = validate_shipping_cost_response(response)
         shipping_details = parse_shipping_cost_details(courier_data.get("costs", []))
 
-        return optional.build(data=ShippingCostDto(courier=courier_data["name"], details=shipping_details))
+        # return optional.build(data=ShippingCostDto(courier=courier_data["name"], details=shipping_details))
+        # Buat DTO untuk respons
+        shipping_cost_dto = ShippingCostDto(
+            courier=courier_data["name"],
+            details=shipping_details
+        )
+
+        # Simpan data ke Redis dengan TTL (Time To Live)
+        redis_client.setex(redis_key, 3600, shipping_cost_dto.json())  # TTL = 1 jam
+
+        return optional.build(data=shipping_cost_dto)
+
 
     except HTTPException as e:
         # Meneruskan pengecualian HTTP yang sudah ditangani di atas

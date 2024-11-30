@@ -1,23 +1,20 @@
 from fastapi import HTTPException, status
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 from sqlalchemy.exc import SQLAlchemyError
-from typing import List
-from datetime import datetime
+
 import json
 
 from app.models.product_model import ProductModel
 from app.dtos.product_dtos import AllProductInfoDTO, AllProductInfoResponseDto
 from app.dtos.error_response_dtos import ErrorResponseDto
-from app.services.product_services.support_function import handle_db_error
-from app.utils.result import build, Result
-from app.libs.redis_config import redis_client
 
-# Fungsi utilitas untuk serialisasi JSON
-def custom_json_serializer(obj):
-    if isinstance(obj, datetime):
-        return obj.isoformat()  # Mengubah datetime menjadi string format ISO 8601
-    raise TypeError(f"Type {type(obj)} not serializable")
+from app.services.product_services.support_function import handle_db_error
+
+from app.utils.result import build, Result
+from app.libs.redis_config import custom_json_serializer, redis_client
+
 
 def all_product(
         db: Session, 
@@ -32,7 +29,7 @@ def all_product(
         if cached_data:
             # Parse JSON dari Redis dan kirim sebagai response
             cached_response = json.loads(cached_data)
-            return build(data=cached_response)
+            return build(data=AllProductInfoResponseDto(**cached_response))
 
         # Query ke database jika cache kosong
         product_model = (
@@ -73,8 +70,8 @@ def all_product(
             data=all_products_dto
         )
 
-        # Simpan data ke Redis (dengan TTL 60 detik)
-        redis_client.setex(cache_key, 60, json.dumps(response_dto.dict(), default=custom_json_serializer))
+        # Simpan data ke Redis (dengan TTL 300 detik)
+        redis_client.setex(cache_key, 300, json.dumps(response_dto.dict(), default=custom_json_serializer))
         
         return build(data=response_dto)
 

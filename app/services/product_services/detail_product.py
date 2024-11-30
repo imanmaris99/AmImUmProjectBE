@@ -6,6 +6,8 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from fastapi import HTTPException, status
 
+import json
+
 from app.models.product_model import ProductModel
 from app.dtos.product_dtos import ProductDetailDTO, ProductDetailResponseDto
 from app.dtos.error_response_dtos import ErrorResponseDto
@@ -13,12 +15,28 @@ from app.dtos.error_response_dtos import ErrorResponseDto
 from app.services.product_services.support_function import handle_db_error
 
 from app.utils.result import build, Result
+from app.libs.redis_config import custom_json_serializer, redis_client
+
+CACHE_TTL = 3600  # 1 hour TTL for cache
 
 def get_product_by_id(
         db: Session, 
         product_id: uuid.UUID
     ) -> Result[ProductDetailResponseDto, Exception]:
     try:
+        # Redis key for caching
+        redis_key = f"product:{product_id}"
+
+        # Check if product data exists in Redis
+        cached_product = redis_client.get(redis_key)
+        if cached_product:
+            product_detail_dto = ProductDetailDTO(**json.loads(cached_product))
+            return build(data=ProductDetailResponseDto(
+                status_code=200,
+                message="Product details successfully retrieved (from cache)",
+                data=product_detail_dto
+            ))
+        
         # Query to get product by ID with eager loading for related entities
         product_model = db.execute(
             select(ProductModel)
@@ -53,6 +71,9 @@ def get_product_by_id(
             created_at=product_model.created_at,
             updated_at=product_model.updated_at
         )
+
+        # Cache the result in Redis
+        redis_client.setex(redis_key, CACHE_TTL, json.dumps(product_detail_dto.dict(), default=custom_json_serializer))
 
         # Build success response
         return build(data=ProductDetailResponseDto(

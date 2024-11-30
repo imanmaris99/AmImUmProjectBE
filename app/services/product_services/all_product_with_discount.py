@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session, selectinload  # Menggunakan selectinload unt
 from sqlalchemy.exc import SQLAlchemyError
 
 from typing import List, Type
+import json
 
 from app.models.product_model import ProductModel
 from app.models.pack_type_model import PackTypeModel  
@@ -14,13 +15,24 @@ from app.dtos.error_response_dtos import ErrorResponseDto
 from app.services.product_services.support_function import handle_db_error
 
 from app.utils.result import build, Result
+from app.libs.redis_config import custom_json_serializer, redis_client
+
 
 def all_product_with_discount(
         db: Session, 
         skip: int = 0, 
         limit: int = 10
     ) -> Result[AllProductInfoResponseDto, Exception]:
+    cache_key = f"products:{skip}:{limit}"
+
     try:
+        # Cek data di Redis cache
+        cached_data = redis_client.get(cache_key)
+        if cached_data:
+            # Parse JSON dari Redis dan kirim sebagai response
+            cached_response = json.loads(cached_data)
+            return build(data=cached_response)
+        
         # Subquery untuk mendapatkan produk yang memiliki pack type dengan diskon
         subquery = (
             select(PackTypeModel.product_id)
@@ -64,11 +76,23 @@ def all_product_with_discount(
 
         # return build(data=all_products_dto)
     
-        return build(data=AllProductInfoResponseDto(
+        # return build(data=AllProductInfoResponseDto(
+        #     status_code=status.HTTP_200_OK,
+        #     message="All List of product with discount can accessed successfully",
+        #     data=all_products_dto
+        # ))
+    
+        response_dto = AllProductInfoResponseDto(
             status_code=status.HTTP_200_OK,
-            message="All List of product with discount can accessed successfully",
+            message="All List product can accessed successfully",
             data=all_products_dto
-        ))
+        )
+
+        # Simpan data ke Redis (dengan TTL 300 detik)
+        redis_client.setex(cache_key, 300, json.dumps(response_dto.dict(), default=custom_json_serializer))
+        
+        return build(data=response_dto)
+
 
     except SQLAlchemyError as e:
         return handle_db_error(db, e)

@@ -1,11 +1,19 @@
 from typing import List, Optional
+
 from fastapi import HTTPException, status
+
+import json
 
 from app.utils.rajaongkir_utils import send_get_request
 from app.dtos.rajaongkir_dtos import ProvinceDto, AllProvincesResponseCreateDto
 from app.dtos.error_response_dtos import ErrorResponseDto
+
 from app.libs.rajaongkir_config import Config
+from app.libs.redis_config import redis_client
+
 from app.utils import optional
+
+CACHE_TTL = 3600  # 1 hour TTL for cache
 
 # Fungsi untuk validasi respons dari API RajaOngkir
 def validate_province_response(response: dict):
@@ -85,15 +93,30 @@ def parse_province_data(provinces: List[dict]) -> List[ProvinceDto]:
 #         return optional.build(error=e)
 
 
-def get_province_data(province_id: Optional[int] = None) -> optional.Optional[List[ProvinceDto], HTTPException]:
-    headers = {'key': Config.RAJAONGKIR_API_KEY}
-    url = "/starter/province"
-
-    response = send_get_request(Config.RAJAONGKIR_API_HOST, url, headers)
-    
+def get_province_data() -> optional.Optional[List[ProvinceDto], HTTPException]:
     try:
+        # Cek apakah data kota ada di Redis
+        cached_data = redis_client.get("provinces")
+        if cached_data:
+            # Parse data dari Redis
+            province_dtos = [ProvinceDto(**province) for province in json.loads(cached_data)]
+            return optional.build(data=province_dtos)
+        
+        headers = {'key': Config.RAJAONGKIR_API_KEY}
+        url = "/starter/province"
+
+        response = send_get_request(Config.RAJAONGKIR_API_HOST, url, headers)
+    
+    # try:
         provinces = validate_province_response(response)
         province_dtos = parse_province_data(provinces)
+
+        # Simpan data di Redis
+        redis_client.setex(
+            "cities", 
+            CACHE_TTL, 
+            json.dumps([city.dict() for city in province_dtos])
+        )
 
         return optional.build(data=province_dtos)
     
@@ -105,3 +128,14 @@ def get_province_data(province_id: Optional[int] = None) -> optional.Optional[Li
         
     except HTTPException as e:
         return optional.build(error=e)
+
+    except Exception as e:
+        # Mengembalikan HTTPException dengan status 500 jika terjadi kesalahan umum
+        return optional.build(error=HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                error="Internal Server Error",
+                message=f"Unexpected error occurred: {str(e)}"
+            ).dict()
+        ))

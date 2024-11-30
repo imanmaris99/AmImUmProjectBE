@@ -2,7 +2,10 @@ import uuid
 from sqlalchemy import select, cast, String
 from sqlalchemy.orm import Session, selectinload
 from sqlalchemy.exc import SQLAlchemyError
+
 from fastapi import HTTPException, status
+
+import json
 
 from app.models.production_model import ProductionModel
 from app.dtos import production_dtos
@@ -11,13 +14,28 @@ from app.dtos.error_response_dtos import ErrorResponseDto
 from app.services.production_services.support_function import handle_db_error
 
 from app.utils.result import build, Result
+from app.libs.redis_config import custom_json_serializer, redis_client
 
+CACHE_TTL = 3600  # 1 hour TTL for cache
 
 def detail_production(
         db: Session, 
         production_id: int,
     ) -> Result[ProductionModel, Exception]:
     try:
+        # Redis key for caching
+        redis_key = f"production:{production_id}"
+
+        # Check if product data exists in Redis
+        cached_product = redis_client.get(redis_key)
+        if cached_product:
+            production_detail_dto = production_dtos.DetailProductionDto(**json.loads(cached_product))
+            return build(data=production_dtos.ProductionDetailResponseDto(
+                status_code=200,
+                message="Product details successfully retrieved (from cache)",
+                data=production_detail_dto
+            ))
+        
         production_model = db.execute(
             select(ProductionModel)
             .filter(ProductionModel.id == production_id)
@@ -44,6 +62,8 @@ def detail_production(
             total_product=production_model.total_product,
             created_at=production_model.created_at
         )
+
+        redis_client.setex(redis_key, CACHE_TTL, json.dumps(production_detail_dto.dict(), default=custom_json_serializer))
 
         # Build success response
         return build(data=production_dtos.ProductionDetailResponseDto(
