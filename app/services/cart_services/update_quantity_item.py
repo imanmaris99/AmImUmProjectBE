@@ -35,33 +35,28 @@ def update_quantity_item(
                 ).dict()
             ))
 
-        # Update atribut berdasarkan input dari DTO
-        for attr, value in quantity_update.model_dump().items():
-            setattr(quantity_model, attr, value)
+        # # Update atribut berdasarkan input dari DTO
+        # for attr, value in quantity_update.model_dump().items():
+        #     setattr(quantity_model, attr, value)
+
+        # Update langsung atribut yang relevan
+        if quantity_update.quantity is not None:
+            quantity_model.quantity = quantity_update.quantity
+
 
         # Simpan perubahan ke dalam database   
         db.commit()
         db.refresh(quantity_model)
 
-        # Invalidate the cached wishlist for this user
-        patterns_to_invalidate = [
-            f"cart:{user_id}:*",
-            f"carts:{user_id}"
-        ]
-        for pattern in patterns_to_invalidate:
+        # Invalidasi cache dengan pendekatan yang lebih efisien
+        redis_keys = [f"cart:{user_id}:*", f"carts:{user_id}"]
+        for pattern in redis_keys:
             for key in redis_client.scan_iter(pattern):
                 redis_client.delete(key)
 
         return build(data=cart_dtos.CartInfoUpdateResponseDto(
             status_code=status.HTTP_200_OK,
             message=f"Updated Info Item from this Cart ID {cart.cart_id} has been success",
-            data=cart_dtos.UpdateInfoCartItemDto(
-                id=quantity_model.id,
-                product_name=quantity_model.product_name,
-                variant_product=quantity_model.variant_product,
-                quantity=quantity_model.quantity,
-                is_active=quantity_model.is_active
-            )
         ))
 
     except SQLAlchemyError as e:

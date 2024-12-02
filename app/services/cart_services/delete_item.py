@@ -43,15 +43,12 @@ def delete_item(
         db.delete(cart_model)
         db.commit()
 
-        # Invalidate the cached wishlist for this user
-        patterns_to_invalidate = [
-            f"cart:{user_id}:*",
-            f"carts:{user_id}"
-        ]
-        for pattern in patterns_to_invalidate:
+        # Invalidasi cache dengan pendekatan yang lebih efisien
+        redis_keys = [f"cart:{user_id}:*", f"carts:{user_id}"]
+        for pattern in redis_keys:
             for key in redis_client.scan_iter(pattern):
                 redis_client.delete(key)
-                
+
         return build(data=cart_dtos.DeleteCartResponseDto(
             status_code=status.HTTP_200_OK,
             message=f"Deleted Info Item from this Cart ID {cart.cart_id} has been success",

@@ -82,12 +82,9 @@ def post_item(
             created_at=cart_instance.created_at
         )
 
-        # Invalidate the cached wishlist for this user
-        patterns_to_invalidate = [
-            f"cart:{user_id}:*",
-            f"carts:{user_id}"
-        ]
-        for pattern in patterns_to_invalidate:
+        # Invalidasi cache dengan pendekatan yang lebih efisien
+        redis_keys = [f"cart:{user_id}:*", f"carts:{user_id}"]
+        for pattern in redis_keys:
             for key in redis_client.scan_iter(pattern):
                 redis_client.delete(key)
 

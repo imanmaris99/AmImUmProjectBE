@@ -2,7 +2,7 @@ from typing import Type
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, load_only
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.models.cart_product_model import CartProductModel
@@ -17,38 +17,23 @@ def update_activate_all_items(
         db: Session, 
         activate_update: cart_dtos.UpdateActivateItemDto,
         user_id: str
-    ) -> Result[list[cart_dtos.UpdateInfoCartItemDto], Exception]:
+    ) -> Result[cart_dtos.CartInfoUpdateAllActivateResponseDto, Exception]:
     try:
-        # Ambil semua item cart milik pengguna
-        carts = db.execute(
-            select(CartProductModel)
-            .where(CartProductModel.customer_id == user_id)
-        ).scalars().all()
+        # Lakukan pembaruan langsung ke database
+        updated_rows = db.query(CartProductModel)\
+            .filter(CartProductModel.customer_id == user_id)\
+            .update(
+                {CartProductModel.is_active: activate_update.is_active},
+                synchronize_session="fetch"
+            )
 
-        if not carts:
+        if updated_rows == 0:
             return build(error=HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=ErrorResponseDto(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    error="Not Found",
-                    message=f"No cart items found for user ID {user_id}"
-                ).dict()
+                detail=f"No cart items found for user ID {user_id}"
             ))
 
-        # Update atribut `is_active` pada setiap item
-        updated_items = []
-        for cart in carts:
-            for attr, value in activate_update.model_dump().items():
-                setattr(cart, attr, value)
-            updated_items.append(cart_dtos.UpdateInfoCartItemDto(
-                id=cart.id,
-                product_name=cart.product_name,
-                variant_product=cart.variant_product,
-                quantity=cart.quantity,
-                is_active=cart.is_active
-            ))
-
-        # Commit perubahan ke database
+        # Commit perubahan
         db.commit()
 
         # Invalidate the cached wishlist for this user
@@ -60,26 +45,23 @@ def update_activate_all_items(
             for key in redis_client.scan_iter(pattern):
                 redis_client.delete(key)
 
+        # Buat response
         return build(data=cart_dtos.CartInfoUpdateAllActivateResponseDto(
             status_code=status.HTTP_200_OK,
-            message=f"All cart items for user ID {user_id} have been successfully updated",
-            data=updated_items
+            message=f"Successfully updated {updated_rows} cart items for user ID {user_id}.",
+            # data=[]  # Data bisa disesuaikan jika hasil spesifik dibutuhkan
         ))
 
     except SQLAlchemyError as e:
-        return handle_db_error(db, e)
-
-    except HTTPException as http_ex:
         db.rollback()
-        return build(error=http_ex)
+        return build(error=HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error: {str(e)}"
+        ))
 
     except Exception as e:
         db.rollback()
         return build(error=HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=ErrorResponseDto(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"
-            ).dict()
+            detail=f"An unexpected error occurred: {str(e)}"
         ))
