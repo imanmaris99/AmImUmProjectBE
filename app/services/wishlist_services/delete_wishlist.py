@@ -10,6 +10,7 @@ from app.dtos.error_response_dtos import ErrorResponseDto
 
 from app.utils.error_parser import find_errr_from_args
 from app.utils.result import build, Result
+from app.libs.redis_config import custom_json_serializer, redis_client  # Redis client
 
 
 def delete_wishlist(
@@ -46,13 +47,22 @@ def delete_wishlist(
         db.delete(wishlist_model)
         db.commit()
 
+        # Invalidate the cached wishlist for this user
+        patterns_to_invalidate = [
+            f"wishlist:{user_id}:*",
+            f"wishlists:{user_id}"
+        ]
+        for pattern in patterns_to_invalidate:
+            for key in redis_client.scan_iter(pattern):
+                redis_client.delete(key)
+        
         return build(data=wishlist_dtos.DeleteWishlistResponseDto(
             status_code=status.HTTP_200_OK,
             message=f"Your product wishlist with ID {wishlist_data.wishlist_id} has been deleted",
             data=wishlist_delete_info
         ))
     
-    except SQLAlchemyError:
+    except SQLAlchemyError as e:
         db.rollback()
         return build(error= HTTPException(
             status_code=status.HTTP_409_CONFLICT,

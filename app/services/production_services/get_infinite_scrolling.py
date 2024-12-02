@@ -17,7 +17,7 @@ from app.utils.result import build, Result
 from app.libs.redis_config import custom_json_serializer, redis_client
 
 
-CACHE_TTL = 3600  # Cache TTL dalam detik (1 jam)
+CACHE_TTL = 300  
 
 def get_infinite_scrolling(
         db: Session, skip: int = 0, limit: int = 6

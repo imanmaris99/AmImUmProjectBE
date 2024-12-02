@@ -6,6 +6,7 @@ from app.dtos import category_dtos
 from app.dtos.error_response_dtos import ErrorResponseDto
 from app.models.tag_category_model import TagCategoryModel
 
+from app.services.article_services.update_article import delete_cache_by_pattern
 from app.utils import optional
 from app.utils.result import build, Result
 
@@ -27,6 +28,9 @@ def create_categories(
             created_at=category_model.created_at
         )
 
+        # Invalidate Redis cache
+        delete_cache_by_pattern("articles:*")
+        
         return optional.build(data=category_dtos.CategoryCreateResponseDto(
             status_code=201,
             message="Create tag categories has been successfully updated",

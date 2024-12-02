@@ -59,8 +59,16 @@ def check_redis_connection():
         logging.error(f"Redis connection failed: {e}")
 
 
+# # Fungsi utilitas untuk serialisasi JSON
+# def custom_json_serializer(obj):
+#     if isinstance(obj, datetime):
+#         return obj.isoformat()  # Mengubah datetime menjadi string format ISO 8601
+#     raise TypeError(f"Type {type(obj)} not serializable")
+
 # Fungsi utilitas untuk serialisasi JSON
 def custom_json_serializer(obj):
     if isinstance(obj, datetime):
         return obj.isoformat()  # Mengubah datetime menjadi string format ISO 8601
+    if hasattr(obj, "dict"):  # Memeriksa jika objek memiliki metode dict()
+        return obj.dict()  # Mengonversi objek ke dict
     raise TypeError(f"Type {type(obj)} not serializable")

@@ -7,8 +7,11 @@ from app.models.article_model import ArticleModel
 from app.dtos.article_dtos import DeleteArticleDto, InfoDeleteArticleDto, DeleteArticleResponseDto
 from app.dtos.error_response_dtos import ErrorResponseDto
 
+from app.services.article_services.update_article import delete_cache_by_pattern
 from app.utils.result import build, Result
 from app.utils.error_parser import find_errr_from_args
+
+from app.libs.redis_config import redis_client
 
 def reorder_ids(session: Session):
     """Mengatur ulang display_id untuk semua artikel berdasarkan urutan created_at."""
@@ -50,6 +53,9 @@ def delete_article(
         # Panggil reorder_ids setelah penghapusan
         reorder_ids(db)
 
+        # Invalidate Redis cache
+        delete_cache_by_pattern("articles:*")
+        
         return build(data=DeleteArticleResponseDto(
             status_code=200,
             message="Your article has been deleted",

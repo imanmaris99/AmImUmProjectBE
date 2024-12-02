@@ -9,9 +9,11 @@ from app.models.article_model import ArticleModel
 from app.dtos.article_dtos import ArticleCreateDTO, ArticleResponseDTO, ArticleCreateResponseDto
 from app.dtos.error_response_dtos import ErrorResponseDto
 
+from app.services.article_services.update_article import delete_cache_by_pattern
 from app.utils import optional
 from app.utils.result import build, Result
 
+from app.libs.redis_config import redis_client
     
 def create_article(
         db: Session, articles: ArticleCreateDTO
@@ -34,6 +36,9 @@ def create_article(
             description_list=article.description_list,
             created_at=article.created_at
         )
+
+        # Invalidate Redis cache
+        delete_cache_by_pattern("articles:*")
 
         return build(data=ArticleCreateResponseDto(
             status_code=status.HTTP_201_CREATED,

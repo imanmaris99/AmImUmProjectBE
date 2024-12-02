@@ -1,21 +1,46 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import select
+
 from fastapi import HTTPException, status
-from typing import List
+
+import json
 
 from app.models.tag_category_model import TagCategoryModel
 from app.dtos.category_dtos import AllCategoryResponseDto, AllCategoryInfoResponseDto
 from app.dtos.error_response_dtos import ErrorResponseDto
 
 from app.utils.result import build, Result
+from app.libs.redis_config import custom_json_serializer, redis_client
 
+CACHE_TTL = 3600  # Cache TTL dalam detik (1 jam)
 
 def get_all_categories(
         db: Session, 
         skip: int = 0, 
         limit: int = 10
     ) -> Result[AllCategoryInfoResponseDto, Exception]:
+    cache_key = f"categories:{skip}:{limit}"
+
     try:
-        categories = db.query(TagCategoryModel).offset(skip).limit(limit).all()
+        # Check if product data exists in Redis
+        cached_categorie = redis_client.get(cache_key)
+
+        if cached_categorie:
+            categories_data = [
+                AllCategoryResponseDto(**addr)
+                for addr in json.loads(cached_categorie)
+            ]
+            return build(data=AllCategoryInfoResponseDto(
+                status_code=status.HTTP_200_OK,
+                message="All lists of categories successfully retrieved (from cache)",
+                data=categories_data
+            ))
+                
+        categories = db.execute(
+            select(TagCategoryModel)
+            .offset(skip)
+            .limit(limit)
+        ).scalars().all()
 
         if not categories:
             raise HTTPException(
@@ -28,7 +53,7 @@ def get_all_categories(
             )
 
         # Konversi kategori ke DTO
-        response_data = [
+        categories_data = [
             AllCategoryResponseDto(
                 id=category.id,
                 name=category.name,
@@ -37,12 +62,17 @@ def get_all_categories(
             ) for category in categories
         ]
 
+        # Cache the data in Redis
+        redis_client.setex(cache_key, CACHE_TTL, json.dumps(
+            [dto.dict() for dto in categories_data], 
+            default=custom_json_serializer
+        ))
+
         # return build(data=response_data)
-    
         return build(data=AllCategoryInfoResponseDto(
             status_code=status.HTTP_200_OK,
             message="All List of tag Categories accessed successfully",
-            data=response_data
+            data=categories_data
         ))
 
     except HTTPException as e:

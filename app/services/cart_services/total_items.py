@@ -1,4 +1,3 @@
-from decimal import Decimal
 from fastapi import HTTPException, status
 
 from sqlalchemy import select, func
@@ -8,27 +7,40 @@ from sqlalchemy.exc import SQLAlchemyError, DataError, IntegrityError
 from app.models.cart_product_model import CartProductModel
 from app.dtos import cart_dtos
 
+import json
+
 from app.dtos.error_response_dtos import ErrorResponseDto
 
 from app.services.cart_services.support_function import handle_db_error
 from app.services.cart_services.support_function import get_total_records
 
 from app.utils.result import build, Result
+from app.libs.redis_config import custom_json_serializer, redis_client
 
+CACHE_TTL = 300
 
 def total_items(
         db: Session, 
-        user_id: str,  
-        skip: int = 0, 
-        limit: int = 10
+        user_id: str
     ) -> Result[cart_dtos.AllItemNotificationDto, Exception]:
     try:
+        # Redis key for caching
+        redis_key = f"carts:{user_id}"
+
+        # Check if product data exists in Redis
+        cached_user = redis_client.get(redis_key)
+        if cached_user:
+            total_notifications = cart_dtos.TotalItemNotificationDto(**json.loads(cached_user))
+            return build(data=cart_dtos.AllItemNotificationDto(
+                status_code=200,
+                message="Total of item products in cart successfully retrieved (from cache)",
+                data=total_notifications
+            ))
+
         # Query untuk mengambil cart berdasarkan user_id dengan pagination
         cart_items = db.execute(
             select(CartProductModel)
             .where(CartProductModel.customer_id == user_id)
-            .offset(skip)
-            .limit(limit)
         ).scalars().all()
 
         if not cart_items:
@@ -47,6 +59,8 @@ def total_items(
         total_notifications=cart_dtos.TotalItemNotificationDto(
             total_items=total_records
         )
+
+        redis_client.setex(redis_key, CACHE_TTL, json.dumps(total_notifications.dict(), default=custom_json_serializer))
 
         # Return DTO dengan respons yang telah dibangun
         return build(data=cart_dtos.AllItemNotificationDto(

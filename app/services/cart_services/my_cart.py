@@ -1,4 +1,3 @@
-from decimal import Decimal
 from fastapi import HTTPException, status
 
 from sqlalchemy import select, func
@@ -8,13 +7,17 @@ from sqlalchemy.exc import SQLAlchemyError, DataError, IntegrityError
 from app.models.cart_product_model import CartProductModel
 from app.dtos import cart_dtos
 
+import json
+
 from app.dtos.error_response_dtos import ErrorResponseDto
 
 from app.services.cart_services.support_function import get_cart_total, handle_db_error
 # from app.services.cart_services.support_function import get_total_records
 
 from app.utils.result import build, Result
+from app.libs.redis_config import redis_client, custom_json_serializer
 
+CACHE_TTL = 300
 
 def my_cart(
         db: Session, 
@@ -23,6 +26,21 @@ def my_cart(
         limit: int = 10
     ) -> Result[cart_dtos.AllCartResponseCreateDto, Exception]:
     try:
+        # Redis key for caching
+        redis_key = f"cart:{user_id}:{skip}:{limit}"
+
+        # Check if wishlist data exists in Redis
+        cached_cart = redis_client.get(redis_key)
+        if cached_cart:
+            # Data is found in cache, return it
+            cart_data = json.loads(cached_cart)
+            return build(data=cart_dtos.AllCartResponseCreateDto(
+                status_code=status.HTTP_200_OK,
+                message=f"All item products in cart from account user ID {user_id} accessed successfully (from cache)",
+                total_prices=cart_data['total_prices'],
+                data=cart_data['data']
+            ))
+        
         # Query untuk mengambil cart berdasarkan user_id dengan pagination
         cart_items = db.execute(
             select(CartProductModel)
@@ -59,6 +77,13 @@ def my_cart(
         ]
 
         cart_total_items_response = get_cart_total(cart_items)
+
+        # Save the result to Redis cache
+        cache_data = {
+            'total_prices': cart_total_items_response,
+            'data': [wish.dict() for wish in cart_dto]
+        }
+        redis_client.setex(redis_key, CACHE_TTL, json.dumps(cache_data, default=custom_json_serializer))
 
         # Return DTO dengan respons yang telah dibangun
         return build(data=cart_dtos.AllCartResponseCreateDto(

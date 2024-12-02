@@ -12,6 +12,7 @@ from app.libs.upload_image_to_supabase import upload_image_to_supabase, validate
 from app.services.production_services.support_function import handle_db_error
 
 from app.utils.result import build, Result
+from app.libs.redis_config import redis_client
 
 async def post_logo(
         db: Session,
@@ -74,6 +75,16 @@ async def post_logo(
         user_response = production_dtos.PostLogoCompanyDto(
             photo_url=logo_model.photo_url,
         )
+
+        # Invalidate the cached wishlist for this user
+        patterns_to_invalidate = [
+            f"productions:*",
+            f"promotions:*",
+            f"production:{production_id}"
+        ]
+        for pattern in patterns_to_invalidate:
+            for key in redis_client.scan_iter(pattern):
+                redis_client.delete(key)
 
         # return build(data=user_model)
         return build(data=production_dtos.PostLogoCompanyResponseDto(

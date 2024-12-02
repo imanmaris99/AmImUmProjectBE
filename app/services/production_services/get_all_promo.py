@@ -12,7 +12,7 @@ from app.services.production_services.support_function import handle_db_error
 from app.utils.result import build, Result
 from app.libs.redis_config import redis_client
 
-CACHE_TTL = 3600  # Waktu cache dalam detik (1 jam)
+CACHE_TTL = 300
 
 def get_all_promo(
         db: Session, 
@@ -27,7 +27,11 @@ def get_all_promo(
         if cached_data:
             # Parse JSON dari Redis dan kembalikan sebagai response
             cached_response = json.loads(cached_data)
-            return build(data=production_dtos.AllProductionPromoResponseDto(**cached_response))
+            return build(data=production_dtos.AllProductionPromoResponseDto(
+                status_code=status.HTTP_200_OK,
+                message=f"All list brand have a promo can accessed successfully (from cache)",
+                data=cached_response['data']
+            ))
 
         # Query database untuk promo
         product_bies = (
@@ -64,18 +68,27 @@ def get_all_promo(
             for prod in product_bies if prod.promo_special > 0  # Hanya yang memiliki promo
         ]
 
-        # Bungkus dalam response DTO
-        response_dto = production_dtos.AllProductionPromoResponseDto(
+        # Save the result to Redis cache
+        cache_data = {
+            'data': [brand.dict() for brand in info_promo]
+        }
+
+        # # Bungkus dalam response DTO
+        # response_dto = production_dtos.AllProductionPromoResponseDto(
+        #     status_code=status.HTTP_200_OK,
+        #     message="All promotions retrieved successfully.",
+        #     data=info_promo
+        # )
+
+        # Simpan hasil ke Redis dengan TTL
+        redis_client.setex(cache_key, CACHE_TTL, json.dumps(cache_data))
+
+        # Kembalikan response
+        return build(data=production_dtos.AllProductionPromoResponseDto(
             status_code=status.HTTP_200_OK,
             message="All promotions retrieved successfully.",
             data=info_promo
-        )
-
-        # Simpan hasil ke Redis dengan TTL
-        redis_client.setex(cache_key, CACHE_TTL, json.dumps(response_dto.dict()))
-
-        # Kembalikan response
-        return build(data=response_dto)
+        ))
 
     except SQLAlchemyError as e:
         return handle_db_error(db, e)

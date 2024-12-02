@@ -16,7 +16,7 @@ from app.services.production_services.support_function import handle_db_error
 from app.utils.result import build, Result
 from app.libs.redis_config import custom_json_serializer, redis_client
 
-CACHE_TTL = 3600  # 1 hour TTL for cache
+CACHE_TTL = 300
 
 def detail_production(
         db: Session, 

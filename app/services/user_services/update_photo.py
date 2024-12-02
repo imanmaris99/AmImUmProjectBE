@@ -8,6 +8,8 @@ from app.dtos.error_response_dtos import ErrorResponseDto
 
 from app.libs.upload_image_to_supabase import upload_image_to_supabase, validate_file
 from app.utils.result import build, Result
+from app.libs.redis_config import custom_json_serializer, redis_client
+
 
 async def update_my_photo(
         db: Session, 
@@ -67,6 +69,11 @@ async def update_my_photo(
         user_response = user_dtos.UserEditPhotoProfileDto(
             photo_url=user_model.photo_url,
         )
+
+        # Invalidate the cached wishlist for this user
+        keys_to_invalidate = redis_client.scan_iter(f"user:{user_id}:*")
+        for key in keys_to_invalidate:
+            redis_client.delete(key)
 
         # return build(data=user_model)
         return build(data=user_dtos.UserEditPhotoProfileResponseDto(

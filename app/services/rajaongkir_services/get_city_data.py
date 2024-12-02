@@ -9,7 +9,7 @@ from app.dtos.rajaongkir_dtos import CityDto, AllCitiesResponseCreateDto
 from app.dtos.error_response_dtos import ErrorResponseDto
 
 from app.libs.rajaongkir_config import Config
-from app.libs.redis_config import custom_json_serializer, redis_client
+from app.libs.redis_config import redis_client
 
 from app.utils import optional
 

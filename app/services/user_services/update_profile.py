@@ -8,7 +8,7 @@ from app.dtos import user_dtos
 from app.dtos.error_response_dtos import ErrorResponseDto
 
 from app.utils import optional, find_errr_from_args
-
+from app.libs.redis_config import redis_client
 
 def user_edit(
         user_id: str,
@@ -23,6 +23,12 @@ def user_edit(
 
             db.commit()
             db.refresh(user_model)
+            
+            # Invalidate the cached wishlist for this user
+            keys_to_invalidate = redis_client.scan_iter(f"user:{user_id}:*")
+            for key in keys_to_invalidate:
+                redis_client.delete(key)
+
             # return optional.build(data=user_model)
             return optional.build(data=user_dtos.UserEditResponseDto(
             status_code=status.HTTP_200_OK,

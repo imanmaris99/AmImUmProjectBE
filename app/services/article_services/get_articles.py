@@ -10,21 +10,35 @@ from app.models.article_model import ArticleModel
 from app.dtos import article_dtos
 from app.dtos.error_response_dtos import ErrorResponseDto
 
-from typing import List, Type
+import json
 
 from app.utils.result import build, Result
 from app.utils.error_parser import find_errr_from_args
+from app.libs.redis_config import custom_json_serializer, redis_client
 
-    
+CACHE_TTL = 3600
+
 def get_articles(
         db: Session, 
         skip: int = 0, 
         limit: int = 10
     ) -> Result[article_dtos.AllArticleResponseDto, Exception]:
+    cache_key = f"articles:{skip}:{limit}"
+
     try:
-        # article=db.query(ArticleModel)\
-        #     .order_by(ArticleModel.display_id)\
-        #     .offset(skip).limit(limit).all()
+        # Check if product data exists in Redis
+        cached_article = redis_client.get(cache_key)
+        
+        if cached_article:
+            article_dto = [
+                article_dtos.GetAllArticleDTO(**addr)
+                for addr in json.loads(cached_article)
+            ]
+            return build(data=article_dtos.AllArticleResponseDto(
+                status_code=status.HTTP_200_OK,
+                message="All list of articles successfully retrieved (from cache)",
+                data=article_dto
+            ))
 
         article = db.execute(
             select(ArticleModel)
@@ -54,13 +68,18 @@ def get_articles(
             for art in article
         ]
 
-        return build(data=article_dtos.AllArticleResponseDto(
-            status_code=status.HTTP_200_OK,
-            message=f"All List of Article accessed successfully",
-            data=article_dto
+        # Cache the data in Redis
+        redis_client.setex(cache_key, CACHE_TTL, json.dumps(
+            [dto.dict() for dto in article_dto], 
+            default=custom_json_serializer
         ))
 
-
+        return build(data=article_dtos.AllArticleResponseDto(
+            status_code=status.HTTP_200_OK,
+            message=f"All List of Articles accessed successfully",
+            data=article_dto
+        ))
+    
     except SQLAlchemyError:
         db.rollback()
         return build(error= HTTPException(

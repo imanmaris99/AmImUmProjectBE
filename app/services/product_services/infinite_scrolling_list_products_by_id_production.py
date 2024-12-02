@@ -16,6 +16,7 @@ from app.services.product_services.support_function import handle_db_error
 from app.utils.result import build, Result
 from app.libs.redis_config import custom_json_serializer, redis_client
 
+CACHE_TTL = 3600
 
 def infinite_scrolling_list_products_by_id_production(
         db: Session, 
@@ -80,7 +81,7 @@ def infinite_scrolling_list_products_by_id_production(
         )
 
         # Simpan data ke Redis (dengan TTL 300 detik)
-        redis_client.setex(cache_key, 300, json.dumps(response_data.dict(), default=custom_json_serializer))
+        redis_client.setex(cache_key, CACHE_TTL, json.dumps(response_data.dict(), default=custom_json_serializer))
 
         return build(data=response_data)
     

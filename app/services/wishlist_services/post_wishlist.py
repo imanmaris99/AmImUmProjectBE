@@ -11,6 +11,8 @@ from app.dtos import wishlist_dtos
 from app.dtos.error_response_dtos import ErrorResponseDto
 
 from app.utils.result import build, Result
+from app.libs.redis_config import custom_json_serializer, redis_client  # Redis client
+
 
 def post_wishlist(
     db: Session, 
@@ -50,13 +52,22 @@ def post_wishlist(
             created_at=wishlist_instance.created_at
         )
 
+        # Invalidate the cached wishlist for this user
+        patterns_to_invalidate = [
+            f"wishlist:{user_id}:*",
+            f"wishlists:{user_id}"
+        ]
+        for pattern in patterns_to_invalidate:
+            for key in redis_client.scan_iter(pattern):
+                redis_client.delete(key)
+        
         return build(data=wishlist_dtos.WishlistResponseCreateDto(
             status_code=201,
             message="Your wishlist for the product has been saved",
             data=post_wishlist_response
         ))
 
-    except SQLAlchemyError:
+    except SQLAlchemyError as e:
         db.rollback()
         return build(error= HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

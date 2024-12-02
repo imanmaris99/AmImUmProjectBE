@@ -11,6 +11,7 @@ from app.dtos.error_response_dtos import ErrorResponseDto
 
 from app.services.cart_services.support_function import get_cart_item, handle_db_error
 from app.utils.result import build, Result
+from app.libs.redis_config import redis_client
 
 # Fungsi untuk Mengupdate Status Aktif Item
 def update_activate_item(
@@ -40,6 +41,15 @@ def update_activate_item(
         # Simpan perubahan ke dalam database   
         db.commit()
         db.refresh(activate_model)
+
+        # Invalidate the cached wishlist for this user
+        patterns_to_invalidate = [
+            f"cart:{user_id}:*",
+            f"carts:{user_id}"
+        ]
+        for pattern in patterns_to_invalidate:
+            for key in redis_client.scan_iter(pattern):
+                redis_client.delete(key)
 
         return build(data=cart_dtos.CartInfoUpdateResponseDto(
             status_code=status.HTTP_200_OK,

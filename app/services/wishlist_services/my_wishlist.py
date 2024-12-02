@@ -14,6 +14,22 @@ from app.services.cart_services.support_function import handle_db_error
 
 from app.utils.result import build, Result
 
+import json
+from fastapi import HTTPException, status
+from sqlalchemy import select, func
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError, DataError, IntegrityError
+
+from app.models.wishlist_model import WishlistModel
+from app.dtos import wishlist_dtos
+from app.dtos.error_response_dtos import ErrorResponseDto
+
+from app.services.cart_services.support_function import handle_db_error
+from app.utils.result import build, Result
+from app.libs.redis_config import custom_json_serializer, redis_client  # Redis client
+
+CACHE_TTL = 300
+
 def my_wishlist(
         db: Session, 
         user_id: str,  
@@ -21,6 +37,21 @@ def my_wishlist(
         limit: int = 10
     ) -> Result[wishlist_dtos.AllWishlistResponseCreateDto, Exception]:
     try:
+        # Redis key for caching
+        redis_key = f"wishlist:{user_id}:{skip}:{limit}"
+
+        # Check if wishlist data exists in Redis
+        cached_wishlist = redis_client.get(redis_key)
+        if cached_wishlist:
+            # Data is found in cache, return it
+            wishlist_data = json.loads(cached_wishlist)
+            return build(data=wishlist_dtos.AllWishlistResponseCreateDto(
+                status_code=status.HTTP_200_OK,
+                message=f"All products wishlist for user ID {user_id} accessed successfully (from cache)",
+                total_records=wishlist_data['total_records'],
+                data=wishlist_data['data']
+            ))
+
         # Query untuk mengambil wishlist berdasarkan user_id dengan pagination
         wishlist_model = db.execute(
             select(WishlistModel)
@@ -59,15 +90,21 @@ def my_wishlist(
             for wish in wishlist_model
         ]
 
-        # Return DTO dengan respons yang telah dibangun
+        # Save the result to Redis cache
+        cache_data = {
+            'total_records': total_records,
+            'data': [wish.dict() for wish in wishlist_dto]
+        }
+        redis_client.setex(redis_key, CACHE_TTL, json.dumps(cache_data, default=custom_json_serializer))
+
+        # Return DTO with success message
         return build(data=wishlist_dtos.AllWishlistResponseCreateDto(
             status_code=status.HTTP_200_OK,
             message=f"All products wishlist for user ID {user_id} accessed successfully",
             total_records=total_records,
             data=wishlist_dto
         ))
-    
-    # Error SQLAlchemy untuk data yang tidak valid, seperti id tidak ditemukan
+
     except IntegrityError as ie:
         db.rollback()
         return build(error=HTTPException(
@@ -79,7 +116,6 @@ def my_wishlist(
             ).dict()
         ))
 
-    # Error SQLAlchemy untuk data input yang tidak sesuai tipe
     except DataError as de:
         db.rollback()
         return build(error=HTTPException(
@@ -97,7 +133,6 @@ def my_wishlist(
     except HTTPException as http_ex:
         return build(error=http_ex)
     
-    # Error tipe data tidak valid (misal, `skip` atau `limit` bukan integer)
     except (ValueError, TypeError) as te:
         return build(error=HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

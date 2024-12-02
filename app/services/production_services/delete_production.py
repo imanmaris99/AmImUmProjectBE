@@ -10,6 +10,7 @@ from app.dtos.error_response_dtos import ErrorResponseDto
 from app.utils.result import build, Result
 from app.utils.error_parser import find_errr_from_args
 
+from app.libs.redis_config import redis_client
 
 def delete_production(
         db: Session, 
@@ -35,6 +36,15 @@ def delete_production(
 
         db.delete(company)
         db.commit()
+
+        # Invalidate the cached wishlist for this user
+        patterns_to_invalidate = [
+            f"productions:*",
+            f"promotions:*"
+        ]
+        for pattern in patterns_to_invalidate:
+            for key in redis_client.scan_iter(pattern):
+                redis_client.delete(key)
 
         return build(data=production_dtos.DeleteProdutionResponseDto(
             status_code=200,

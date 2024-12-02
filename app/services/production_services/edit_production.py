@@ -11,6 +11,7 @@ from app.dtos.error_response_dtos import ErrorResponseDto
 
 from app.utils.result import build, Result
 from app.utils.error_parser import find_errr_from_args
+from app.libs.redis_config import redis_client
 
     
 def edit_production(
@@ -37,6 +38,17 @@ def edit_production(
         # Simpan perubahan ke dalam database   
         db.commit()
         db.refresh(production)
+
+        # Invalidate the cached wishlist for this user
+        patterns_to_invalidate = [
+            f"productions:*",
+            f"promotions:*",
+            f"production:{company_id.production_id}"
+        ]
+        for pattern in patterns_to_invalidate:
+            for key in redis_client.scan_iter(pattern):
+                redis_client.delete(key)
+
         return build(data=production_dtos.ProductionInfoUpdateResponseDto(
             status_code=200,
             message="Information about company product has been updated",
