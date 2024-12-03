@@ -3,7 +3,7 @@ from typing import Annotated
 from sqlalchemy.orm import Session
 
 from app.dtos import shipment_dtos
-from app.services.shipment_services import create_shipment, my_shipping, update_shipping, update_activate, delete_shipment
+from app.services.shipment_services import new_post, create_shipment, my_shipping, update_shipping, update_activate, delete_shipment
 from app.libs.sql_alchemy_lib import get_db
 from app.libs.jwt_lib import jwt_dto, jwt_service
 
@@ -106,6 +106,29 @@ def create_shipment_route(
         raise result.error
 
     return result.unwrap()
+
+@router.post(
+    "/new-shipment",
+    response_model=shipment_dtos.ShipmentResponseDto,
+    status_code=status.HTTP_201_CREATED,
+    summary="Post a new shipment"
+)
+def create_new_shipment(
+    request_data: shipment_dtos.RequestIdToUpdateDto, 
+    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],
+    db: Session = Depends(get_db),
+):
+    result = new_post(
+        request_data=request_data, 
+        user_id=jwt_token.id, 
+        db=db
+    )
+
+    if result.error:
+        raise result.error
+
+    return result.unwrap()
+
 
 @router.get(
     "/my-list",
