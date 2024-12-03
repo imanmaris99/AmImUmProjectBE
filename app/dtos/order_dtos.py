@@ -6,6 +6,9 @@ from app.dtos.order_item_dtos import OrderItemDto
 from app.models.enums import DeliveryTypeEnum
 
 
+class OrderIdCompleteDataDTO(BaseModel):
+    order_id: str
+
 class OrderCreateDTO(BaseModel):
     delivery_type: DeliveryTypeEnum
     notes: Optional[str] = None

@@ -17,7 +17,7 @@ from app.services.cart_services.support_function import get_total_records
 from app.utils.result import build, Result
 from app.libs.redis_config import custom_json_serializer, redis_client
 
-CACHE_TTL = 300
+CACHE_TTL = 3600
 
 def total_items(
         db: Session, 

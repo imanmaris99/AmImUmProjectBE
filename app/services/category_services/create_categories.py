@@ -29,7 +29,7 @@ def create_categories(
         )
 
         # Invalidate Redis cache
-        delete_cache_by_pattern("articles:*")
+        delete_cache_by_pattern("categories:*")
         
         return optional.build(data=category_dtos.CategoryCreateResponseDto(
             status_code=201,
