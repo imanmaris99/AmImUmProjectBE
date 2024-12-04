@@ -38,40 +38,40 @@ def create_payment(
     return result.unwrap()
 
 
-# @router.post(
-#     "/notifications",
-#     response_model=payment_dtos.PaymentNotificationResponseDto,
-#     status_code=status.HTTP_200_OK
-# )
-# def receive_payment_notification(
-#     notification_data: payment_dtos.InfoTransactionIdDto,  # Data dari body request
-#     jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],
-#     db: Session = Depends(get_db)
-# ):
-#     """
-#     Endpoint untuk menerima notifikasi pembayaran dari Midtrans.
+@router.post(
+    "/notifications",
+    response_model=payment_dtos.PaymentNotificationResponseDto,
+    status_code=status.HTTP_200_OK
+)
+def receive_payment_notification(
+    notification_data: payment_dtos.InfoTransactionIdDto,  # Data dari body request
+    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],
+    db: Session = Depends(get_db)
+):
+    """
+    Endpoint untuk menerima notifikasi pembayaran dari Midtrans.
 
-#     Args:
-#         notification_data (InfoTransactionIdDto): Data notifikasi yang dikirimkan oleh Midtrans.
-#         db (Session): Sesi database yang digunakan.
+    Args:
+        notification_data (InfoTransactionIdDto): Data notifikasi yang dikirimkan oleh Midtrans.
+        db (Session): Sesi database yang digunakan.
 
-#     Returns:
-#         PaymentNotificationResponseDto: Respons sukses atau error.
-#     """
-#     result = payment_services.handle_notification(
-#         notification_data, 
-#         db,
-#         jwt_token.id
-#     )
+    Returns:
+        PaymentNotificationResponseDto: Respons sukses atau error.
+    """
+    result = payment_services.handle_notification(
+        notification_data, 
+        db,
+        jwt_token.id
+    )
 
-#     if result.error:
-#         raise result.error
+    if result.error:
+        raise result.error
 
-#     return result.unwrap()
+    return result.unwrap()
 
 
 @router.post(
-    "/notifications",
+    "/handler-notifications",
     response_model=payment_dtos.PaymentNotificationResponseDto,
     status_code=status.HTTP_200_OK,
     tags=["Payments"],
@@ -93,7 +93,7 @@ def receive_payment_notification(
     Returns:
         PaymentNotificationResponseDto: Respons sukses atau error.
     """
-    result = payment_services.handle_notification(
+    result = payment_services.handler_notification(
         notification_data.dict(), 
         db)
 
