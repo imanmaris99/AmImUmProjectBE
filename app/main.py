@@ -35,6 +35,7 @@ origins = [
     "https://tools.slingacademy.com",
     "https://www.slingacademy.com",
     "https://amimumherbalproject.vercel.app",
+    "https://api.sandbox.midtrans.com"
 ]
 
 app.add_middleware(
