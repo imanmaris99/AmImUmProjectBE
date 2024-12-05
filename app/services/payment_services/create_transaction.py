@@ -109,17 +109,35 @@ def create_transaction(
             )
 
         # Simpan transaksi ke database
-        payment = PaymentModel(
-            order_id=order.id,
-            transaction_id="unknown",
-            gross_amount=order.total_price,
-            transaction_status="pending",
-            payment_response=transaction_response,
-        )
-        db.add(payment)
-        db.commit()
-        db.refresh(payment)
+        try:
+            payment = PaymentModel(
+                order_id=order.id,
+                transaction_id="unknown",  # Atau gunakan ID yang lebih spesifik
+                gross_amount=order.total_price,
+                transaction_status="pending",
+                payment_response=transaction_response,
+            )
+            db.add(payment)
+            db.commit()
+            db.refresh(payment)
+        except IntegrityError as e:
+            db.rollback()  # Rollback jika terjadi duplikasi atau masalah integritas lainnya
 
+            # Tangani duplikasi transaction_id
+            if "payments_transaction_id_key" in str(e.orig):  # Memeriksa constraint unik untuk transaction_id
+                return build(
+                    error=HTTPException(
+                        status_code=status.HTTP_409_CONFLICT,
+                        detail="Transaksi dengan ID yang sama sudah ada. Harap coba lagi.",
+                    )
+                )
+            # Jika error bukan duplikasi, lemparkan kembali exception yang lain
+            return build(
+                error=HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Terjadi kesalahan dalam menyimpan pembayaran.",
+                )
+            )
 
         # Menambahkan item order dari keranjang aktif
         for item in cart_items:
@@ -162,7 +180,6 @@ def create_transaction(
             data=payment_callback
         ))
 
-
     except SQLAlchemyError as e:
         db.rollback()
         return build(error=handle_db_error(db, e))
@@ -183,4 +200,3 @@ def create_transaction(
                 ).dict(),
             )
         )
-    

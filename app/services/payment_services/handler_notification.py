@@ -81,12 +81,20 @@ def handler_notification(notification_data: dict, db: Session) -> Result[dict, E
     except SQLAlchemyError as e:
         db.rollback()
         logger.error(f"Database error: {e}")
-        return build(error=HTTPException(status_code=500, detail="Kesalahan sistem database."))
+        return build(error=HTTPException(
+            status_code=500, 
+            detail=f"Kesalahan sistem database.{str(e)}"
+            )
+        )
 
     except Exception as e:
         db.rollback()
         logger.critical(f"Unhandled error: {e}")
-        return build(error=HTTPException(status_code=500, detail="Kesalahan tak terduga."))
+        return build(error=HTTPException(
+            status_code=500, 
+            detail=f"Kesalahan tak terduga.{str(e)}"
+            )
+        )
 
 
 def fetch_midtrans_transaction_status(order_id: str) -> Result[dict, Exception]:
@@ -115,7 +123,11 @@ def fetch_midtrans_transaction_status(order_id: str) -> Result[dict, Exception]:
 
     except requests.RequestException as e:
         logger.error(f"Request error: {e}")
-        return build(error=HTTPException(status_code=500, detail="Kesalahan jaringan ke Midtrans."))
+        return build(error=HTTPException(
+            status_code=500, 
+            detail=f"Kesalahan jaringan ke Midtrans.{str(e)}"
+            )
+        )
 
 
 def get_payment_by_order_id(order_id: str, db: Session) -> PaymentModel:
