@@ -40,16 +40,23 @@ def handler_notification(notification_data: dict, db: Session) -> Result[dict, E
                 }
             ))
 
+        # Debug payload awal
+        logger.debug(f"Payload diterima: {notification_data}")
+
         # Validasi payload dengan DTO
         try:
             notification = MidtransNotificationDto(**notification_data)
         except ValidationError as ve:
             logger.error(f"Payload tidak valid: {ve.json()}")
+            missing_fields = [
+                field for field in ["transaction_status", "payment_type", "gross_amount", "signature_key"]
+                if not notification_data.get(field)
+            ]
             return build(error=HTTPException(
                 status_code=400,
                 detail={
-                    "error": "Payload notifikasi tidak valid.",
-                    "validation_errors": ve.errors()
+                    "error": "Payload tidak valid.",
+                    "missing_fields": missing_fields,
                 }
             ))
 
