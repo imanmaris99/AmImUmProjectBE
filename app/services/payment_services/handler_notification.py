@@ -26,6 +26,20 @@ def handler_notification(notification_data: dict, db: Session) -> Result[dict, E
     Menangani notifikasi pembayaran dari Midtrans.
     """
     try:
+        # Cek field wajib di payload
+        required_fields = ["order_id", "transaction_status", "payment_type", "gross_amount", "signature_key"]
+        missing_fields = [field for field in required_fields if field not in notification_data]
+
+        if missing_fields:
+            logger.error(f"Field yang hilang: {missing_fields}")
+            return build(error=HTTPException(
+                status_code=422,
+                detail={
+                    "error": "Payload tidak valid.",
+                    "missing_fields": missing_fields
+                }
+            ))
+
         # Validasi payload dengan DTO
         try:
             notification = MidtransNotificationDto(**notification_data)
@@ -89,16 +103,6 @@ def handler_notification(notification_data: dict, db: Session) -> Result[dict, E
                 transaction_status=transaction_status.value,
                 fraud_status=midtrans_data.get("fraud_status"),
             )
-        ))
-
-    except ValidationError as ve:
-        logger.error(f"Error validasi: {ve.json()}")
-        return build(error=HTTPException(
-            status_code=400,
-            detail={
-                "error": "Kesalahan validasi.",
-                "validation_errors": ve.errors()
-            }
         ))
 
     except IntegrityError as e:
