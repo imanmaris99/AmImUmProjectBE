@@ -202,6 +202,8 @@ def map_payment_status_to_order_status(transaction_status: TransactionStatusEnum
         TransactionStatusEnum.cancel: "failed",
         TransactionStatusEnum.deny: "failed",
         TransactionStatusEnum.pending: "pending",
+        TransactionStatusEnum.capture:"capture",
+        TransactionStatusEnum.refund:"refund"
     }
     mapped_status = status_mapping.get(transaction_status, "unknown")
     if mapped_status == "unknown":
