@@ -13,6 +13,7 @@ from app.dtos.payment_dtos import (
 )
 from app.utils.result import build, Result
 from app.libs.midtrans_config import MIDTRANS_SERVER_KEY
+from app.dtos.payment_dtos import MidtransNotificationDto  # Tambahkan DTO untuk validasi notifikasi
 import logging
 
 logger = logging.getLogger(__name__)
@@ -23,52 +24,52 @@ def handler_notification(notification_data: dict, db: Session) -> Result[dict, E
     Menangani notifikasi pembayaran dari Midtrans.
     """
     try:
-        order_id = notification_data.get("order_id")
+        # 1. Validasi notifikasi menggunakan DTO
+        notification = MidtransNotificationDto(**notification_data)
+        order_id = notification.order_id
         logger.info(f"Memproses notifikasi untuk order_id: {order_id}")
 
-        # 1. Ambil status transaksi dari Midtrans
+        # 2. Ambil status transaksi dari Midtrans
         midtrans_result = fetch_midtrans_transaction_status(order_id)
         if midtrans_result.error:
-            logger.error(f"Error fetch Midtrans status: {midtrans_result.error}")
+            logger.error(f"Error saat mengambil status Midtrans: {midtrans_result.error}")
             return build(error=midtrans_result.error)
 
         midtrans_data = midtrans_result.data
-        transaction_id = midtrans_data.get("transaction_id")
-        payment_type = midtrans_data.get("payment_type")
-        transaction_status = TransactionStatusEnum(midtrans_data.get("transaction_status"))
-        fraud_status = FraudStatusEnum(midtrans_data.get("fraud_status"))
+        logger.debug(f"Data transaksi Midtrans: {midtrans_data}")
 
-        logger.info(f"Midtrans data: {midtrans_data}")
-
-        # 2. Validasi pembayaran di database
+        # 3. Validasi dan ambil data pembayaran dari database
         payment = get_payment_by_order_id(order_id, db)
         if not payment:
             logger.warning(f"Pembayaran dengan order_id {order_id} tidak ditemukan.")
             return build(error=HTTPException(status_code=404, detail="Pembayaran tidak ditemukan."))
 
-        # 3. Update data pembayaran
-        update_payment_data(payment, midtrans_data, transaction_id, payment_type, transaction_status, fraud_status, db)
+        # 4. Update data pembayaran di database
+        update_payment_data(payment, midtrans_data, db)
 
-        # 4. Validasi dan update status pesanan
+        # 5. Validasi dan update status pesanan
         order = get_order_by_id(payment.order_id, db)
         if not order:
             logger.warning(f"Pesanan terkait dengan order_id {order_id} tidak ditemukan.")
             return build(error=HTTPException(status_code=404, detail="Pesanan tidak ditemukan."))
 
-        order.status = map_payment_status_to_order_status(transaction_status)
-        logger.info(f"Status pesanan diupdate menjadi: {order.status}")
+        # Map status pembayaran ke status pesanan
+        order.status = map_payment_status_to_order_status(
+            TransactionStatusEnum(midtrans_data.get("transaction_status"))
+        )
+        logger.info(f"Status pesanan diperbarui menjadi: {order.status}")
 
-        # 5. Commit perubahan ke database
+        # 6. Commit perubahan ke database
         db.commit()
 
-        # 6. Return response sukses
+        # 7. Return response sukses
         return build(data=PaymentNotificationResponseDto(
             status_code=200,
             message=f"Berhasil memproses notifikasi untuk transaksi {order_id}",
             data=PaymentNotificationSchemaDto(
                 order_id=order_id,
-                transaction_status=transaction_status.value,
-                fraud_status=fraud_status.value,
+                transaction_status=midtrans_data.get("transaction_status"),
+                fraud_status=midtrans_data.get("fraud_status"),
             )
         ))
 
@@ -76,7 +77,7 @@ def handler_notification(notification_data: dict, db: Session) -> Result[dict, E
         db.rollback()
         logger.error(f"Integrity error: {e}")
         return build(error=HTTPException(status_code=400, detail="Kesalahan database, periksa data yang dimasukkan."))
-    
+
     except SQLAlchemyError as e:
         db.rollback()
         logger.error(f"Database error: {e}")
@@ -131,14 +132,14 @@ def get_order_by_id(order_id: int, db: Session) -> OrderModel:
     return db.execute(select(OrderModel).where(OrderModel.id == order_id)).scalars().first()
 
 
-def update_payment_data(payment, midtrans_data, transaction_id, payment_type, transaction_status, fraud_status, db):
+def update_payment_data(payment, midtrans_data, db):
     """
     Memperbarui data pembayaran di database.
     """
-    payment.transaction_id = transaction_id
-    payment.payment_type = payment_type
-    payment.transaction_status = transaction_status
-    payment.fraud_status = fraud_status
+    payment.transaction_id = midtrans_data.get("transaction_id")
+    payment.payment_type = midtrans_data.get("payment_type")
+    payment.transaction_status = TransactionStatusEnum(midtrans_data.get("transaction_status"))
+    payment.fraud_status = FraudStatusEnum(midtrans_data.get("fraud_status"))
     payment.payment_response = midtrans_data
     db.add(payment)
     logger.info(f"Pembayaran untuk order_id {payment.order_id} diperbarui.")
@@ -155,4 +156,7 @@ def map_payment_status_to_order_status(transaction_status: TransactionStatusEnum
         TransactionStatusEnum.deny: "failed",
         TransactionStatusEnum.pending: "pending",
     }
-    return status_mapping.get(transaction_status, "unknown")
+    mapped_status = status_mapping.get(transaction_status, "unknown")
+    if mapped_status == "unknown":
+        logger.warning(f"Unmapped transaction status: {transaction_status}")
+    return mapped_status

@@ -8,7 +8,9 @@ from app.dtos import payment_dtos
 
 from app.libs.sql_alchemy_lib import get_db
 from app.libs.jwt_lib import jwt_dto, jwt_service
+import logging
 
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/payments",
@@ -76,7 +78,11 @@ def receive_payment_notification(
     status_code=status.HTTP_200_OK,
     tags=["Payments"],
     summary="Menerima notifikasi pembayaran dari Midtrans",
-    description="Endpoint ini digunakan untuk menerima notifikasi pembayaran dari Midtrans dan memperbarui status pembayaran serta pesanan di sistem."
+    description=(
+        "Endpoint ini digunakan untuk menerima notifikasi pembayaran dari Midtrans. "
+        "Endpoint akan memproses data yang dikirimkan oleh Midtrans, memperbarui status pembayaran, "
+        "dan memperbarui status pesanan di sistem."
+    )
 )
 def receive_payment_notification(
     notification_data: payment_dtos.InfoTransactionIdDto,
@@ -87,17 +93,20 @@ def receive_payment_notification(
 
     Args:
         notification_data (InfoTransactionIdDto): Data notifikasi yang dikirimkan oleh Midtrans.
-        jwt_token (TokenPayLoad): Token JWT pengguna untuk otorisasi.
-        db (Session): Sesi database yang digunakan.
+        db (Session): Sesi database untuk memproses data.
 
     Returns:
         PaymentNotificationResponseDto: Respons sukses atau error.
     """
-    result = payment_services.handler_notification(
-        notification_data.dict(), 
-        db)
+    logger.info("Menerima notifikasi pembayaran dari Midtrans.")
+    logger.debug(f"Data notifikasi yang diterima: {notification_data}")
+
+    # Memanggil service untuk memproses notifikasi
+    result = payment_services.handler_notification(notification_data.dict(), db)
 
     if result.error:
+        logger.error(f"Error saat memproses notifikasi: {result.error.detail}")
         raise result.error
 
+    logger.info("Notifikasi pembayaran berhasil diproses.")
     return result.unwrap()

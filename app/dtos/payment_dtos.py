@@ -62,3 +62,10 @@ class PaymentNotificationResponseDto(BaseModel):
     message: str = Field(default="Success access")
     data: PaymentNotificationSchemaDto
 
+class MidtransNotificationDto(BaseModel):
+    order_id: str
+    transaction_status: str
+    fraud_status: str
+    payment_type: str
+    gross_amount: str
+    signature_key: str
