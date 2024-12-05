@@ -24,8 +24,7 @@ fraud_status_enum = sa.Enum(
     name='fraudstatusenum'
 )
 transaction_status_enum = sa.Enum(
-    'pending', 'settlement', 'expire', 'cancel', 'deny', 'refund', 
-    'capture',
+    'pending', 'settlement', 'expire', 'cancel', 'deny', 'refund',
     name='transactionstatusenum'
 )
 
