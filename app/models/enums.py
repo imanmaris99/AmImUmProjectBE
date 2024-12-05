@@ -31,6 +31,7 @@ class TransactionStatusEnum(str, Enum):
     cancel = "cancel"
     deny = "deny"
     refund = "refund"
+    capture = "capture"  # Tambahkan status ini
 
 # Enum untuk status fraud transaksi pembayaran
 class FraudStatusEnum(str, Enum):
