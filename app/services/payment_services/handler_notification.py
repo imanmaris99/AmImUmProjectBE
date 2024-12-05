@@ -1,4 +1,6 @@
 from fastapi import HTTPException
+
+from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
@@ -24,12 +26,23 @@ def handler_notification(notification_data: dict, db: Session) -> Result[dict, E
     Menangani notifikasi pembayaran dari Midtrans.
     """
     try:
-        # 1. Validasi notifikasi menggunakan DTO
-        notification = MidtransNotificationDto(**notification_data)
+        # Validasi payload dengan DTO
+        try:
+            notification = MidtransNotificationDto(**notification_data)
+        except ValidationError as ve:
+            logger.error(f"Payload tidak valid: {ve.json()}")
+            return build(error=HTTPException(
+                status_code=400,
+                detail={
+                    "error": "Payload notifikasi tidak valid.",
+                    "validation_errors": ve.errors()
+                }
+            ))
+
         order_id = notification.order_id
         logger.info(f"Memproses notifikasi untuk order_id: {order_id}")
 
-        # 2. Ambil status transaksi dari Midtrans
+        # Ambil status transaksi dari Midtrans
         midtrans_result = fetch_midtrans_transaction_status(order_id)
         if midtrans_result.error:
             logger.error(f"Error saat mengambil status Midtrans: {midtrans_result.error}")
@@ -38,63 +51,79 @@ def handler_notification(notification_data: dict, db: Session) -> Result[dict, E
         midtrans_data = midtrans_result.data
         logger.debug(f"Data transaksi Midtrans: {midtrans_data}")
 
-        # 3. Validasi dan ambil data pembayaran dari database
+        # Validasi dan ambil data pembayaran dari database
         payment = get_payment_by_order_id(order_id, db)
         if not payment:
             logger.warning(f"Pembayaran dengan order_id {order_id} tidak ditemukan.")
-            return build(error=HTTPException(status_code=404, detail="Pembayaran tidak ditemukan."))
+            return build(error=HTTPException(
+                status_code=404,
+                detail="Pembayaran tidak ditemukan."
+            ))
 
-        # 4. Update data pembayaran di database
+        # Update data pembayaran di database
         update_payment_data(payment, midtrans_data, db)
 
-        # 5. Validasi dan update status pesanan
+        # Validasi dan update status pesanan
         order = get_order_by_id(payment.order_id, db)
         if not order:
             logger.warning(f"Pesanan terkait dengan order_id {order_id} tidak ditemukan.")
-            return build(error=HTTPException(status_code=404, detail="Pesanan tidak ditemukan."))
+            return build(error=HTTPException(
+                status_code=404,
+                detail="Pesanan tidak ditemukan."
+            ))
 
         # Map status pembayaran ke status pesanan
-        order.status = map_payment_status_to_order_status(
-            TransactionStatusEnum(midtrans_data.get("transaction_status"))
-        )
+        transaction_status = TransactionStatusEnum(midtrans_data.get("transaction_status"))
+        order.status = map_payment_status_to_order_status(transaction_status)
         logger.info(f"Status pesanan diperbarui menjadi: {order.status}")
 
-        # 6. Commit perubahan ke database
+        # Commit perubahan ke database
         db.commit()
 
-        # 7. Return response sukses
+        # Return response sukses
         return build(data=PaymentNotificationResponseDto(
             status_code=200,
             message=f"Berhasil memproses notifikasi untuk transaksi {order_id}",
             data=PaymentNotificationSchemaDto(
                 order_id=order_id,
-                transaction_status=midtrans_data.get("transaction_status"),
+                transaction_status=transaction_status.value,
                 fraud_status=midtrans_data.get("fraud_status"),
             )
+        ))
+
+    except ValidationError as ve:
+        logger.error(f"Error validasi: {ve.json()}")
+        return build(error=HTTPException(
+            status_code=400,
+            detail={
+                "error": "Kesalahan validasi.",
+                "validation_errors": ve.errors()
+            }
         ))
 
     except IntegrityError as e:
         db.rollback()
         logger.error(f"Integrity error: {e}")
-        return build(error=HTTPException(status_code=400, detail="Kesalahan database, periksa data yang dimasukkan."))
+        return build(error=HTTPException(
+            status_code=400,
+            detail="Kesalahan database, periksa data yang dimasukkan."
+        ))
 
     except SQLAlchemyError as e:
         db.rollback()
         logger.error(f"Database error: {e}")
         return build(error=HTTPException(
-            status_code=500, 
-            detail=f"Kesalahan sistem database.{str(e)}"
-            )
-        )
+            status_code=500,
+            detail=f"Kesalahan sistem database: {str(e)}"
+        ))
 
     except Exception as e:
         db.rollback()
         logger.critical(f"Unhandled error: {e}")
         return build(error=HTTPException(
-            status_code=500, 
-            detail=f"Kesalahan tak terduga.{str(e)}"
-            )
-        )
+            status_code=500,
+            detail=f"Kesalahan tak terduga: {str(e)}"
+        ))
 
 
 def fetch_midtrans_transaction_status(order_id: str) -> Result[dict, Exception]:

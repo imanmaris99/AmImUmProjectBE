@@ -63,9 +63,9 @@ class PaymentNotificationResponseDto(BaseModel):
     data: PaymentNotificationSchemaDto
 
 class MidtransNotificationDto(BaseModel):
-    order_id: str
-    transaction_status: str
-    fraud_status: str
-    payment_type: str
-    gross_amount: str
-    signature_key: str
+    transaction_status: str = Field(..., description="Status transaksi, misalnya 'capture', 'settlement', dll.")
+    fraud_status: Optional[str] = Field(None, description="Status fraud dari transaksi.")
+    payment_type: str = Field(..., description="Tipe pembayaran, misalnya 'credit_card', 'bank_transfer', dll.")
+    gross_amount: str = Field(..., description="Jumlah total pembayaran.")
+    signature_key: str = Field(..., description="Kunci signature untuk memvalidasi notifikasi.")
+    order_id: str = Field(..., description="ID pesanan yang terkait.")
