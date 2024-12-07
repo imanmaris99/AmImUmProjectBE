@@ -24,7 +24,7 @@ def all_product_with_discount(
         skip: int = 0, 
         limit: int = 10
     ) -> Result[AllProductInfoResponseDto, Exception]:
-    cache_key = f"products:{skip}:{limit}"
+    cache_key = f"promotions:{skip}:{limit}"
 
     try:
         # Cek data di Redis cache

@@ -11,7 +11,7 @@ from app.dtos.error_response_dtos import ErrorResponseDto
 from app.services.product_services.support_function import handle_db_error
 
 from app.utils.result import build, Result
-
+from app.libs.redis_config import redis_client
 
 def delete_product(
         db: Session, 
@@ -44,6 +44,17 @@ def delete_product(
         # Hapus artikel
         db.delete(product_model)
         db.commit()
+
+        # Invalidasi cache dengan pendekatan yang lebih efisien
+        redis_keys = [
+            f"products:*", 
+            f"product:*",
+            f"discounts:*",
+            f"promotions:*"
+        ]
+        for pattern in redis_keys:
+            for key in redis_client.scan_iter(pattern):
+                redis_client.delete(key)
 
         return build(data=DeleteProductResponseDto(
             status_code=200,

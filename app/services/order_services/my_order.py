@@ -8,12 +8,16 @@ from sqlalchemy.exc import SQLAlchemyError, DataError, IntegrityError
 from app.models.order_model import OrderModel
 from app.dtos import order_dtos
 
+import json
+
 from app.dtos.error_response_dtos import ErrorResponseDto
 
 from app.services.cart_services.support_function import get_cart_total, handle_db_error
 
 from app.utils.result import build, Result
+from app.libs.redis_config import redis_client, custom_json_serializer
 
+CACHE_TTL = 3600
 
 def my_order(
         db: Session, 
@@ -22,6 +26,20 @@ def my_order(
         limit: int = 10
     ) -> Result[order_dtos.GetOrderInfoResponseDto, Exception]:
     try:
+        # Redis key for caching
+        redis_key = f"orders:{user_id}:{skip}:{limit}"
+
+        # Check if wishlist data exists in Redis
+        cached_order = redis_client.get(redis_key)
+        if cached_order:
+            # Data is found in cache, return it
+            order_data = json.loads(cached_order)
+            return build(data=order_dtos.GetOrderInfoResponseDto(
+                status_code=status.HTTP_200_OK,
+                message=f"All orders in account with user ID {user_id} accessed successfully(from cache)",
+                data=order_data['data']
+            ))
+        
         # Query untuk mengambil cart berdasarkan user_id dengan pagination
         order_models = db.execute(
             select(OrderModel)
@@ -55,6 +73,13 @@ def my_order(
             )
             for order in order_models
         ]
+
+        # Save the result to Redis cache
+        cache_data = {
+            'data': [wish.dict() for wish in order_dto]
+        }
+
+        redis_client.setex(redis_key, CACHE_TTL, json.dumps(cache_data, default=custom_json_serializer))
 
         # Return DTO dengan respons yang telah dibangun
         return build(data=order_dtos.GetOrderInfoResponseDto(

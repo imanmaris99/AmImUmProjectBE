@@ -7,6 +7,7 @@ from sqlalchemy.orm import relationship, Mapped
 
 from app.dtos import order_dtos
 
+from app.dtos.shipment_dtos import MyShipmentAddressOrderInfoDto
 from app.libs.sql_alchemy_lib import Base
 from app.models.enums import DeliveryTypeEnum
 
@@ -90,6 +91,17 @@ class OrderModel(Base):
         from app.models.shipment_model import ShipmentModel
         shipment_models: ShipmentModel = self.shipments
         return shipment_models.shipping_cost if shipment_models else 0.0
+
+    @property
+    def my_shipping(self):
+        from app.models import ShipmentAddressModel
+        address_model: ShipmentAddressModel = self.shipments
+        return MyShipmentAddressOrderInfoDto(
+            id=address_model.id,
+            my_courier=address_model.my_courier,
+            my_address=address_model.my_address,
+            created_at=address_model.created_at
+        ).model_dump() if address_model else None
 
     @property
     def order_item_lists(self):

@@ -12,7 +12,7 @@ from app.dtos.error_response_dtos import ErrorResponseDto
 from app.services.cart_services.support_function import get_cart_total, handle_db_error
 
 from app.utils.result import build, Result
-
+from app.libs.redis_config import redis_client
 
 def checkout(
         db: Session, 
@@ -65,25 +65,6 @@ def checkout(
         db.add(order)
         db.commit()
 
-        # # --- Tambahkan Item Order dari Keranjang ---
-        # for item in cart_items:
-        #     order_item = OrderItemModel(
-        #         order_id=order.id,
-        #         product_id=item.product_id,
-        #         variant_id=item.variant_id,
-        #         quantity=item.quantity,
-        #         price_per_item=item.product_price,
-        #         total_price=item.product_price * item.quantity,
-        #     )
-        #     db.add(order_item)
-
-        # # --- Hapus Item Keranjang Setelah Order Dibuat ---
-        # db.query(CartProductModel).filter(
-        #     CartProductModel.customer_id == user_id,
-        #     CartProductModel.is_active == True
-        # ).delete()
-        # db.commit()
-
         # --- Buat DTO Response ---
         order_response = order_dtos.OrderCreateInfoDTO(
             id=order.id,
@@ -94,6 +75,15 @@ def checkout(
             notes=order.notes,
             created_at=order.created_at
         )
+
+        # Invalidasi cache dengan pendekatan yang lebih efisien
+        redis_keys = [
+            f"orders:{user_id}:*", 
+            f"order:{user_id}:*"
+        ]
+        for pattern in redis_keys:
+            for key in redis_client.scan_iter(pattern):
+                redis_client.delete(key)
 
         return build(data=order_dtos.OrderInfoResponseDto(
             status_code=201,

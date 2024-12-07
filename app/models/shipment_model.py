@@ -85,3 +85,15 @@ class ShipmentModel(Base):
         from app.models.user_model import UserModel
         user_models: UserModel = self.user
         return user_models.firstname if user_models else ""
+    
+    @property
+    def user_phone(self):
+        from app.models.user_model import UserModel
+        user_models: UserModel = self.user
+        return user_models.phone if user_models else ""
+    
+    @property
+    def user_address(self):
+        from app.models.user_model import UserModel
+        user_models: UserModel = self.user
+        return user_models.address if user_models else ""

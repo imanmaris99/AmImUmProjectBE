@@ -3,6 +3,7 @@ from typing import List, Optional
 from datetime import datetime
 
 from app.dtos.order_item_dtos import OrderItemDto
+from app.dtos.shipment_dtos import MyShipmentAddressOrderInfoDto
 from app.models.enums import DeliveryTypeEnum
 
 
@@ -46,10 +47,27 @@ class GetOrderInfoDto(BaseModel):
     notes: Optional[str] = None
     customer_name: Optional[str] = None
     created_at: datetime
-    shipping_cost: Optional[float] = None
+    shipping_cost: Optional[float] = 0.0
     order_item_lists: List[OrderItemDto]
 
 class GetOrderInfoResponseDto(BaseModel):
     status_code: int = Field(default=200)
     message: str = Field(default="Information about your order successfully retrieved")
     data: List[GetOrderInfoDto]
+
+class GetOrderDetailDto(BaseModel):
+    id: str
+    status: str
+    total_price: Optional[float] = 0.0
+    delivery_type: str
+    notes: Optional[str]
+    customer_name: str
+    created_at: datetime
+    shipping_cost: Optional[float] = 0.0
+    my_shipping: Optional[MyShipmentAddressOrderInfoDto]
+    order_item_lists: List[OrderItemDto]
+
+class GetOrderDetailResponseDto(BaseModel):
+    status_code: int
+    message: str
+    data: GetOrderDetailDto

@@ -236,6 +236,27 @@ async def get_my_order(
     
     return result.unwrap()
 
+@router.get("/detail/{order_id}", response_model=order_dtos.GetOrderDetailResponseDto)
+def get_order_detail(
+    order_id: str, 
+    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],
+    db: Session = Depends(get_db)
+):
+    
+    # Panggil service detail_order
+    result= order_services.detail_order(
+        db=db,
+        order_id=order_id,
+        user_id=jwt_token.id
+    )
+
+    if result.error:
+        # Tangani error jika terjadi
+        raise result.error
+    
+    # Kembalikan data response jika berhasil
+    return result.data
+
 
 @router.put(
     "/complete-details/{order_id}", 

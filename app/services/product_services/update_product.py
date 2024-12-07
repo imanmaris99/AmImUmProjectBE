@@ -10,6 +10,7 @@ from app.dtos.error_response_dtos import ErrorResponseDto
 
 from app.utils.result import build, Result
 from app.utils.error_parser import find_errr_from_args
+from app.libs.redis_config import redis_client
 
 def update_product(
         db: Session, 
@@ -43,11 +44,8 @@ def update_product(
         db.commit()
         db.refresh(product_model)
 
-        # Menggunakan model ter-update untuk membuat respons
-        return build(data=ProductResponseDto(
-            status_code=200,
-            message="Your information of product has been updated",
-            data=ProductInfoDTO(
+        # --- Buat DTO Response ---
+        update_response = ProductInfoDTO(
                 id=product_model.id,
                 name=product_model.name,
                 info=product_model.info,
@@ -59,6 +57,23 @@ def update_product(
                 created_at=product_model.created_at,
                 updated_at=product_model.updated_at
             )
+
+        # Invalidasi cache dengan pendekatan yang lebih efisien
+        redis_keys = [
+            f"products:*", 
+            f"product:*",
+            f"discounts:*",
+            f"promotions:*"
+        ]
+        for pattern in redis_keys:
+            for key in redis_client.scan_iter(pattern):
+                redis_client.delete(key)
+
+        # Menggunakan model ter-update untuk membuat respons
+        return build(data=ProductResponseDto(
+            status_code=200,
+            message="Your information of product has been updated",
+            data=update_response
         ))
     
     except SQLAlchemyError:

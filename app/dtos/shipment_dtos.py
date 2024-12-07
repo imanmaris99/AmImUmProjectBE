@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel, Field
 from app.dtos.shipment_address_dtos import ShipmentAddressCreateDto, MyShipmentAddressInfoDto, DataShipmentAddressInfoDto
 from app.dtos.courier_dtos import CourierCreateDto, MyCourierInfoDto, DataCourierInfoDto
@@ -60,6 +60,13 @@ class ShipmentDetailInfoListDto(BaseModel):
     address_info: DataShipmentAddressInfoDto
     code_tracking: str
     created_at: datetime
+
+class MyShipmentAddressOrderInfoDto(BaseModel):
+    id: str
+    my_address: MyShipmentAddressInfoDto
+    my_courier: MyCourierInfoDto
+    created_at: datetime
+
 
 class AllShipmentListResponseDto(BaseModel):
     status_code: int = Field(default=200)
