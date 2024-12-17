@@ -23,7 +23,7 @@ def all_product_by_id_production(
         skip: int = 0, 
         limit: int = 10
     ) -> Result[AllProductInfoResponseDto, Exception]:  
-    cache_key = f"products:{skip}:{limit}"
+    cache_key = f"products:{production_id}:{skip}:{limit}"
 
     try:
         # Cek data di Redis cache

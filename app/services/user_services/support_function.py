@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from fastapi import HTTPException, status
 
 from datetime import datetime, timedelta
@@ -72,6 +73,35 @@ def delete_unverified_users(db: Session):
         db.delete(user)
 
     db.commit()
+
+# @contextmanager
+# def get_db_session(db: Session):
+#     try:
+#         yield db
+#         db.commit()  # Commit jika tidak ada error
+#     except Exception as e:
+#         db.rollback()  # Rollback jika terjadi error
+#         raise e  # Lanjutkan melempar error agar bisa ditangani di tempat lain
+#     finally:
+#         db.close()  # Pastikan koneksi ditutup
+
+# def delete_unverified_users(db: Session):
+#     """
+#     Menghapus pengguna yang tidak diverifikasi dalam waktu tertentu.
+#     """
+#     expiration_time = datetime.utcnow()
+
+#     with get_db_session(db) as session:  # Pastikan `db` dilewatkan ke context manager
+#         unverified_users = session.query(UserModel).filter(
+#             UserModel.is_active == False,
+#             UserModel.verification_expiry < expiration_time
+#         ).all()
+
+#         for user in unverified_users:
+#             if user.firebase_uid:
+#                 delete_firebase_user(user.firebase_uid)  # Hapus user dari Firebase
+#             session.delete(user)  # Hapus user dari database
+
 
 # Fungsi untuk membuat instance UserModel dan menyimpannya ke database
 def save_user_to_db(db: Session, user: user_dtos.UserCreateDto) -> UserModel:

@@ -25,7 +25,7 @@ def all_discount_by_id_production(
         skip: int = 0, 
         limit: int = 10
     ) -> Result[AllProductInfoResponseDto, Exception]:
-    cache_key = f"discounts:{skip}:{limit}"
+    cache_key = f"discounts:{production_id}:{skip}:{limit}"
 
     try:
         # Cek data di Redis cache

@@ -12,10 +12,17 @@ APP_DEVELOPMENT = os.getenv("APP_DEVELOPMENT", True)
 engine: Engine
 
 SQLALCHEMY_DATABASE_URL = os.getenv('DATABASE_URL')
+# engine = create_engine(
+#     SQLALCHEMY_DATABASE_URL,
+#     pool_pre_ping=True
+#     )
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
-    pool_pre_ping=True
-    )
+    pool_pre_ping=True,  # Memeriksa koneksi sebelum digunakan
+    pool_size=5,         # Maksimal 5 koneksi
+    max_overflow=10,     # Koneksi tambahan jika pool penuh
+    pool_recycle=1800    # Recycle koneksi setelah 30 menit
+)
 
 """
 ######################Tis code use to make interact with database object###################################

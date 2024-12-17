@@ -24,7 +24,7 @@ def infinite_scrolling_list_products_by_id_production(
         skip: int = 0, 
         limit: int = 6
     ) -> Result[Dict[str, Any], Exception]:
-    cache_key = f"products:{skip}:{limit}"
+    cache_key = f"products:{production_id}:{skip}:{limit}"
 
     try:
         # Cek data di Redis cache
