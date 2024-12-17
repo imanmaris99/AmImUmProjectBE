@@ -8,7 +8,7 @@ def start_scheduler():
     scheduler.add_job(
         func=delete_unverified_users, 
         trigger='interval', 
-        days=1, 
+        minutes=5, 
         args=[next(get_db())]  # Mengambil session menggunakan dependency get_db
     )
     scheduler.start()
