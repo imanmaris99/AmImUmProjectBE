@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
 
+from app.dtos.production_dtos import InfoProductionProductDto
 from app.dtos.rating_dtos import ProductRatingDto
 from app.dtos.pack_type_dtos import VariantProductDto, VariantAllProductDto
 
@@ -34,8 +35,9 @@ class ProductResponseDto(BaseModel):
 
 class AllProductInfoDTO(BaseModel):
     id: Optional[str]
-    name: Optional[str]= Field(default="buyung upik")
-    price: float= Field(default=8000.0)
+    name: Optional[str] = Field(default="buyung upik")
+    price: float = Field(default=8000.0)
+    brand_info: Optional[dict] = None  # Jadikan opsional dengan default None # Jadikan opsional
     all_variants: List[VariantAllProductDto]
     created_at: datetime
 

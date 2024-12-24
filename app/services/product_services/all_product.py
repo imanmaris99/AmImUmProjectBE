@@ -59,6 +59,7 @@ def all_product(
                 id=product.id, 
                 name=product.name,
                 price=product.price,
+                brand_info=product.brand_info,
                 all_variants=product.all_variants or [],  # Cek None dan default ke list kosong                
                 created_at=product.created_at
             )

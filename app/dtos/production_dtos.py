@@ -101,5 +101,7 @@ class DeleteProdutionResponseDto(BaseModel):
     message: str = Field(default="Info about company some product has been deleted")
     data: InfoDeleteProductionDto
 
-
+class InfoProductionProductDto(BaseModel):
+    id: int
+    name: Optional[str] = None
 

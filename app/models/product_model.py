@@ -52,10 +52,16 @@ class ProductModel(sql_alchemy_lib.Base):
         return [i.strip() for i in self.instruction.splitlines() if i.strip()] if self.instruction else []
 
     # Properti untuk mendapatkan nama perusahaan terkait
-    @property
-    def company(self):
-        return self.product_bies.name if self.product_bies else ""
+    # @property
+    # def company(self):
+    #     return self.product_bies.name if self.product_bies else ""
     
+    @property
+    def company(self) -> str:
+        from app.models.production_model import ProductionModel
+        productions_model: ProductionModel = self.product_bies
+        return productions_model.name if productions_model else ""
+
     @property
     def highest_promo(self):
         if not self.pack_type:
@@ -127,3 +133,15 @@ class ProductModel(sql_alchemy_lib.Base):
                 rater_name=rating.rater_name
             ).model_dump() for rating in self.ratings
         ] if self.ratings else []
+    
+    @property
+    def brand_info(self):
+        """Mengembalikan informasi brand atau None jika tidak ada data."""
+        if not self.product_bies:  # Jika relasi tidak ada
+            return None
+
+        production_model = self.product_bies
+        return {
+            "id": production_model.id,
+            "name": production_model.name,
+        }

@@ -44,7 +44,9 @@ def all_discount_by_id_production(
         product_model = (
             db.execute(
                 select(ProductModel)
-                .options(selectinload(ProductModel.pack_type))  # Eager loading untuk pack_type
+                .options(
+                    selectinload(ProductModel.pack_type),
+                    selectinload(ProductModel.product_bies))  # Eager loading untuk pack_type
                 .where(ProductModel.product_by_id == production_id,
                        ProductModel.is_active.is_(True), 
                        ProductModel.id.in_(subquery))
@@ -73,19 +75,13 @@ def all_discount_by_id_production(
                 id=product.id, 
                 name=product.name,
                 price=product.price,
+                brand_info=product.brand_info,
                 all_variants=product.all_variants or [],  # Cek None dan default ke list kosong                
                 created_at=product.created_at
             )
             for product in product_model
         ]
 
-        # return build(data=all_products_discount_by_production_dto)
-
-        # return build(data=AllProductInfoResponseDto(
-        #     status_code=status.HTTP_200_OK,
-        #     message=f"All List of product discount with brand ID {production_id} can accessed successfully",
-        #     data=all_products_discount_by_production_dto
-        # ))
         response_dto = AllProductInfoResponseDto(
             status_code=status.HTTP_200_OK,
             message="All List product can accessed successfully",
