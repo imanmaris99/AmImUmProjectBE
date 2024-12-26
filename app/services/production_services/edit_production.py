@@ -42,7 +42,7 @@ def edit_production(
         # Invalidate the cached wishlist for this user
         patterns_to_invalidate = [
             f"productions:*",
-            f"promotions:*",
+            f"brand_promotions:*",
             f"production:{company_id.production_id}"
         ]
         for pattern in patterns_to_invalidate:

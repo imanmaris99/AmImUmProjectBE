@@ -27,23 +27,27 @@ def all_product_with_discount(
     cache_key = f"promotions:{skip}:{limit}"
 
     try:
+        # Cek data di Redis cache
         cached_data = redis_client.get(cache_key)
         if cached_data:
-            cached_response = AllProductInfoResponseDto.parse_obj(json.loads(cached_data))
+            # Parse JSON dari Redis dan kirim sebagai response
+            cached_response = json.loads(cached_data)
             return build(data=cached_response)
         
+        # Subquery untuk mendapatkan produk yang memiliki pack type dengan diskon
         subquery = (
             select(PackTypeModel.product_id)
             .filter(PackTypeModel.discount > 0)
-            .scalar_subquery()
+            .scalar_subquery()  # Menggunakan scalar_subquery()
         )
 
+        # Mengambil produk yang aktif dan memiliki variasi dengan diskon
         product_model = (
             db.execute(
                 select(ProductModel)
-                .options(selectinload(ProductModel.pack_type))
+                .options(selectinload(ProductModel.pack_type))  # Eager loading untuk pack_type
                 .where(ProductModel.is_active.is_(True), 
-                        ProductModel.id.in_(subquery))
+                        ProductModel.id.in_(subquery))  # Menggunakan in_() dengan subquery
                 .offset(skip)
                 .limit(limit)
             ).scalars().all()
@@ -52,40 +56,60 @@ def all_product_with_discount(
         if not product_model:
             raise HTTPException(
                 status_code=status.HTTP_204_NO_CONTENT,
-                detail="No products with discounts found."
+                detail=ErrorResponseDto(
+                    status_code=status.HTTP_204_NO_CONTENT,
+                    error="Not Content Found",
+                    message=f"info about list products with discount not found"
+                ).dict()
             )
 
+        # Konversi produk menjadi DTO
         all_products_dto = [
             AllProductInfoDTO(
-                id=str(product.id),
-                name=product.name or "No Name",
-                price=product.price or 0.0,
-                brand_info=product.brand_info or "Unknown Brand",
-                all_variants=product.all_variants or [],
-                created_at=product.created_at or "1970-01-01T00:00:00Z"
+                id=product.id, 
+                name=product.name,
+                price=product.price,
+                brand_info=product.brand_info,
+                all_variants=product.all_variants or [],  # Cek None dan default ke list kosong                
+                created_at=product.created_at
             )
             for product in product_model
         ]
 
+        # return build(data=all_products_dto)
+    
+        # return build(data=AllProductInfoResponseDto(
+        #     status_code=status.HTTP_200_OK,
+        #     message="All List of product with discount can accessed successfully",
+        #     data=all_products_dto
+        # ))
+    
         response_dto = AllProductInfoResponseDto(
             status_code=status.HTTP_200_OK,
-            message="All products with discount retrieved successfully.",
+            message="All List product can accessed successfully",
             data=all_products_dto
         )
 
+        # Simpan data ke Redis (dengan TTL 300 detik)
         redis_client.setex(cache_key, CACHE_TTL, json.dumps(response_dto.dict(), default=custom_json_serializer))
         
         return build(data=response_dto)
+
 
     except SQLAlchemyError as e:
         return handle_db_error(db, e)
     
     except HTTPException as http_ex:
-        db.rollback()
+        db.rollback()  # Rollback jika terjadi error dari Firebase
+        # Langsung kembalikan error dari Firebase tanpa membuat response baru
         return build(error=http_ex)
     
     except Exception as e:
-        return build(error=HTTPException(
+        return build(error= HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An error occurred: {str(e)}"
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                error="Internal Server Error",
+                message=f"An error occurred: {str(e)}"            
+            ).dict()
         ))

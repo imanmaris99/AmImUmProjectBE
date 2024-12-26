@@ -38,7 +38,7 @@ def create_production(
         # Invalidate the cached wishlist for this user
         patterns_to_invalidate = [
             f"productions:*",
-            f"promotions:*"
+            f"brand_promotions:*"
         ]
         for pattern in patterns_to_invalidate:
             for key in redis_client.scan_iter(pattern):

@@ -79,7 +79,7 @@ async def post_logo(
         # Invalidate the cached wishlist for this user
         patterns_to_invalidate = [
             f"productions:*",
-            f"promotions:*",
+            f"brand_promotions:*",
             f"production:{production_id}"
         ]
         for pattern in patterns_to_invalidate:

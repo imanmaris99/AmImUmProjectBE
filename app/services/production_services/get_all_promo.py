@@ -19,28 +19,28 @@ def get_all_promo(
         skip: int = 0, 
         limit: int = 10
     ) -> Result[production_dtos.AllProductionPromoResponseDto, Exception]:
-    cache_key = f"promotions:{skip}:{limit}"
+    cache_key = f"brand_promotions:{skip}:{limit}"
 
     try:
-        # Cek data di Redis cache
+        # Check Redis cache
         cached_data = redis_client.get(cache_key)
         if cached_data:
-            # Parse JSON dari Redis dan kembalikan sebagai response
+            # Parse JSON from Redis
             cached_response = json.loads(cached_data)
             return build(data=production_dtos.AllProductionPromoResponseDto(
                 status_code=status.HTTP_200_OK,
-                message=f"All list brand have a promo can accessed successfully (from cache)",
+                message="All promotions retrieved successfully (from cache)",
                 data=cached_response['data']
             ))
 
-        # Query database untuk promo
+        # Query database for promotions
         product_bies = (
             db.query(ProductionModel)
-            .options(joinedload(ProductionModel.products))  # Eager loading produk terkait
+            .options(joinedload(ProductionModel.products))  # Eager loading of related products
             .join(ProductModel)
             .filter(
-                ProductModel.is_active.is_(True),  # Produk aktif
-                ProductionModel.products != None  # Hanya yang memiliki produk terkait
+                ProductModel.is_active.is_(True),
+                ProductionModel.products != None  # Only those with associated products
             )
             .offset(skip)
             .limit(limit)
@@ -57,33 +57,24 @@ def get_all_promo(
                 ).dict()
             )
 
-        # Konversi data menjadi DTO promo
+        # Convert data to promo DTO
         info_promo = [
             production_dtos.AllProductionPromoDto(
-                id=str(prod.id),  # Konversi UUID ke string
+                id=prod.id,  # UUID to string
                 name=prod.name,
                 photo_url=prod.photo_url,
                 promo_special=prod.promo_special
             )
-            for prod in product_bies if prod.promo_special > 0  # Hanya yang memiliki promo
+            for prod in product_bies if prod.promo_special > 0  # Only those with promo
         ]
 
         # Save the result to Redis cache
         cache_data = {
             'data': [brand.dict() for brand in info_promo]
         }
-
-        # # Bungkus dalam response DTO
-        # response_dto = production_dtos.AllProductionPromoResponseDto(
-        #     status_code=status.HTTP_200_OK,
-        #     message="All promotions retrieved successfully.",
-        #     data=info_promo
-        # )
-
-        # Simpan hasil ke Redis dengan TTL
         redis_client.setex(cache_key, CACHE_TTL, json.dumps(cache_data))
 
-        # Kembalikan response
+        # Return response
         return build(data=production_dtos.AllProductionPromoResponseDto(
             status_code=status.HTTP_200_OK,
             message="All promotions retrieved successfully.",
@@ -91,10 +82,11 @@ def get_all_promo(
         ))
 
     except SQLAlchemyError as e:
+        # Handle database errors
         return handle_db_error(db, e)
 
     except HTTPException as http_ex:
-        db.rollback()  # Rollback jika terjadi HTTPException
+        db.rollback()  # Only rollback if necessary
         return build(error=http_ex)
 
     except Exception as e:

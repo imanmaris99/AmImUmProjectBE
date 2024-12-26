@@ -53,7 +53,7 @@ class ProductionModel(sql_alchemy_lib.Base):
         return len(self.products)
     
     @property
-    def total_product_with_promo(self) -> int:
+    def total_product_with_promo(self):
         """Menghitung jumlah produk dengan promo."""
         if not self.products:
             return 0
