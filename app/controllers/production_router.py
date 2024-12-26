@@ -253,7 +253,7 @@ def read_productions(
 )
 def get_productions(
     skip: int = 0,               # Posisi awal data untuk pagination
-    limit: int = 6,              # Jumlah data yang akan ditampilkan per halaman
+    limit: int = 8,              # Jumlah data yang akan ditampilkan per halaman
     db: Session = Depends(get_db)
 ):
     """

@@ -20,7 +20,9 @@ from app.libs.redis_config import custom_json_serializer, redis_client
 CACHE_TTL = 300  
 
 def get_infinite_scrolling(
-        db: Session, skip: int = 0, limit: int = 6
+        db: Session, 
+        skip: int = 0, 
+        limit: int = 8
     ) -> Result[Dict[str, Any], Exception]:
     cache_key = f"productions:{skip}:{limit}"
 
