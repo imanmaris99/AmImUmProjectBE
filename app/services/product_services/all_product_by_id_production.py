@@ -21,7 +21,7 @@ def all_product_by_id_production(
         db: Session, 
         production_id: int,  
         skip: int = 0, 
-        limit: int = 10
+        limit: int = 100
     ) -> Result[AllProductInfoResponseDto, Exception]:  
     cache_key = f"products:{production_id}:{skip}:{limit}"
 

@@ -62,7 +62,7 @@ class VariantProductDto(BaseModel):
 class PackTypeEditInfoResponseDto(BaseModel):
     status_code: int = Field(default=200)
     message: str = Field(default="Edit stock and discount product has been success")
-    data: VariantProductDto
+    data: PackTypeEditInfoDto
 
 class VariantAllProductDto(BaseModel):
     id: Optional[int] = None

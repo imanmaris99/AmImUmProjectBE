@@ -69,6 +69,7 @@ class DetailProductionDto(BaseModel):
     description_list: list[str]
     category: Optional[str] = None
     total_product: Optional[int] = None
+    total_product_with_promo: Optional[int] = None
     created_at: datetime
 
     class Config:

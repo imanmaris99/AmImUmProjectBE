@@ -51,3 +51,10 @@ class ProductionModel(sql_alchemy_lib.Base):
     @property
     def total_product(self):
         return len(self.products)
+    
+    @property
+    def total_product_with_promo(self) -> int:
+        """Menghitung jumlah produk dengan promo."""
+        if not self.products:
+            return 0
+        return sum(1 for product in self.products if product.highest_promo > 0)

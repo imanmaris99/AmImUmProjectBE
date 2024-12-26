@@ -60,6 +60,7 @@ def detail_production(
             description_list=production_model.description_list or [],
             category=production_model.category,
             total_product=production_model.total_product,
+            total_product_with_promo=production_model.total_product_with_promo,
             created_at=production_model.created_at
         )
 

@@ -36,20 +36,33 @@ def update_stock(
         db.commit()
         db.refresh(type_model)
 
-        # Menggunakan model ter-update untuk membuat respons
+        # Buat response DTO
+        response_data = PackTypeEditInfoDto(
+            stock=type_model.stock,
+            discount=type_model.discount
+        )
+
+        # return build(data=user_model)
         return build(data=PackTypeEditInfoResponseDto(
             status_code=200,
-            message="Your pack and variant type product has been updated",
-            data=VariantProductDto(
-                id=type_model.id,
-                variant=type_model.variant,
-                expiration=type_model.expiration,
-                stock=type_model.stock,
-                discount=type_model.discount,  # Ambil discount dari model
-                created_at=type_model.created_at,
-                updated_at=type_model.updated_at
-            )
+            message="Edit stock and discount product has been success",
+            data=response_data
         ))
+    
+        # # Menggunakan model ter-update untuk membuat respons
+        # return build(data=PackTypeEditInfoResponseDto(
+        #     status_code=200,
+        #     message="Your pack and variant type product has been updated",
+        #     data=VariantProductDto(
+        #         id=type_model.id,
+        #         variant=type_model.variant,
+        #         expiration=type_model.expiration,
+        #         stock=type_model.stock,
+        #         discount=type_model.discount,  # Ambil discount dari model
+        #         created_at=type_model.created_at,
+        #         updated_at=type_model.updated_at
+        #     )
+        # ))
 
     except SQLAlchemyError:
         db.rollback()
