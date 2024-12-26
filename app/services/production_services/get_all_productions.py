@@ -20,7 +20,7 @@ CACHE_TTL = 300
 def get_all_productions(
         db: Session, 
         skip: int = 0, 
-        limit: int = 50
+        limit: int = 100
     ) -> Result[production_dtos.AllListProductionResponseDto, Exception]:
     cache_key = f"productions:{skip}:{limit}"
 

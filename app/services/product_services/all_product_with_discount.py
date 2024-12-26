@@ -22,7 +22,7 @@ CACHE_TTL = 3600
 def all_product_with_discount(
         db: Session, 
         skip: int = 0, 
-        limit: int = 10
+        limit: int = 100
     ) -> Result[AllProductInfoResponseDto, Exception]:
     cache_key = f"promotions:{skip}:{limit}"
 

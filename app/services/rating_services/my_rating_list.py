@@ -21,7 +21,7 @@ def my_rating_list(
         db: Session, 
         user_id: str,  
         skip: int = 0, 
-        limit: int = 10
+        limit: int = 100
     ) -> Result[AllMyRatingListResponseDto, Exception]:  # Mengembalikan List DTO
     try:
         # Redis key for caching

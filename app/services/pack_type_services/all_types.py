@@ -17,7 +17,7 @@ from app.utils.result import build, Result
 
 
 def all_types(
-        db: Session, skip: int = 0, limit: int = 10
+        db: Session, skip: int = 0, limit: int = 100
     ) -> Result[List[Type[PackTypeModel]], Exception]:
     try:
         pack_types = db.execute(

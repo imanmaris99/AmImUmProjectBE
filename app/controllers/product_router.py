@@ -560,7 +560,7 @@ def read_all_products_by_id_production(
 def get_list_products_by_id_production(
     production_id: int,
     skip: int = 0,               # Posisi awal data untuk pagination
-    limit: int = 6,              # Jumlah data yang akan ditampilkan per halaman
+    limit: int = 9,              # Jumlah data yang akan ditampilkan per halaman
     db: Session = Depends(get_db)
 ):
     """

@@ -17,7 +17,7 @@ CACHE_TTL = 300
 def get_all_promo(
         db: Session, 
         skip: int = 0, 
-        limit: int = 10
+        limit: int = 100
     ) -> Result[production_dtos.AllProductionPromoResponseDto, Exception]:
     cache_key = f"brand_promotions:{skip}:{limit}"
 

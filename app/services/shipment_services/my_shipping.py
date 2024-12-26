@@ -18,7 +18,7 @@ def my_shipping(
         db: Session, 
         user_id: str,  
         skip: int = 0, 
-        limit: int = 10
+        limit: int = 100
     ) -> Result[shipment_dtos.MyListShipmentResponseDto, Exception]:
     try:
         shipment_model = db.execute(

@@ -23,7 +23,7 @@ def my_cart(
         db: Session, 
         user_id: str,  
         skip: int = 0, 
-        limit: int = 10
+        limit: int = 100
     ) -> Result[cart_dtos.AllCartResponseCreateDto, Exception]:
     try:
         # Redis key for caching

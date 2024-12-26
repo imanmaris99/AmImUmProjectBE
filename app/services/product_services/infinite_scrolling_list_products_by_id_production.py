@@ -22,7 +22,7 @@ def infinite_scrolling_list_products_by_id_production(
         db: Session, 
         production_id: int,
         skip: int = 0, 
-        limit: int = 6
+        limit: int = 9
     ) -> Result[Dict[str, Any], Exception]:
     cache_key = f"products:{production_id}:{skip}:{limit}"
 

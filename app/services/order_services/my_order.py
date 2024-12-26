@@ -23,7 +23,7 @@ def my_order(
         db: Session, 
         user_id: str,  
         skip: int = 0, 
-        limit: int = 10
+        limit: int = 100
     ) -> Result[order_dtos.GetOrderInfoResponseDto, Exception]:
     try:
         # Redis key for caching

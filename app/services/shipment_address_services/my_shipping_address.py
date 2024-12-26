@@ -21,7 +21,7 @@ def my_shipping_address(
         db: Session, 
         user_id: str,  
         skip: int = 0, 
-        limit: int = 10
+        limit: int = 100
     ) -> Result[shipment_address_dtos.AllAddressListResponseDto, Exception]:
     try:
         # Redis key for caching

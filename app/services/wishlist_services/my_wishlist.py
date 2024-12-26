@@ -34,7 +34,7 @@ def my_wishlist(
         db: Session, 
         user_id: str,  
         skip: int = 0, 
-        limit: int = 10
+        limit: int = 100
     ) -> Result[wishlist_dtos.AllWishlistResponseCreateDto, Exception]:
     try:
         # Redis key for caching
