@@ -35,6 +35,7 @@ origins = [
     "https://tools.slingacademy.com",
     "https://www.slingacademy.com",
     "https://amimumherbalproject.vercel.app",
+    "https://amimumherbalproject-git-staging-imanmaris99s-projects.vercel.app/",
     "https://api.sandbox.midtrans.com"
 ]
 
