@@ -17,7 +17,11 @@ class ProductionModel(sql_alchemy_lib.Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)  # Menambahkan kolom updated_at
 
  # Relationships
-    herbal_category: Mapped["TagCategoryModel"] = relationship(viewonly=True)
+    herbal_category: Mapped["TagCategoryModel"] = relationship(
+        "TagCategoryModel",
+        back_populates="product_bies",
+        lazy="selectin"
+        )
 
     products: Mapped[list["ProductModel"]] = relationship(
         "ProductModel",

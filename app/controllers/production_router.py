@@ -281,6 +281,112 @@ def get_productions(
     
     return result.unwrap()
 
+@router.get(
+    "/loader/categories/{categories_id}",
+    response_model=production_dtos.ArticleListScrollResponseDto,
+    status_code=status.HTTP_200_OK,
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Daftar produk berhasil diambil dengan format respons infinite scrolling",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": [
+                            {
+                                "id": 1,
+                                "name": "Product A",
+                                "photo_url": "http://example.com/product_a.jpg",
+                                "description_list": "Brief description of Product A",
+                                "category": "Category A",
+                                "created_at": "2023-01-01T12:00:00Z"
+                            },
+                            {
+                                "id": 2,
+                                "name": "Product B",
+                                "photo_url": "http://example.com/product_b.jpg",
+                                "description_list": "Brief description of Product B",
+                                "category": "Category B",
+                                "created_at": "2023-01-02T12:00:00Z"
+                            }
+                        ],
+                        "remaining_records": 94,
+                        "has_more": True
+                    }
+                }
+            }
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Data produk tidak ditemukan",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 404,
+                        "error": "Not Found",
+                        "message": "No information about productions found."
+                    }
+                }
+            }
+        },
+        status.HTTP_409_CONFLICT: {
+            "description": "Konflik saat mengambil data produk",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 409,
+                        "error": "Conflict",
+                        "message": "Database conflict occurred while fetching data."
+                    }
+                }
+            }
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "description": "Kesalahan server",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 500,
+                        "error": "Internal Server Error",
+                        "message": "An unexpected error occurred while fetching data."
+                    }
+                }
+            }
+        }
+    },
+    summary="Fetch a paginated list of products"
+)
+def get_brands_by_categories(
+    categories_id: int,
+    skip: int = 0,               # Posisi awal data untuk pagination
+    limit: int = 8,              # Jumlah data yang akan ditampilkan per halaman
+    db: Session = Depends(get_db)
+):
+    """
+    # Menampilkan List Brand dengan Pagination berdasarkan kategori #
+
+    Endpoint ini memungkinkan pengguna untuk Mengambil daftar item produksi dengan menggunakan paginasi.
+
+    **Parameter:**
+    - **skip** (int, opsional): Jumlah item yang dilewati sebelum memulai pengambilan data. Default adalah 0.
+    - **limit** (int, opsional): Jumlah maksimum item yang akan dikembalikan dalam respons. Default adalah 6.
+    
+    **Return:**
+    - **200 OK**: Daftar item produksi beserta metadata paginasi (remaining records, `has_more`).
+    - **404 Not Found**: Jika tidak ada item produksi yang ditemukan.
+    - **409 Conflict**: Jika terjadi kesalahan pada database.
+    - **500 Internal Server Error**: Jika terjadi kesalahan yang tidak terduga.
+
+    """
+    result = production_services.get_infinite_scrolling_by_category(
+        db, 
+        categories_id=categories_id,
+        skip=skip, 
+        limit=limit
+    )
+
+    if result.error:
+        raise result.error  
+    
+    return result.unwrap()
 
 @router.get(
     "/promo", 

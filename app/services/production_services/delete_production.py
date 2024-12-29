@@ -40,6 +40,7 @@ def delete_production(
         # Invalidate the cached wishlist for this user
         patterns_to_invalidate = [
             f"productions:*",
+            f"all_brand_by_categories:*",
             f"brand_promotions:*"
         ]
         for pattern in patterns_to_invalidate:
