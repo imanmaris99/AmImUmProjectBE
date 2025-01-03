@@ -22,7 +22,7 @@ def search_product(
         limit: int = 10
     ) -> Result[AllProductInfoResponseDto, Exception]:
     try:
-        search_query = f"%{product_name}%"
+        search_query = f"{product_name}%"
 
         product_model = (
             db.execute(
