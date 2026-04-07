@@ -1,11 +1,14 @@
 # app/services/verify_user_email.py
 
+from datetime import datetime
+
 from fastapi import HTTPException, status
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
+
 from app.models.user_model import UserModel
 from app.dtos.error_response_dtos import ErrorResponseDto
-from app.dtos.user_dtos import EmailVerificationRequestDto, EmailInfoVerificationRequestDto, EmailVerificationResponseDto
+from app.dtos.user_dtos import EmailInfoVerificationRequestDto, EmailVerificationResponseDto
 from app.utils import optional
 
 def verify_user_email(code: str, email: str, db: Session) -> optional.Optional[EmailVerificationResponseDto, Exception]:
@@ -34,17 +37,12 @@ def verify_user_email(code: str, email: str, db: Session) -> optional.Optional[E
                 ).dict()
             ))
 
-        # Cek kode verifikasi
-        if user.verification_code == code:
-            user.is_active = True
-            user.verification_code = None  # Hapus kode verifikasi setelah berhasil diverifikasi
-            user.verification_expiry = None
-            db.commit()
+        if user.is_active:
             return optional.build(data=EmailVerificationResponseDto(
                 status_code=status.HTTP_200_OK,
-                message="Email successfully verified and Your Account Already Actived",
+                message="Email already verified and account already active",
                 data=EmailInfoVerificationRequestDto(
-                    code=code, 
+                    code=code,
                     email=email,
                     firstname=user.firstname,
                     lastname=user.lastname,
@@ -53,7 +51,18 @@ def verify_user_email(code: str, email: str, db: Session) -> optional.Optional[E
                     is_active=user.is_active
                 )
             ))
-        else:
+
+        if user.verification_expiry and user.verification_expiry < datetime.utcnow():
+            return optional.build(error=HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=ErrorResponseDto(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    error="Bad Request",
+                    message="Verification code has expired."
+                ).dict()
+            ))
+
+        if user.verification_code != code:
             return optional.build(error=HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=ErrorResponseDto(
@@ -62,6 +71,25 @@ def verify_user_email(code: str, email: str, db: Session) -> optional.Optional[E
                     message="Invalid verification code."
                 ).dict()
             ))
+
+        user.is_active = True
+        user.verification_code = None
+        user.verification_expiry = None
+        db.commit()
+        db.refresh(user)
+        return optional.build(data=EmailVerificationResponseDto(
+            status_code=status.HTTP_200_OK,
+            message="Email successfully verified and account activated",
+            data=EmailInfoVerificationRequestDto(
+                code=code,
+                email=email,
+                firstname=user.firstname,
+                lastname=user.lastname,
+                gender=user.gender,
+                role=user.role,
+                is_active=user.is_active
+            )
+        ))
 
     except SQLAlchemyError as e:
         return optional.build(error=HTTPException(

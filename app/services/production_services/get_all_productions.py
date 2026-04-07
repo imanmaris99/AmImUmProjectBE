@@ -26,13 +26,12 @@ def get_all_productions(
 
     try:
         # Cek data di Redis cache
-        cached_data = redis_client.get(cache_key)
+        cached_data = redis_client.get(cache_key) if redis_client else None
         if cached_data:
-            # Parse JSON dari Redis dan kirim sebagai response
             cached_response = json.loads(cached_data)
             return build(data=production_dtos.AllListProductionResponseDto(
                 status_code=status.HTTP_200_OK,
-                message=f"All list of brands can accessed successfully (from cache)",
+                message="All list of brands can accessed successfully (from cache)",
                 data=cached_response['data']
             ))
 
@@ -80,7 +79,8 @@ def get_all_productions(
         # )
 
         # Simpan hasil ke Redis dengan TTL
-        redis_client.setex(cache_key, CACHE_TTL, json.dumps(cache_data, default=custom_json_serializer))
+        if redis_client:
+            redis_client.setex(cache_key, CACHE_TTL, json.dumps(cache_data, default=custom_json_serializer))
 
         # Kembalikan response
         return build(data=production_dtos.AllListProductionResponseDto(
@@ -90,7 +90,7 @@ def get_all_productions(
         ))
 
     except SQLAlchemyError as e:
-        return handle_db_error(db, e)
+        return build(error=handle_db_error(db, e))
 
     except HTTPException as http_ex:
         db.rollback()  # Rollback jika terjadi error

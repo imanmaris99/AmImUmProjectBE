@@ -62,7 +62,7 @@ def all_types(
         ))
     
     except SQLAlchemyError as e:
-        return handle_db_error(db, e)
+        return build(error=handle_db_error(db, e))
     
     except HTTPException as http_ex:
         db.rollback()  

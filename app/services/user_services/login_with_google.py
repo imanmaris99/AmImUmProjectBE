@@ -14,6 +14,16 @@ from app.utils import optional
 
 def login_with_google(db: Session, id_token: str):
     try:
+        if not id_token:
+            return optional.build(error=HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=ErrorResponseDto(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    error="Bad Request",
+                    message="Google id token must be provided."
+                ).dict()
+            ))
+
         # Verifikasi ID token dengan Firebase
         decoded_token = firebase_auth.verify_id_token(id_token)
         uid = decoded_token.get('uid')
@@ -28,10 +38,11 @@ def login_with_google(db: Session, id_token: str):
                 email=email,
                 firstname=decoded_token.get('given_name', 'Unknown'),
                 lastname=decoded_token.get('family_name', 'Unknown'),
-                gender=decoded_token.get('gender', 'Unknown'),
-                phone=decoded_token.get('phone', 'Not provided'),
-                address='No address provided',  # Set default address
-                role='customer'  # Set default role if not provided
+                gender=decoded_token.get('gender', 'male'),
+                phone=decoded_token.get('phone') or f"google-{uid[:12]}",
+                address='No address provided',
+                role='customer',
+                is_active=True,
             )
             db.add(user)
             db.commit()
@@ -102,7 +113,7 @@ def login_with_google(db: Session, id_token: str):
             detail=ErrorResponseDto(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 error="Unauthorized",
-                message="Invalid token or login failed :" + str(e)
+                message="Invalid token or Google login failed: " + str(e)
             ).dict()
         ))
 
