@@ -89,8 +89,8 @@ def user_login(db: Session, user: user_dtos.UserLoginPayloadDto) -> optional.Opt
             }
         })
 
-    except SQLAlchemyError:
-        return optional.build(error= HTTPException(
+    except SQLAlchemyError as e:
+        return optional.build(error=HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=ErrorResponseDto(
                 status_code=status.HTTP_409_CONFLICT,

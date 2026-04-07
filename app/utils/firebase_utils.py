@@ -20,22 +20,29 @@ load_dotenv()
 
 # Mengambil kredensial dari variabel lingkungan
 firebase_service_account_key = os.getenv('FIREBASE_SERVICE_ACCOUNT_KEY')
+FIREBASE_ENABLED = bool(firebase_service_account_key)
 
-if firebase_service_account_key and not firebase_admin._apps:
+if FIREBASE_ENABLED and not firebase_admin._apps:
     cred = credentials.Certificate(json.loads(firebase_service_account_key))
     firebase_admin.initialize_app(cred)
-else:
-    raise ValueError("Firebase service account key tidak ditemukan atau sudah diinisialisasi.")
 
-# Inisialisasi Firebase
-# cred = credentials.Certificate("path/to/serviceAccountKey.json")
-# if not firebase_admin._apps:
-#     firebase_admin.initialize_app(cred)
+
+def _ensure_firebase_enabled():
+    if not FIREBASE_ENABLED:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                error="Service Unavailable",
+                message="Firebase belum dikonfigurasi pada environment."
+            ).dict()
+        )
 
 
 # Fungsi untuk membuat user di Firebase
 def create_firebase_user(email: str, password: str):
     """Membuat pengguna baru di Firebase Authentication."""
+    _ensure_firebase_enabled()
     try:
         user = auth.create_user(email=email, password=password)
         return user
@@ -65,6 +72,7 @@ def create_firebase_user(email: str, password: str):
 # Fungsi untuk autentikasi pengguna di Firebase
 def authenticate_firebase_user(email: str, password: str):
     """Autentikasi pengguna di Firebase."""
+    _ensure_firebase_enabled()
     try:
         firebase_user = auth.get_user_by_email(email)
         return firebase_user
@@ -99,6 +107,7 @@ def delete_firebase_user(firebase_uid: str) -> None:
     Raises:
         HTTPException: Jika terjadi kesalahan dalam proses penghapusan akun.
     """
+    _ensure_firebase_enabled()
     try:
         # Hapus user berdasarkan Firebase UID
         auth.delete_user(firebase_uid)
@@ -533,5 +542,3 @@ def send_email_reset_password(to_email: str, verification_code: str, reset_link:
                 message=f"Gagal mengirim email reset password ke {to_email}: {str(e)}"
             ).dict()
         )
-
-

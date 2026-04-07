@@ -1,37 +1,32 @@
-import redis
-import os
 import logging
-from dotenv import load_dotenv
+import os
 from datetime import datetime
-import json
+from typing import Optional
 
-# Load environment variables from .env file
+import redis
+from dotenv import load_dotenv
+
 load_dotenv()
 
-# Configure logging to show INFO level messages
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-# Redis configuration from environment variables
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
 REDIS_DB = int(os.getenv("REDIS_DB", 0))
 REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", None)
 
-# Log Redis configuration
-# logging.info(f"REDIS_HOST: {REDIS_HOST}, REDIS_PORT: {REDIS_PORT}, REDIS_DB: {REDIS_DB}")
 
-# Singleton Redis connection
 class RedisClient:
-    _instance = None
+    _instance: Optional[redis.StrictRedis] = None
 
     def __new__(cls):
         if cls._instance is None:
             logging.info(f"Connecting to Redis at {REDIS_HOST}:{REDIS_PORT}, DB={REDIS_DB}")
             try:
-                cls._instance = redis.StrictRedis(
+                client = redis.StrictRedis(
                     host=REDIS_HOST,
                     port=REDIS_PORT,
                     db=REDIS_DB,
@@ -40,35 +35,31 @@ class RedisClient:
                     socket_connect_timeout=5,
                     socket_timeout=5,
                 )
-                cls._instance.ping()
+                client.ping()
+                cls._instance = client
                 logging.info("Successfully connected to Redis!")
             except redis.ConnectionError as e:
-                logging.error(f"Failed to connect to Redis at {REDIS_HOST}:{REDIS_PORT}. Error: {e}")
-                raise e
+                logging.warning(f"Failed to connect to Redis at {REDIS_HOST}:{REDIS_PORT}. Error: {e}")
+                cls._instance = None
         return cls._instance
 
-# Global Redis client instance
+
 redis_client = RedisClient()
 
-# Function to check Redis connection explicitly
+
 def check_redis_connection():
     try:
-        if redis_client.ping():
+        if redis_client and redis_client.ping():
             logging.info("Connected to Redis!")
+            return True
     except redis.ConnectionError as e:
         logging.error(f"Redis connection failed: {e}")
+    return False
 
 
-# # Fungsi utilitas untuk serialisasi JSON
-# def custom_json_serializer(obj):
-#     if isinstance(obj, datetime):
-#         return obj.isoformat()  # Mengubah datetime menjadi string format ISO 8601
-#     raise TypeError(f"Type {type(obj)} not serializable")
-
-# Fungsi utilitas untuk serialisasi JSON
 def custom_json_serializer(obj):
     if isinstance(obj, datetime):
-        return obj.isoformat()  # Mengubah datetime menjadi string format ISO 8601
-    if hasattr(obj, "dict"):  # Memeriksa jika objek memiliki metode dict()
-        return obj.dict()  # Mengonversi objek ke dict
+        return obj.isoformat()
+    if hasattr(obj, "dict"):
+        return obj.dict()
     raise TypeError(f"Type {type(obj)} not serializable")

@@ -15,7 +15,7 @@ from app.dtos.payment_dtos import (
     PaymentNotificationSchemaDto,
 )
 from app.utils.result import build, Result
-from app.libs.midtrans_config import MIDTRANS_SERVER_KEY
+from app.libs.midtrans_config import MIDTRANS_SERVER_KEY, MIDTRANS_IS_PRODUCTION
 import logging
 
 logger = logging.getLogger(__name__)
@@ -51,6 +51,9 @@ def handle_notification(
     Menangani notifikasi dari Midtrans.
     """
     try:
+        if not MIDTRANS_SERVER_KEY:
+            return build(error=HTTPException(status_code=503, detail="Konfigurasi Midtrans belum tersedia."))
+
         # Fetch status transaksi dari Midtrans
         logger.info(f"Mengambil status transaksi untuk order_id: {notification_data.order_id}")
         midtrans_result = fetch_midtrans_transaction_status(notification_data.order_id)
@@ -142,7 +145,8 @@ def fetch_midtrans_transaction_status(order_id: str) -> Result[dict, Exception]:
     Mengambil status transaksi dari Midtrans.
     """
     try:
-        url = f"https://api.sandbox.midtrans.com/v2/{order_id}/status"
+        base_url = "https://api.midtrans.com" if MIDTRANS_IS_PRODUCTION else "https://api.sandbox.midtrans.com"
+        url = f"{base_url}/v2/{order_id}/status"
         auth_key = base64.b64encode(f"{MIDTRANS_SERVER_KEY}:".encode()).decode()
 
         headers = {

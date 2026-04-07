@@ -20,7 +20,7 @@ async def create_image_service(upload_file: UploadFile, domain: str) -> optional
     with open(image_dir, "wb") as f:
         f.write(content)
 
-    host_url = os.getenv("HOST_URL", "http://127.0.0.1:8000/")
+    host_url = os.getenv("HOST_URL", "http://127.0.0.1:8000").rstrip("/")
     image_url = f"{host_url}/{image_dir}"
 
     return optional.build(data=image_url)

@@ -25,14 +25,14 @@ def create_user(db: Session, user: user_dtos.UserCreateDto) -> optional.Optional
     try:
         validate_user_data(user)
 
+        # Buat akun Firebase lebih dulu agar tidak meninggalkan user lokal yatim jika integrasi gagal
+        firebase_user = create_firebase_user_account(user)
+
         # Simpan data user ke database
         user_model, verification_code = save_user_to_db(db, user)
 
         # Set waktu kedaluwarsa verifikasi 10 menit setelah pembuatan akun
         user_model.verification_expiry = datetime.utcnow() + timedelta(minutes=10)
-
-        # Buat akun Firebase
-        firebase_user = create_firebase_user_account(user)
 
         # Update Firebase UID ke database setelah berhasil buat akun di Firebase
         user_model.firebase_uid = firebase_user.uid
@@ -76,7 +76,7 @@ def create_user(db: Session, user: user_dtos.UserCreateDto) -> optional.Optional
 
     except IntegrityError as ie:
         db.rollback()
-        handle_integrity_error(ie)
+        return optional.build(error=handle_integrity_error(ie))
 
     except SQLAlchemyError as e:
         db.rollback()

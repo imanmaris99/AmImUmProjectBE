@@ -87,6 +87,14 @@ def create_transaction(
         # Buat payload untuk transaksi Midtrans
         transaction_payload = generate_midtrans_payload(order)
 
+        if snap is None:
+            return build(
+                error=HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="Konfigurasi Midtrans belum tersedia."
+                )
+            )
+
         # Buat transaksi di Midtrans
         try:
             transaction_response = snap.create_transaction(transaction_payload)
@@ -160,10 +168,11 @@ def create_transaction(
         db.commit()
 
         # Invalidasi cache dengan pendekatan yang lebih efisien
-        redis_keys = [f"cart:{user_id}:*", f"carts:{user_id}"]
-        for pattern in redis_keys:
-            for key in redis_client.scan_iter(pattern):
-                redis_client.delete(key)
+        if redis_client:
+            redis_keys = [f"cart:{user_id}:*", f"carts:{user_id}"]
+            for pattern in redis_keys:
+                for key in redis_client.scan_iter(pattern):
+                    redis_client.delete(key)
 
         # Buat DTO response
         payment_callback = PaymentMidtransResponseDTO(

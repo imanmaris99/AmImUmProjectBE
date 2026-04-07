@@ -26,9 +26,8 @@ def all_product(
     
     try:
         # Cek data di Redis cache
-        cached_data = redis_client.get(cache_key)
+        cached_data = redis_client.get(cache_key) if redis_client else None
         if cached_data:
-            # Parse JSON dari Redis dan kirim sebagai response
             cached_response = json.loads(cached_data)
             return build(data=AllProductInfoResponseDto(**cached_response))
 
@@ -72,12 +71,13 @@ def all_product(
             data=all_products_dto
         )
 
-        redis_client.setex(cache_key, CACHE_TTL, json.dumps(response_dto.dict(), default=custom_json_serializer))
+        if redis_client:
+            redis_client.setex(cache_key, CACHE_TTL, json.dumps(response_dto.dict(), default=custom_json_serializer))
         
         return build(data=response_dto)
 
     except SQLAlchemyError as e:
-        return handle_db_error(db, e)
+        return build(error=handle_db_error(db, e))
     
     except HTTPException as http_ex:
         db.rollback()  

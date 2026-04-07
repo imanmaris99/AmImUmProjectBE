@@ -1,27 +1,26 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base, Session
-from sqlalchemy import Engine
 import os
+
 from dotenv import load_dotenv
+from sqlalchemy import Engine, create_engine
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 load_dotenv()
 """
 #######################This use to create connection with database###########################################
 """
-APP_DEVELOPMENT = os.getenv("APP_DEVELOPMENT", True)
+APP_DEVELOPMENT = str(os.getenv("APP_DEVELOPMENT", "True")).lower() == "true"
 engine: Engine
 
 SQLALCHEMY_DATABASE_URL = os.getenv('DATABASE_URL')
-# engine = create_engine(
-#     SQLALCHEMY_DATABASE_URL,
-#     pool_pre_ping=True
-#     )
+if not SQLALCHEMY_DATABASE_URL:
+    raise ValueError("DATABASE_URL environment variable is not set")
+
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
-    pool_pre_ping=True,  # Memeriksa koneksi sebelum digunakan
-    pool_size=5,         # Maksimal 5 koneksi
-    max_overflow=10,     # Koneksi tambahan jika pool penuh
-    pool_recycle=1800    # Recycle koneksi setelah 30 menit
+    pool_pre_ping=True,
+    pool_size=5,
+    max_overflow=10,
+    pool_recycle=1800,
 )
 
 """

@@ -77,13 +77,14 @@ def checkout(
         )
 
         # Invalidasi cache dengan pendekatan yang lebih efisien
-        redis_keys = [
-            f"orders:{user_id}:*", 
-            f"order:{user_id}:*"
-        ]
-        for pattern in redis_keys:
-            for key in redis_client.scan_iter(pattern):
-                redis_client.delete(key)
+        if redis_client:
+            redis_keys = [
+                f"orders:{user_id}:*", 
+                f"order:{user_id}:*"
+            ]
+            for pattern in redis_keys:
+                for key in redis_client.scan_iter(pattern):
+                    redis_client.delete(key)
 
         return build(data=order_dtos.OrderInfoResponseDto(
             status_code=201,
@@ -93,23 +94,23 @@ def checkout(
 
     except (IntegrityError, DataError) as db_error:
         db.rollback()
-        raise handle_db_error(db, db_error)
+        return build(error=handle_db_error(db, db_error))
 
     except SQLAlchemyError as e:
         db.rollback()
-        raise handle_db_error(db, e)
+        return build(error=handle_db_error(db, e))
 
     except HTTPException as http_ex:
         db.rollback()
-        raise http_ex
+        return build(error=http_ex)
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(
+        return build(error=HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
                 message=f"Unexpected error: {str(e)}"
             ).dict()
-        )
+        ))

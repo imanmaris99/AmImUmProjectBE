@@ -28,7 +28,7 @@ def get_product_by_id(
         redis_key = f"product:{product_id}"
 
         # Check if product data exists in Redis
-        cached_product = redis_client.get(redis_key)
+        cached_product = redis_client.get(redis_key) if redis_client else None
         if cached_product:
             product_detail_dto = ProductDetailDTO(**json.loads(cached_product))
             return build(data=ProductDetailResponseDto(
@@ -73,7 +73,8 @@ def get_product_by_id(
         )
 
         # Cache the result in Redis
-        redis_client.setex(redis_key, CACHE_TTL, json.dumps(product_detail_dto.dict(), default=custom_json_serializer))
+        if redis_client:
+            redis_client.setex(redis_key, CACHE_TTL, json.dumps(product_detail_dto.dict(), default=custom_json_serializer))
 
         # Build success response
         return build(data=ProductDetailResponseDto(
@@ -83,7 +84,7 @@ def get_product_by_id(
         ))
 
     except SQLAlchemyError as e:
-        return handle_db_error(db, e)
+        return build(error=handle_db_error(db, e))
     
     except HTTPException as http_ex:
         db.rollback()  # Rollback jika terjadi error dari Firebase
