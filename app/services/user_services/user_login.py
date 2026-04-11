@@ -44,8 +44,6 @@ def user_login(db: Session, user: user_dtos.UserLoginPayloadDto) -> optional.Opt
             ))
 
         user_model = user_optional.data  # Mengambil data user dari Optional
-        # Log untuk debugging role dan email
-        print(f"User found: {user_model.email}, Role: {user_model.role}")
 
         # Cek apakah akun pengguna diblokir atau tidak aktif
         if not user_model.is_active:  # Misalkan ada atribut is_active di model User

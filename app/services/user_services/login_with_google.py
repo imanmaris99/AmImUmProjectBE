@@ -14,6 +14,7 @@ from app.utils import optional
 
 def login_with_google(db: Session, id_token: str):
     try:
+        updated_existing_user = False
         if not id_token:
             return optional.build(error=HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -52,21 +53,31 @@ def login_with_google(db: Session, id_token: str):
             # Jika pengguna sudah ada, periksa dan lengkapi data yang kosong
             if not user.firstname:
                 user.firstname = decoded_token.get('given_name', 'Unknown')
+                updated_existing_user = True
             if not user.lastname:
                 user.lastname = decoded_token.get('family_name', 'Unknown')
+                updated_existing_user = True
             if not user.gender:
                 user.gender = decoded_token.get('gender', 'Not specified')
+                updated_existing_user = True
             if not user.phone:
-                user.phone = decoded_token.get('phone', 'Not provided')
+                user.phone = decoded_token.get('phone', f'google-{uid[:12]}')
+                updated_existing_user = True
             if not user.address:
                 user.address = 'No address provided'
+                updated_existing_user = True
             if not user.role:
-                user.role = 'customer'  # Set default role
+                user.role = 'customer'
+                updated_existing_user = True
 
         # Pastikan UID Firebase selalu diperbarui jika ada perubahan
         if user.firebase_uid != uid:
             user.firebase_uid = uid
+            updated_existing_user = True
+
+        if updated_existing_user:
             db.commit()
+            db.refresh(user)
 
         # Mapping ke UserCreateResponseDto untuk response
         user_response = UserCreateResponseDto(
@@ -88,6 +99,7 @@ def login_with_google(db: Session, id_token: str):
     
     # Tangkap error SQLAlchemy untuk string yang terlalu panjang
     except DataError as e:
+        db.rollback()
         if isinstance(e.orig, StringDataRightTruncation):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -108,6 +120,7 @@ def login_with_google(db: Session, id_token: str):
         )
     
     except FirebaseError as e:
+        db.rollback()
         return optional.build(error=HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=ErrorResponseDto(
@@ -118,6 +131,7 @@ def login_with_google(db: Session, id_token: str):
         ))
 
     except Exception as e:
+        db.rollback()
         return optional.build(error=HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorResponseDto(

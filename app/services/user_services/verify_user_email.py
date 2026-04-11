@@ -92,6 +92,7 @@ def verify_user_email(code: str, email: str, db: Session) -> optional.Optional[E
         ))
 
     except SQLAlchemyError as e:
+        db.rollback()
         return optional.build(error=HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=ErrorResponseDto(
@@ -102,6 +103,7 @@ def verify_user_email(code: str, email: str, db: Session) -> optional.Optional[E
         ))
 
     except Exception as e:
+        db.rollback()
         return optional.build(error=HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorResponseDto(

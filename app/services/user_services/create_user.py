@@ -6,17 +6,18 @@ from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
-from app.models.user_model import UserModel
 from app.dtos import user_dtos
 from app.dtos.error_response_dtos import ErrorResponseDto
 
-from app.libs import password_lib
-from app.libs.verification_code import generate_verification_code
+from app.services.user_services.support_function import (
+    create_firebase_user_account,
+    delete_unverified_users,
+    handle_integrity_error,
+    save_user_to_db,
+    validate_user_data,
+)
 
-from app.services.user_services.support_function import create_firebase_user_account, handle_integrity_error, save_user_to_db, validate_user_data, delete_unverified_users
-
-from app.utils.firebase_utils import create_firebase_user, send_verification_email
-from app.utils.error_parser import is_valid_password
+from app.utils.firebase_utils import send_verification_email
 from app.utils import optional
 
 
@@ -80,14 +81,14 @@ def create_user(db: Session, user: user_dtos.UserCreateDto) -> optional.Optional
 
     except SQLAlchemyError as e:
         db.rollback()
-        raise HTTPException(
+        return optional.build(error=HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=ErrorResponseDto(
                 status_code=status.HTTP_409_CONFLICT,
                 error="Conflict",
                 message=f"Database conflict: {str(e)}"
             ).dict()
-        )
+        ))
 
     except HTTPException as e:
         return optional.build(error=e)
