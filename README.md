@@ -56,20 +56,44 @@ poetry install
 
 ### 3. Konfigurasi Lingkungan
 
-Buat file .env di root folder proyek dan masukkan konfigurasi berikut:
+Buat file `.env` di root folder proyek dengan menjadikan `.env.example` sebagai template utama.
+
+Contoh variabel yang digunakan aplikasi saat ini:
 ```makefile
-DATABASE_URL=postgresql://user:password@localhost:5432/mydatabase
-SECRET_KEY=mysecretkey
-DEBUG=True
-FIREBASE_API_KEY=your_firebase_api_key
-FIREBASE_PROJECT_ID=your_firebase_project_id
-SUPABASE_URL=your_supabase_url
-SUPABASE_KEY=your_supabase_key
-SMTP_SERVER=smtp_type
-SMTP_PORT=587/465
-SMTP_USER=your_email
-SMTP_PASSWORD=your_password
-FROM_EMAIL=your_email
+PORT=8000
+APP_DEVELOPMENT=True
+HOST_URL=http://127.0.0.1:8000
+SECRET_KEY=change-me
+
+DB_TYPE=postgresql
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=amimum_db
+DB_USER=postgres
+DB_PASSWORD=postgres
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/amimum_db
+
+FIREBASE_SERVICE_ACCOUNT_KEY=
+SUPABASE_URL=
+SUPABASE_KEY=
+
+SMTP_SERVER=
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASSWORD=
+FROM_EMAIL=
+
+RAJAONGKIR_API_KEY=
+RAJAONGKIR_API_HOST=api.rajaongkir.com
+
+MIDTRANS_SERVER_KEY=
+MIDTRANS_CLIENT_KEY=
+MIDTRANS_IS_PRODUCTION=false
+
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_DB=0
+REDIS_PASSWORD=
 ```
 
 ### 4. Menjalankan Database
@@ -79,13 +103,24 @@ Jika menggunakan Docker, kamu bisa menjalankan PostgreSQL melalui Docker Compose
 docker-compose up -d
 ```
 
-### 5. Jalankan Migrasi Database
+### 5. Jalankan Migrasi Database dan Aplikasi
 
-Jika menggunakan Alembic untuk migrasi database:
+Untuk memastikan skema database terbaru diterapkan:
+```bash
+poetry run alembic upgrade head
+```
+
+Untuk menjalankan aplikasi secara lokal:
+```bash
+poetry run python run.py
+```
+
+Atau mode development dengan reload:
 ```bash
 poetry run uvicorn app.main:app --reload
 ```
-Aplikasi akan berjalan di http://127.0.0.1:8000.
+
+Aplikasi akan berjalan di `http://127.0.0.1:8000`.
 
 
 ## Pengujian
@@ -104,15 +139,13 @@ poetry run pytest --cov=app
 ## Pengembangan (Development)
 
 ### 1. Menjalankan Environment dengan Docker
-Selama pengembangan, kamu bisa menggunakan Docker dan Docker Compose untuk menjalankan seluruh stack aplikasi, termasuk database PostgreSQL dan aplikasi FastAPI.
+Selama pengembangan atau staging, kamu bisa menggunakan Docker Compose untuk menjalankan stack aplikasi.
 
 ```bash
-docker-compose -f docker-compose.dev.yml up --build
+docker-compose up --build
 ```
-File docker-compose.dev.yml telah diatur untuk menjalankan container dengan pengaturan development seperti:
 
-- Hot-reloading: Uvicorn akan secara otomatis memuat ulang jika ada perubahan kode.
-- Debugging: Debug mode diaktifkan di dalam aplikasi.
+Pastikan file `.env` sudah terisi sebelum menjalankan container, karena service `app` membaca konfigurasi dari environment tersebut.
 
 ### 2. Menggunakan Poetry dalam Development
 #### Membuat Virtual Environment Otomatis
@@ -183,14 +216,6 @@ Untuk pertanyaan atau saran, silakan hubungi:
 Nama: [amimumHerbal]()
 Email: [herbalamimum99@gmail.com]()
 
-```markdown
-### Penjelasan Tambahan:
-
-- **Docker Compose**: `docker-compose.dev.yml` diatur untuk development environment (misalnya hot-reloading, debug mode).
-- **Poetry**: Bagian ini menjelaskan cara mengatur virtual environment dan menggunakan Poetry untuk keperluan development.
-- **Testing**: Ada instruksi tambahan tentang bagaimana menjalankan tes dan mengukur cakupan kode menggunakan `pytest` dan `pytest-cov`.
-- **Linting & Formatting**: Dengan menggunakan `black`, `flake8`, dan `isort`, proses development bisa lebih terstruktur dan mudah dijaga.
-```
 </br>
 
 ##
