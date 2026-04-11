@@ -36,14 +36,15 @@ def create_production(
             description=production.description
         )
         # Invalidate the cached wishlist for this user
-        patterns_to_invalidate = [
-            f"productions:*",
-            f"all_brand_by_categories:*",
-            f"brand_promotions:*"
-        ]
-        for pattern in patterns_to_invalidate:
-            for key in redis_client.scan_iter(pattern):
-                redis_client.delete(key)
+        if redis_client:
+            patterns_to_invalidate = [
+                f"productions:*",
+                f"all_brand_by_categories:*",
+                f"brand_promotions:*"
+            ]
+            for pattern in patterns_to_invalidate:
+                for key in redis_client.scan_iter(pattern):
+                    redis_client.delete(key)
 
         return build(data=production_dtos.ProductionCreateResponseDto(
             status_code=201,
@@ -52,7 +53,7 @@ def create_production(
         ))
     
     except SQLAlchemyError as e:
-        return handle_db_error(db, e)
+        return build(error=handle_db_error(db, e))
     
     except HTTPException as http_ex:
         db.rollback()  # Rollback jika terjadi error dari Firebase

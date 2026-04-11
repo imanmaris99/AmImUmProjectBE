@@ -64,14 +64,14 @@ def update_stock(
         #     )
         # ))
 
-    except SQLAlchemyError:
+    except SQLAlchemyError as e:
         db.rollback()
-        return build(error= HTTPException(
+        return build(error=HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=ErrorResponseDto(
                 status_code=status.HTTP_409_CONFLICT,
                 error="Conflict",
-                message=f"Database conflict: {find_errr_from_args("pack_types", str(e.args))}"
+                message=f"Database conflict: {find_errr_from_args('pack_types', str(e.args))}"
             ).dict()
         ))
     

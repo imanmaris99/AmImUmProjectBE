@@ -38,14 +38,15 @@ def delete_production(
         db.commit()
 
         # Invalidate the cached wishlist for this user
-        patterns_to_invalidate = [
-            f"productions:*",
-            f"all_brand_by_categories:*",
-            f"brand_promotions:*"
-        ]
-        for pattern in patterns_to_invalidate:
-            for key in redis_client.scan_iter(pattern):
-                redis_client.delete(key)
+        if redis_client:
+            patterns_to_invalidate = [
+                f"productions:*",
+                f"all_brand_by_categories:*",
+                f"brand_promotions:*"
+            ]
+            for pattern in patterns_to_invalidate:
+                for key in redis_client.scan_iter(pattern):
+                    redis_client.delete(key)
 
         return build(data=production_dtos.DeleteProdutionResponseDto(
             status_code=200,
@@ -53,14 +54,14 @@ def delete_production(
             data=company_delete_info
         ))
     
-    except SQLAlchemyError:
+    except SQLAlchemyError as e:
         db.rollback()
-        return build(error= HTTPException(
+        return build(error=HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=ErrorResponseDto(
                 status_code=status.HTTP_409_CONFLICT,
                 error="Conflict",
-                message=f"Database conflict: {find_errr_from_args("productions", str(e.args))}"
+                message=f"Database conflict: {find_errr_from_args('productions', str(e.args))}"
             ).dict()
         ))
     
