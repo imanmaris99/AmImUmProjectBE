@@ -1,8 +1,11 @@
+import logging
+
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from app.libs.sql_alchemy_lib import session_local
 from app.services.user_services import delete_unverified_users
 
+logger = logging.getLogger(__name__)
 scheduler = None
 
 
@@ -18,6 +21,10 @@ def start_scheduler():
     global scheduler
 
     if scheduler is not None:
+        if scheduler.running:
+            return scheduler
+        scheduler.start()
+        logger.info("Scheduler restarted.")
         return scheduler
 
     scheduler = BackgroundScheduler()
@@ -29,4 +36,5 @@ def start_scheduler():
         replace_existing=True,
     )
     scheduler.start()
+    logger.info("Scheduler started.")
     return scheduler

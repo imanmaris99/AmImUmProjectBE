@@ -1,12 +1,13 @@
 from fastapi import HTTPException, status
 
 import firebase_admin
-from firebase_admin import credentials, auth, initialize_app
+from firebase_admin import credentials, auth
 from firebase_admin.exceptions import FirebaseError
 
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import logging
 import os
 
 from dotenv import load_dotenv
@@ -16,15 +17,19 @@ from app.dtos.error_response_dtos import ErrorResponseDto
 
 # Load environment variables from .env file
 load_dotenv()
-
+logger = logging.getLogger(__name__)
 
 # Mengambil kredensial dari variabel lingkungan
 firebase_service_account_key = os.getenv('FIREBASE_SERVICE_ACCOUNT_KEY')
 FIREBASE_ENABLED = bool(firebase_service_account_key)
 
 if FIREBASE_ENABLED and not firebase_admin._apps:
-    cred = credentials.Certificate(json.loads(firebase_service_account_key))
-    firebase_admin.initialize_app(cred)
+    try:
+        cred = credentials.Certificate(json.loads(firebase_service_account_key))
+        firebase_admin.initialize_app(cred)
+    except (ValueError, json.JSONDecodeError) as exc:
+        FIREBASE_ENABLED = False
+        logger.warning("Firebase disabled because FIREBASE_SERVICE_ACCOUNT_KEY is invalid: %s", exc)
 
 
 def _ensure_firebase_enabled():
@@ -111,7 +116,7 @@ def delete_firebase_user(firebase_uid: str) -> None:
     try:
         # Hapus user berdasarkan Firebase UID
         auth.delete_user(firebase_uid)
-        print(f"Firebase user with UID {firebase_uid} has been deleted successfully.")
+        logger.info("Firebase user with UID %s has been deleted successfully.", firebase_uid)
 
     except FirebaseError as e:
         # Jika terjadi kesalahan dari Firebase SDK
@@ -160,7 +165,7 @@ def send_email(to_email: str, subject: str, body: str, html: bool = False):
             server.starttls()
             server.login(smtp_user, smtp_password)
             server.send_message(msg)
-        print(f"Email with subject '{subject}' sent successfully!")
+        logger.info("Email with subject '%s' sent successfully.", subject)
     
     except Exception as e:
         raise HTTPException(
