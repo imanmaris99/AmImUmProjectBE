@@ -87,10 +87,10 @@ def get_product_by_id(
         return build(error=handle_db_error(db, e))
     
     except HTTPException as http_ex:
-        db.rollback()  # Rollback jika terjadi error dari Firebase
         return build(error=http_ex)
     
     except Exception as e:
+        db.rollback()
         return build(error= HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorResponseDto(

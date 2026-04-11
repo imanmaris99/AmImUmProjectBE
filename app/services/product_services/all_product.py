@@ -43,14 +43,11 @@ def all_product(
         )
 
         if not product_model:
-            raise HTTPException(
-                status_code=status.HTTP_204_NO_CONTENT,
-                detail=ErrorResponseDto(
-                    status_code=status.HTTP_204_NO_CONTENT,
-                    error="No content found",
-                    message="Info about list of all products not found"
-                ).dict()
-            )
+            return build(data=AllProductInfoResponseDto(
+                status_code=status.HTTP_200_OK,
+                message="All List product can accessed successfully",
+                data=[]
+            ))
 
         # Mapping data ke DTO
         all_products_dto = [
@@ -80,10 +77,10 @@ def all_product(
         return build(error=handle_db_error(db, e))
     
     except HTTPException as http_ex:
-        db.rollback()  
         return build(error=http_ex)
     
     except Exception as e:
+        db.rollback()
         return build(error=HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorResponseDto(

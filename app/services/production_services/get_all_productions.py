@@ -44,14 +44,11 @@ def get_all_productions(
 
         # Jika tidak ada data
         if not productions:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=ErrorResponseDto(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    error="Not Found",
-                    message="No information about productions found."
-                ).dict()
-            )
+            return build(data=production_dtos.AllListProductionResponseDto(
+                status_code=status.HTTP_200_OK,
+                message="All productions retrieved successfully.",
+                data=[]
+            ))
 
         # Konversi data produksi menjadi DTO
         productions_dto = [
@@ -93,7 +90,6 @@ def get_all_productions(
         return build(error=handle_db_error(db, e))
 
     except HTTPException as http_ex:
-        db.rollback()  # Rollback jika terjadi error
         return build(error=http_ex)
 
     except Exception as e:
