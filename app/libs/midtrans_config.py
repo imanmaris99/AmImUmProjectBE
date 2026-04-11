@@ -1,9 +1,11 @@
+import logging
 import os
 from typing import Optional
 import midtransclient
 from dotenv import load_dotenv
 
 load_dotenv()
+logger = logging.getLogger(__name__)
 
 MIDTRANS_SERVER_KEY = os.getenv("MIDTRANS_SERVER_KEY")
 MIDTRANS_CLIENT_KEY = os.getenv("MIDTRANS_CLIENT_KEY")
@@ -17,3 +19,5 @@ if MIDTRANS_SERVER_KEY and MIDTRANS_CLIENT_KEY:
         server_key=MIDTRANS_SERVER_KEY,
         client_key=MIDTRANS_CLIENT_KEY,
     )
+else:
+    logger.warning("Midtrans Snap client is disabled because credentials are incomplete.")

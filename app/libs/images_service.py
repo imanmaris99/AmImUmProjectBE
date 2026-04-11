@@ -16,6 +16,7 @@ async def create_image_service(upload_file: UploadFile, domain: str) -> optional
         return _raise_exception()
 
     image_dir = f"{IMAGES_DIRECTORY}/{domain}/{upload_file.filename}"
+    os.makedirs(os.path.dirname(image_dir), exist_ok=True)
 
     with open(image_dir, "wb") as f:
         f.write(content)
@@ -27,12 +28,14 @@ async def create_image_service(upload_file: UploadFile, domain: str) -> optional
 
 
 def _is_extension_valid(file_name: str):
-    result = re.findall(r"\.[a-zA-Z]{3,}", file_name)[0]
-    return result in ALLOWED_EXTENSION
+    matches = re.findall(r"\.[a-zA-Z]{3,}", file_name or "")
+    if not matches:
+        return False
+    return matches[0].lower() in ALLOWED_EXTENSION
 
 
 def _raise_exception() -> optional.Optional:
     return optional.build(error=HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
+        status_code=status.HTTP_400_BAD_REQUEST,
         detail="not allowed extension"
     ))

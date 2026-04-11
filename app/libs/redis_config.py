@@ -7,11 +7,7 @@ import redis
 from dotenv import load_dotenv
 
 load_dotenv()
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logger = logging.getLogger(__name__)
 
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
@@ -24,7 +20,7 @@ class RedisClient:
 
     def __new__(cls):
         if cls._instance is None:
-            logging.info(f"Connecting to Redis at {REDIS_HOST}:{REDIS_PORT}, DB={REDIS_DB}")
+            logger.info("Connecting to Redis at %s:%s, DB=%s", REDIS_HOST, REDIS_PORT, REDIS_DB)
             try:
                 client = redis.StrictRedis(
                     host=REDIS_HOST,
@@ -37,9 +33,9 @@ class RedisClient:
                 )
                 client.ping()
                 cls._instance = client
-                logging.info("Successfully connected to Redis!")
+                logger.info("Successfully connected to Redis!")
             except redis.ConnectionError as e:
-                logging.warning(f"Failed to connect to Redis at {REDIS_HOST}:{REDIS_PORT}. Error: {e}")
+                logger.warning("Failed to connect to Redis at %s:%s. Error: %s", REDIS_HOST, REDIS_PORT, e)
                 cls._instance = None
         return cls._instance
 
@@ -50,10 +46,10 @@ redis_client = RedisClient()
 def check_redis_connection():
     try:
         if redis_client and redis_client.ping():
-            logging.info("Connected to Redis!")
+            logger.info("Connected to Redis!")
             return True
     except redis.ConnectionError as e:
-        logging.error(f"Redis connection failed: {e}")
+        logger.error("Redis connection failed: %s", e)
     return False
 
 
