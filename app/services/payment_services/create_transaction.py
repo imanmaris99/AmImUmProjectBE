@@ -116,48 +116,42 @@ def create_transaction(
                 )
             )
 
-        # Simpan transaksi ke database
-        try:
+        payment_reference = transaction_response.get("token")
+        existing_payment = db.execute(
+            select(PaymentModel).where(PaymentModel.order_id == order.id)
+        ).scalars().first()
+
+        if existing_payment:
+            existing_payment.transaction_id = payment_reference
+            existing_payment.gross_amount = order.total_price
+            existing_payment.transaction_status = "pending"
+            existing_payment.payment_response = transaction_response
+            payment = existing_payment
+        else:
             payment = PaymentModel(
                 order_id=order.id,
-                transaction_id="unknown",  # Atau gunakan ID yang lebih spesifik
+                transaction_id=payment_reference,
                 gross_amount=order.total_price,
                 transaction_status="pending",
                 payment_response=transaction_response,
             )
             db.add(payment)
-            db.commit()
-            db.refresh(payment)
-        except IntegrityError as e:
-            db.rollback()  # Rollback jika terjadi duplikasi atau masalah integritas lainnya
 
-            # Tangani duplikasi transaction_id
-            if "payments_transaction_id_key" in str(e.orig):  # Memeriksa constraint unik untuk transaction_id
-                return build(
-                    error=HTTPException(
-                        status_code=status.HTTP_409_CONFLICT,
-                        detail="Transaksi dengan ID yang sama sudah ada. Harap coba lagi.",
-                    )
-                )
-            # Jika error bukan duplikasi, lemparkan kembali exception yang lain
-            return build(
-                error=HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="Terjadi kesalahan dalam menyimpan pembayaran.",
-                )
-            )
+        existing_order_items = db.execute(
+            select(OrderItemModel).where(OrderItemModel.order_id == order.id)
+        ).scalars().all()
 
-        # Menambahkan item order dari keranjang aktif
-        for item in cart_items:
-            order_item = OrderItemModel(
-                order_id=order.id,
-                product_id=item.product_id,
-                variant_id=item.variant_id,
-                quantity=item.quantity,
-                price_per_item=item.product_price,
-                total_price=order.total_price,
-            )
-            db.add(order_item)
+        if not existing_order_items:
+            for item in cart_items:
+                order_item = OrderItemModel(
+                    order_id=order.id,
+                    product_id=item.product_id,
+                    variant_id=item.variant_id,
+                    quantity=item.quantity,
+                    price_per_item=item.product_price,
+                    total_price=item.product_price * item.quantity,
+                )
+                db.add(order_item)
 
         # Menghapus item aktif dari keranjang setelah order dibuat
         db.query(CartProductModel).filter(
@@ -166,6 +160,7 @@ def create_transaction(
         ).delete()
 
         db.commit()
+        db.refresh(payment)
 
         # Invalidasi cache dengan pendekatan yang lebih efisien
         if redis_client:
@@ -176,7 +171,7 @@ def create_transaction(
 
         # Buat DTO response
         payment_callback = PaymentMidtransResponseDTO(
-                transaction_id="unknown",
+                transaction_id=payment.transaction_id,
                 redirect_url=transaction_response["redirect_url"],
                 token=transaction_response["token"],
                 transaction_status="pending"

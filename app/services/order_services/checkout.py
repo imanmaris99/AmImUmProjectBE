@@ -64,6 +64,7 @@ def checkout(
         )
         db.add(order)
         db.commit()
+        db.refresh(order)
 
         # --- Buat DTO Response ---
         order_response = order_dtos.OrderCreateInfoDTO(

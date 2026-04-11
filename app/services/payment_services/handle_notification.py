@@ -78,7 +78,8 @@ def handle_notification(
         transaction_id = midtrans_data.get("transaction_id")
         payment_type = midtrans_data.get("payment_type")
         transaction_status = TransactionStatusEnum(midtrans_data.get("transaction_status"))
-        fraud_status = FraudStatusEnum(midtrans_data.get("fraud_status"))
+        fraud_status_value = midtrans_data.get("fraud_status") or FraudStatusEnum.accept.value
+        fraud_status = FraudStatusEnum(fraud_status_value)
 
         logger.info(f"Data Midtrans: {midtrans_data}")
 
@@ -89,7 +90,7 @@ def handle_notification(
             return build(error=HTTPException(status_code=404, detail="Pembayaran tidak ditemukan."))
         
         # Update payment data
-        payment.transaction_id = transaction_id
+        payment.transaction_id = transaction_id or payment.transaction_id
         payment.payment_type = payment_type
         payment.transaction_status = transaction_status
         payment.payment_response = midtrans_data
