@@ -409,10 +409,15 @@ Gunakan format berikut setiap kali menjalankan validasi manual:
 - `GET /brand/all`
   - Dilakukan 10 kali probe berturut-turut
   - Hasil akhir: stabil `200`
-  - Catatan: pesan respons sempat berbeda pada hit awal dibanding hit berikutnya, sehingga konsistensi message response masih layak dipantau
+  - Setelah patch konsistensi response, message tervalidasi menjadi seragam: `All list of brands can accessed successfully`
 - `GET /type/all`
   - Dilakukan 10 kali probe berturut-turut
   - Hasil akhir: stabil `200`
+
+### Catatan runtime verification
+- Saat verifikasi restart-aware, terdeteksi dua proses `uvicorn` aktif dengan interpreter berbeda
+- Kondisi ini berisiko membuat hasil QA lokal membingungkan karena request bisa tidak selalu merepresentasikan runtime yang benar-benar diharapkan
+- Untuk staging/production, jalankan hanya satu instance aplikasi yang terkontrol agar hasil verifikasi lebih dapat dipercaya
 
 ## Kontribusi
 Jika kamu ingin berkontribusi pada proyek ini:
