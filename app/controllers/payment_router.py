@@ -20,6 +20,17 @@ router = APIRouter(
     "/create",
     response_model=payment_dtos.PaymentInfoResponseDto,
     status_code=status.HTTP_201_CREATED,
+    openapi_extra={
+        "requestBody": {
+            "content": {
+                "application/json": {
+                    "example": {
+                        "order_id": "11111111-2222-3333-4444-555555555555"
+                    }
+                }
+            }
+        }
+    },
 )
 def create_payment(
     payment_data: payment_dtos.PaymentOrderByIdDto, 
@@ -41,7 +52,18 @@ def create_payment(
 @router.post(
     "/notifications",
     response_model=payment_dtos.PaymentNotificationResponseDto,
-    status_code=status.HTTP_200_OK
+    status_code=status.HTTP_200_OK,
+    openapi_extra={
+        "requestBody": {
+            "content": {
+                "application/json": {
+                    "example": {
+                        "order_id": "11111111-2222-3333-4444-555555555555"
+                    }
+                }
+            }
+        }
+    }
 )
 def receive_payment_notification(
     notification_data: payment_dtos.InfoTransactionIdDto,  # Data dari body request
@@ -76,7 +98,18 @@ def receive_payment_notification(
     status_code=status.HTTP_200_OK,
     tags=["Payments"],
     summary="Menerima notifikasi pembayaran dari Midtrans",
-    description="Endpoint ini digunakan untuk menerima notifikasi pembayaran dari Midtrans dan memperbarui status pembayaran serta pesanan di sistem."
+    description="Endpoint ini digunakan untuk menerima notifikasi pembayaran dari Midtrans dan memperbarui status pembayaran serta pesanan di sistem.",
+    openapi_extra={
+        "requestBody": {
+            "content": {
+                "application/json": {
+                    "example": {
+                        "order_id": "11111111-2222-3333-4444-555555555555"
+                    }
+                }
+            }
+        }
+    }
 )
 def receive_payment_notification(
     notification_data: payment_dtos.InfoTransactionIdDto,

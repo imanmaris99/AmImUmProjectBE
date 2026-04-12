@@ -19,6 +19,22 @@ router = APIRouter(
     "/register",
     response_model=user_dtos.UserResponseDto,
     status_code=status.HTTP_201_CREATED,
+    openapi_extra={
+        "requestBody": {
+            "content": {
+                "application/json": {
+                    "example": {
+                        "firstname": "Budi",
+                        "lastname": "Pekerti",
+                        "gender": "male",
+                        "email": "budi.pekerti@example.com",
+                        "phone": "+6281234567890",
+                        "password": "Amimum123!"
+                    }
+                }
+            }
+        }
+    },
     responses={
         status.HTTP_201_CREATED: {
             "description": "User successfully created",
@@ -33,7 +49,7 @@ router = APIRouter(
                             "firstname": "Budi",
                             "lastname": "Pekerti",
                             "gender": "male",
-                            "phone": "123456789",
+                            "phone": "+6281234567890",
                             "role": "customer",
                             "created_at": "2024-09-21T14:28:23.382Z",
                             "updated_at": "2024-09-21T14:28:23.382Z"
@@ -93,7 +109,19 @@ def create_user(user: user_dtos.UserCreateDto, db: Session = Depends(get_db)):
 
 @router.post(
         "/verify-email", 
-        response_model=user_dtos.EmailVerificationResponseDto
+        response_model=user_dtos.EmailVerificationResponseDto,
+        openapi_extra={
+            "requestBody": {
+                "content": {
+                    "application/json": {
+                        "example": {
+                            "code": "123456",
+                            "email": "budi.pekerti@example.com"
+                        }
+                    }
+                }
+            }
+        }
     )
 def verify_email(
     verification_request: user_dtos.EmailVerificationRequestDto, 
@@ -114,6 +142,18 @@ def verify_email(
     "/login",
     # response_model=jwt_dto.AccessTokenDto,
     response_model= user_dtos.UserLoginResponseDto,
+    openapi_extra={
+        "requestBody": {
+            "content": {
+                "application/json": {
+                    "example": {
+                        "email": "budi.pekerti@example.com",
+                        "password": "Amimum123!"
+                    }
+                }
+            }
+        }
+    },
     responses={
         status.HTTP_401_UNAUTHORIZED: {
             "description": "Unauthorized. Incorrect email or password.",
@@ -201,6 +241,17 @@ def user_login(user: user_dtos.UserLoginPayloadDto, db: Session = Depends(get_db
 @router.post(
         "/auth/google-login",
         response_model=user_dtos.GoogleLoginResponseRequestDto,
+        openapi_extra={
+            "requestBody": {
+                "content": {
+                    "application/json": {
+                        "example": {
+                            "id_token": "google-id-token-from-client"
+                        }
+                    }
+                }
+            }
+        },
         responses={
             status.HTTP_401_UNAUTHORIZED: {
                 "description": "Unauthorized. Incorrect email or password.",
