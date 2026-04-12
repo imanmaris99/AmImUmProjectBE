@@ -11,12 +11,16 @@ from app.dtos import article_dtos
 from app.dtos.error_response_dtos import ErrorResponseDto
 
 import json
+import logging
 
 from app.utils.result import build, Result
 from app.utils.error_parser import find_errr_from_args
 from app.libs.redis_config import custom_json_serializer, redis_client
 
+logger = logging.getLogger(__name__)
+
 CACHE_TTL = 3600
+RESPONSE_MESSAGE = "All List of Articles accessed successfully"
 
 def get_articles(
         db: Session, 
@@ -27,7 +31,12 @@ def get_articles(
 
     try:
         # Check if product data exists in Redis
-        cached_article = redis_client.get(cache_key)
+        cached_article = None
+        if redis_client:
+            try:
+                cached_article = redis_client.get(cache_key)
+            except Exception as cache_error:
+                logger.warning("Failed to read article cache for key %s: %s", cache_key, cache_error)
         
         if cached_article:
             article_dto = [
@@ -36,7 +45,7 @@ def get_articles(
             ]
             return build(data=article_dtos.AllArticleResponseDto(
                 status_code=status.HTTP_200_OK,
-                message="All list of articles successfully retrieved (from cache)",
+                message=RESPONSE_MESSAGE,
                 data=article_dto
             ))
 
@@ -48,13 +57,10 @@ def get_articles(
         ).scalars().all()
 
         if not article:
-            return build(error= HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=ErrorResponseDto(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    error="Not Found",
-                    message=f"Articles not found"
-                ).dict()
+            return build(data=article_dtos.AllArticleResponseDto(
+                status_code=status.HTTP_200_OK,
+                message=RESPONSE_MESSAGE,
+                data=[]
             ))
 
         # Konversi wishlist menjadi DTO
@@ -69,25 +75,29 @@ def get_articles(
         ]
 
         # Cache the data in Redis
-        redis_client.setex(cache_key, CACHE_TTL, json.dumps(
-            [dto.dict() for dto in article_dto], 
-            default=custom_json_serializer
-        ))
+        if redis_client:
+            try:
+                redis_client.setex(cache_key, CACHE_TTL, json.dumps(
+                    [dto.dict() for dto in article_dto], 
+                    default=custom_json_serializer
+                ))
+            except Exception as cache_error:
+                logger.warning("Failed to write article cache for key %s: %s", cache_key, cache_error)
 
         return build(data=article_dtos.AllArticleResponseDto(
             status_code=status.HTTP_200_OK,
-            message=f"All List of Articles accessed successfully",
+            message=RESPONSE_MESSAGE,
             data=article_dto
         ))
     
-    except SQLAlchemyError:
+    except SQLAlchemyError as e:
         db.rollback()
         return build(error= HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=ErrorResponseDto(
                 status_code=status.HTTP_409_CONFLICT,
                 error="Conflict",
-                message=f"Database conflict: {find_errr_from_args("articles", str(e.args))}"
+                message=f"Database conflict: {find_errr_from_args('articles', str(e.args))}"
             ).dict()
         ))
     
