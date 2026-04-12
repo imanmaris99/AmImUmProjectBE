@@ -1,4 +1,4 @@
-# AmImUmHerbal - Finding Product
+﻿# AmImUmHerbal - Finding Product
 
 AmImUmHerbal adalah sebuah aplikasi yang dirancang untuk membantu pengguna menemukan produk herbal dengan mudah dan efisien. Proyek ini dibangun menggunakan FastAPI dan berbagai pustaka lainnya untuk memberikan pengalaman pengguna yang optimal.
 
@@ -204,8 +204,8 @@ Status saat ini untuk kesiapan backend menuju staging/produksi:
 
 ### Yang sudah tervalidasi
 - Aplikasi dapat dijalankan secara lokal
-- Endpoint dokumentasi `/docs` merespons `200`
-- Endpoint OpenAPI `/openapi.json` merespons `200`
+- Endpoint dokumentasi `/docs` -> `200`
+- Endpoint OpenAPI `/openapi.json` -> `200`
 - Endpoint publik katalog berikut merespons `200`
   - `/product/all`
   - `/brand/all`
@@ -218,7 +218,7 @@ Status saat ini untuk kesiapan backend menuju staging/produksi:
 
 ### Yang masih perlu divalidasi sebelum launch penuh
 - Uji endpoint yang membutuhkan autentikasi dengan skenario nyata
-- Uji register → verify email → login → checkout → payment secara end-to-end
+- Uji register -> verify email -> login -> checkout -> payment secara end-to-end
 - Validasi integrasi eksternal dengan kredensial produksi/staging yang final:
   - Firebase
   - Supabase
@@ -260,11 +260,11 @@ Status saat ini untuk kesiapan backend menuju staging/produksi:
   - `HOST_URL`
   - `MIDTRANS_IS_PRODUCTION`
 - Smoke test publik terakhir pada environment lokal aktif:
-  - `/docs` → `200`
-  - `/openapi.json` → `200`
-  - `/product/all` → `200`
-  - `/brand/all` → `200`
-  - `/type/all` → `200`
+  - `/docs` -> `200`
+  - `/openapi.json` -> `200`
+  - `/product/all` -> `200`
+  - `/brand/all` -> `200`
+  - `/type/all` -> `200`
 
 ## Kontribusi
 Jika kamu ingin berkontribusi pada proyek ini:
