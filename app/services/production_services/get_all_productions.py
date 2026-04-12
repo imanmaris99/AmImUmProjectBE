@@ -16,6 +16,7 @@ from app.utils.result import build, Result
 from app.libs.redis_config import custom_json_serializer, redis_client
 
 CACHE_TTL = 300
+RESPONSE_MESSAGE = "All list of brands can accessed successfully"
 
 def get_all_productions(
         db: Session, 
@@ -31,7 +32,7 @@ def get_all_productions(
             cached_response = json.loads(cached_data)
             return build(data=production_dtos.AllListProductionResponseDto(
                 status_code=status.HTTP_200_OK,
-                message="All list of brands can accessed successfully (from cache)",
+                message=RESPONSE_MESSAGE,
                 data=cached_response['data']
             ))
 
@@ -46,7 +47,7 @@ def get_all_productions(
         if not productions:
             return build(data=production_dtos.AllListProductionResponseDto(
                 status_code=status.HTTP_200_OK,
-                message="All productions retrieved successfully.",
+                message=RESPONSE_MESSAGE,
                 data=[]
             ))
 
@@ -82,7 +83,7 @@ def get_all_productions(
         # Kembalikan response
         return build(data=production_dtos.AllListProductionResponseDto(
             status_code=status.HTTP_200_OK,
-            message="All productions retrieved successfully.",
+            message=RESPONSE_MESSAGE,
             data=productions_dto
         ))
 
