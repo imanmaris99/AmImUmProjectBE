@@ -240,15 +240,20 @@ Status saat ini untuk kesiapan backend menuju staging/produksi:
 - Folder `tests/` belum berisi suite test yang memadai, jadi regresi masih banyak bergantung pada smoke test manual
 - README dan checklist deploy masih perlu terus dijaga sinkron mengikuti perubahan implementasi
 - Belum ada healthcheck/deploy verification formal di level container/orchestrator
+- Flow `POST /user/register` saat ini sudah lolos validasi schema dan validasi password, tetapi masih gagal end-to-end jika kredensial SMTP aktif tidak diterima provider email (`535 Username and Password not accepted`)
 
 ### Rekomendasi langkah berikut
 1. Siapkan environment staging final berdasarkan `.env.example`
-2. Jalankan migrasi database di staging
-3. Uji flow end-to-end dengan akun uji dan data uji
-4. Dokumentasikan hasil uji staging
-5. Baru lanjut ke launch produksi
+2. Verifikasi kredensial SMTP aktif dan pastikan provider email menerima login aplikasi
+3. Jalankan migrasi database di staging
+4. Uji flow end-to-end dengan akun uji dan data uji
+5. Dokumentasikan hasil uji staging
+6. Baru lanjut ke launch produksi
 
 ### Hasil audit staging execution saat ini
+- QA runtime register terbaru:
+  - payload register invalid password -> `400` dengan pesan validasi yang lebih jelas
+  - payload register valid -> saat ini mentok di pengiriman email verifikasi karena SMTP login ditolak provider
 - Environment aktif sudah memiliki nilai untuk integrasi utama berikut:
   - `DATABASE_URL`
   - `FIREBASE_SERVICE_ACCOUNT_KEY`
