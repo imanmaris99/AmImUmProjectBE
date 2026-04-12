@@ -401,6 +401,19 @@ Gunakan format berikut setiap kali menjalankan validasi manual:
 - `POST /payments/handler-notifications` baru bermakna penuh jika ada transaksi/order yang memang sudah terbentuk
 - `POST /user/auth/google-login` bergantung pada token Firebase/Google yang valid
 
+### Hasil observasi stabilitas endpoint publik
+- `GET /product/all`
+  - Dilakukan 10 kali probe berturut-turut
+  - Hasil akhir: stabil `200`
+  - Catatan: belum ada bukti gagal konsisten pada observasi ini
+- `GET /brand/all`
+  - Dilakukan 10 kali probe berturut-turut
+  - Hasil akhir: stabil `200`
+  - Catatan: pesan respons sempat berbeda pada hit awal dibanding hit berikutnya, sehingga konsistensi message response masih layak dipantau
+- `GET /type/all`
+  - Dilakukan 10 kali probe berturut-turut
+  - Hasil akhir: stabil `200`
+
 ## Kontribusi
 Jika kamu ingin berkontribusi pada proyek ini:
 
