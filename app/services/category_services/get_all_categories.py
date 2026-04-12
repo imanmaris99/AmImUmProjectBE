@@ -4,6 +4,7 @@ from sqlalchemy import select
 from fastapi import HTTPException, status
 
 import json
+import logging
 
 from app.models.tag_category_model import TagCategoryModel
 from app.dtos.category_dtos import AllCategoryResponseDto, AllCategoryInfoResponseDto
@@ -12,7 +13,10 @@ from app.dtos.error_response_dtos import ErrorResponseDto
 from app.utils.result import build, Result
 from app.libs.redis_config import custom_json_serializer, redis_client
 
+logger = logging.getLogger(__name__)
+
 CACHE_TTL = 3600  # Cache TTL dalam detik (1 jam)
+RESPONSE_MESSAGE = "All List of tag Categories accessed successfully"
 
 def get_all_categories(
         db: Session, 
@@ -23,7 +27,12 @@ def get_all_categories(
 
     try:
         # Check if product data exists in Redis
-        cached_categorie = redis_client.get(cache_key)
+        cached_categorie = None
+        if redis_client:
+            try:
+                cached_categorie = redis_client.get(cache_key)
+            except Exception as cache_error:
+                logger.warning("Failed to read category cache for key %s: %s", cache_key, cache_error)
 
         if cached_categorie:
             categories_data = [
@@ -32,7 +41,7 @@ def get_all_categories(
             ]
             return build(data=AllCategoryInfoResponseDto(
                 status_code=status.HTTP_200_OK,
-                message="All lists of categories successfully retrieved (from cache)",
+                message=RESPONSE_MESSAGE,
                 data=categories_data
             ))
                 
@@ -43,14 +52,11 @@ def get_all_categories(
         ).scalars().all()
 
         if not categories:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=ErrorResponseDto(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    error="Not Found",
-                    message="Categories not found"
-                ).dict()
-            )
+            return build(data=AllCategoryInfoResponseDto(
+                status_code=status.HTTP_200_OK,
+                message=RESPONSE_MESSAGE,
+                data=[]
+            ))
 
         # Konversi kategori ke DTO
         categories_data = [
@@ -63,15 +69,19 @@ def get_all_categories(
         ]
 
         # Cache the data in Redis
-        redis_client.setex(cache_key, CACHE_TTL, json.dumps(
-            [dto.dict() for dto in categories_data], 
-            default=custom_json_serializer
-        ))
+        if redis_client:
+            try:
+                redis_client.setex(cache_key, CACHE_TTL, json.dumps(
+                    [dto.dict() for dto in categories_data], 
+                    default=custom_json_serializer
+                ))
+            except Exception as cache_error:
+                logger.warning("Failed to write category cache for key %s: %s", cache_key, cache_error)
 
         # return build(data=response_data)
         return build(data=AllCategoryInfoResponseDto(
             status_code=status.HTTP_200_OK,
-            message="All List of tag Categories accessed successfully",
+            message=RESPONSE_MESSAGE,
             data=categories_data
         ))
 
