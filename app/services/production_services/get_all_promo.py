@@ -2,6 +2,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import SQLAlchemyError
 import json
+import logging
 
 from app.models.product_model import ProductModel
 from app.models.production_model import ProductionModel
@@ -12,7 +13,10 @@ from app.services.production_services.support_function import handle_db_error
 from app.utils.result import build, Result
 from app.libs.redis_config import redis_client
 
+logger = logging.getLogger(__name__)
+
 CACHE_TTL = 300
+RESPONSE_MESSAGE = "All promotions retrieved successfully"
 
 def get_all_promo(
         db: Session, 
@@ -23,13 +27,18 @@ def get_all_promo(
 
     try:
         # Check Redis cache
-        cached_data = redis_client.get(cache_key)
+        cached_data = None
+        if redis_client:
+            try:
+                cached_data = redis_client.get(cache_key)
+            except Exception as cache_error:
+                logger.warning("Failed to read promotion cache for key %s: %s", cache_key, cache_error)
         if cached_data:
             # Parse JSON from Redis
             cached_response = json.loads(cached_data)
             return build(data=production_dtos.AllProductionPromoResponseDto(
                 status_code=status.HTTP_200_OK,
-                message="All promotions retrieved successfully (from cache)",
+                message=RESPONSE_MESSAGE,
                 data=cached_response['data']
             ))
 
@@ -48,14 +57,11 @@ def get_all_promo(
         )
 
         if not product_bies:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=ErrorResponseDto(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    error="Not Found",
-                    message="No information about promotions found."
-                ).dict()
-            )
+            return build(data=production_dtos.AllProductionPromoResponseDto(
+                status_code=status.HTTP_200_OK,
+                message=RESPONSE_MESSAGE,
+                data=[]
+            ))
 
         # Convert data to promo DTO
         info_promo = [
@@ -72,18 +78,22 @@ def get_all_promo(
         cache_data = {
             'data': [brand.dict() for brand in info_promo]
         }
-        redis_client.setex(cache_key, CACHE_TTL, json.dumps(cache_data))
+        if redis_client:
+            try:
+                redis_client.setex(cache_key, CACHE_TTL, json.dumps(cache_data))
+            except Exception as cache_error:
+                logger.warning("Failed to write promotion cache for key %s: %s", cache_key, cache_error)
 
         # Return response
         return build(data=production_dtos.AllProductionPromoResponseDto(
             status_code=status.HTTP_200_OK,
-            message="All promotions retrieved successfully.",
+            message=RESPONSE_MESSAGE,
             data=info_promo
         ))
 
     except SQLAlchemyError as e:
         # Handle database errors
-        return handle_db_error(db, e)
+        return build(error=handle_db_error(db, e))
 
     except HTTPException as http_ex:
         db.rollback()  # Only rollback if necessary
