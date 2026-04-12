@@ -7,6 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from fastapi import HTTPException, status
 
 import json
+import logging
 
 from app.models.product_model import ProductModel
 from app.dtos.product_dtos import ProductDetailDTO, ProductDetailResponseDto
@@ -17,7 +18,10 @@ from app.services.product_services.support_function import handle_db_error
 from app.utils.result import build, Result
 from app.libs.redis_config import custom_json_serializer, redis_client
 
+logger = logging.getLogger(__name__)
+
 CACHE_TTL = 3600  # 1 hour TTL for cache
+RESPONSE_MESSAGE = "Product details successfully retrieved"
 
 def get_product_by_id(
         db: Session, 
@@ -28,12 +32,18 @@ def get_product_by_id(
         redis_key = f"product:{product_id}"
 
         # Check if product data exists in Redis
-        cached_product = redis_client.get(redis_key) if redis_client else None
+        cached_product = None
+        if redis_client:
+            try:
+                cached_product = redis_client.get(redis_key)
+            except Exception as cache_error:
+                logger.warning("Failed to read product detail cache for key %s: %s", redis_key, cache_error)
+
         if cached_product:
             product_detail_dto = ProductDetailDTO(**json.loads(cached_product))
             return build(data=ProductDetailResponseDto(
                 status_code=200,
-                message="Product details successfully retrieved (from cache)",
+                message=RESPONSE_MESSAGE,
                 data=product_detail_dto
             ))
         
@@ -74,12 +84,15 @@ def get_product_by_id(
 
         # Cache the result in Redis
         if redis_client:
-            redis_client.setex(redis_key, CACHE_TTL, json.dumps(product_detail_dto.dict(), default=custom_json_serializer))
+            try:
+                redis_client.setex(redis_key, CACHE_TTL, json.dumps(product_detail_dto.dict(), default=custom_json_serializer))
+            except Exception as cache_error:
+                logger.warning("Failed to write product detail cache for key %s: %s", redis_key, cache_error)
 
         # Build success response
         return build(data=ProductDetailResponseDto(
             status_code=200,
-            message="Product details successfully retrieved",
+            message=RESPONSE_MESSAGE,
             data=product_detail_dto
         ))
 
