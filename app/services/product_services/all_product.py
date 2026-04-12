@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session, selectinload
 from sqlalchemy.exc import SQLAlchemyError
 
 import json
+import logging
 
 from app.models.product_model import ProductModel
 from app.dtos.product_dtos import AllProductInfoDTO, AllProductInfoResponseDto
@@ -15,7 +16,10 @@ from app.services.product_services.support_function import handle_db_error
 from app.utils.result import build, Result
 from app.libs.redis_config import custom_json_serializer, redis_client
 
+logger = logging.getLogger(__name__)
+
 CACHE_TTL = 3600
+RESPONSE_MESSAGE = "All List product can accessed successfully"
 
 def all_product(
         db: Session, 
@@ -26,7 +30,13 @@ def all_product(
     
     try:
         # Cek data di Redis cache
-        cached_data = redis_client.get(cache_key) if redis_client else None
+        cached_data = None
+        if redis_client:
+            try:
+                cached_data = redis_client.get(cache_key)
+            except Exception as cache_error:
+                logger.warning("Failed to read product cache for key %s: %s", cache_key, cache_error)
+
         if cached_data:
             cached_response = json.loads(cached_data)
             return build(data=AllProductInfoResponseDto(**cached_response))
@@ -45,7 +55,7 @@ def all_product(
         if not product_model:
             return build(data=AllProductInfoResponseDto(
                 status_code=status.HTTP_200_OK,
-                message="All List product can accessed successfully",
+                message=RESPONSE_MESSAGE,
                 data=[]
             ))
 
@@ -64,12 +74,15 @@ def all_product(
 
         response_dto = AllProductInfoResponseDto(
             status_code=status.HTTP_200_OK,
-            message="All List product can accessed successfully",
+            message=RESPONSE_MESSAGE,
             data=all_products_dto
         )
 
         if redis_client:
-            redis_client.setex(cache_key, CACHE_TTL, json.dumps(response_dto.dict(), default=custom_json_serializer))
+            try:
+                redis_client.setex(cache_key, CACHE_TTL, json.dumps(response_dto.dict(), default=custom_json_serializer))
+            except Exception as cache_error:
+                logger.warning("Failed to write product cache for key %s: %s", cache_key, cache_error)
         
         return build(data=response_dto)
 
