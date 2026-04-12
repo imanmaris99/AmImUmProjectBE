@@ -8,6 +8,7 @@ from app.models.cart_product_model import CartProductModel
 from app.dtos import cart_dtos
 
 import json
+import logging
 
 from app.dtos.error_response_dtos import ErrorResponseDto
 
@@ -17,7 +18,10 @@ from app.services.cart_services.support_function import get_cart_total, handle_d
 from app.utils.result import build, Result
 from app.libs.redis_config import redis_client, custom_json_serializer
 
+logger = logging.getLogger(__name__)
+
 CACHE_TTL = 300
+RESPONSE_MESSAGE = "All products in cart accessed successfully"
 
 def my_cart(
         db: Session, 
@@ -30,13 +34,19 @@ def my_cart(
         redis_key = f"cart:{user_id}:{skip}:{limit}"
 
         # Check if wishlist data exists in Redis
-        cached_cart = redis_client.get(redis_key)
+        cached_cart = None
+        if redis_client:
+            try:
+                cached_cart = redis_client.get(redis_key)
+            except Exception as cache_error:
+                logger.warning("Failed to read cart cache for key %s: %s", redis_key, cache_error)
+
         if cached_cart:
             # Data is found in cache, return it
             cart_data = json.loads(cached_cart)
             return build(data=cart_dtos.AllCartResponseCreateDto(
                 status_code=status.HTTP_200_OK,
-                message=f"All item products in cart from account user ID {user_id} accessed successfully (from cache)",
+                message=RESPONSE_MESSAGE,
                 total_prices=cart_data['total_prices'],
                 data=cart_data['data']
             ))
@@ -50,14 +60,12 @@ def my_cart(
         ).scalars().all()
 
         if not cart_items:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=ErrorResponseDto(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    error="Not Found",
-                    message=f"No products found in cart for user ID {user_id}."
-                ).dict()
-            )
+            return build(data=cart_dtos.AllCartResponseCreateDto(
+                status_code=status.HTTP_200_OK,
+                message=RESPONSE_MESSAGE,
+                data=[],
+                total_prices=cart_dtos.CartProductTotalDto()
+            ))
 
         # Hitung total_records
         # total_records = get_total_records(db, user_id)
@@ -83,12 +91,16 @@ def my_cart(
             'total_prices': cart_total_items_response,
             'data': [wish.dict() for wish in cart_dto]
         }
-        redis_client.setex(redis_key, CACHE_TTL, json.dumps(cache_data, default=custom_json_serializer))
+        if redis_client:
+            try:
+                redis_client.setex(redis_key, CACHE_TTL, json.dumps(cache_data, default=custom_json_serializer))
+            except Exception as cache_error:
+                logger.warning("Failed to write cart cache for key %s: %s", redis_key, cache_error)
 
         # Return DTO dengan respons yang telah dibangun
         return build(data=cart_dtos.AllCartResponseCreateDto(
             status_code=status.HTTP_200_OK,
-            message=f"All products in cart for user ID {user_id} accessed successfully",
+            message=RESPONSE_MESSAGE,
             # total_records=total_records,
             data=cart_dto,
             total_prices=cart_total_items_response
@@ -108,7 +120,7 @@ def my_cart(
         ))
     
     except SQLAlchemyError as e:
-        return handle_db_error(db, e)
+        return build(error=handle_db_error(db, e))
     
     except HTTPException as http_ex:
         db.rollback()  # Rollback jika terjadi HTTPException
