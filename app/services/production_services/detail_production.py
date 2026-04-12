@@ -6,6 +6,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from fastapi import HTTPException, status
 
 import json
+import logging
 
 from app.models.production_model import ProductionModel
 from app.dtos import production_dtos
@@ -16,7 +17,10 @@ from app.services.production_services.support_function import handle_db_error
 from app.utils.result import build, Result
 from app.libs.redis_config import custom_json_serializer, redis_client
 
+logger = logging.getLogger(__name__)
+
 CACHE_TTL = 300
+RESPONSE_MESSAGE = "Production detail retrieved successfully"
 
 def detail_production(
         db: Session, 
@@ -27,12 +31,17 @@ def detail_production(
         redis_key = f"production:{production_id}"
 
         # Check if product data exists in Redis
-        cached_product = redis_client.get(redis_key)
+        cached_product = None
+        if redis_client:
+            try:
+                cached_product = redis_client.get(redis_key)
+            except Exception as cache_error:
+                logger.warning("Failed to read production detail cache for key %s: %s", redis_key, cache_error)
         if cached_product:
             production_detail_dto = production_dtos.DetailProductionDto(**json.loads(cached_product))
             return build(data=production_dtos.ProductionDetailResponseDto(
                 status_code=200,
-                message="Product details successfully retrieved (from cache)",
+                message=RESPONSE_MESSAGE,
                 data=production_detail_dto
             ))
         
@@ -64,17 +73,21 @@ def detail_production(
             created_at=production_model.created_at
         )
 
-        redis_client.setex(redis_key, CACHE_TTL, json.dumps(production_detail_dto.dict(), default=custom_json_serializer))
+        if redis_client:
+            try:
+                redis_client.setex(redis_key, CACHE_TTL, json.dumps(production_detail_dto.dict(), default=custom_json_serializer))
+            except Exception as cache_error:
+                logger.warning("Failed to write production detail cache for key %s: %s", redis_key, cache_error)
 
         # Build success response
         return build(data=production_dtos.ProductionDetailResponseDto(
             status_code=200,
-            message="Production detail info successfully retrieved",
+            message=RESPONSE_MESSAGE,
             data=production_detail_dto
         ))
 
     except SQLAlchemyError as e:
-        return handle_db_error(db, e)
+        return build(error=handle_db_error(db, e))
     
     except HTTPException as http_ex:
         db.rollback()  
