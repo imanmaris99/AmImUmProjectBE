@@ -9,6 +9,7 @@ from app.models.order_model import OrderModel
 from app.dtos import order_dtos
 
 import json
+import logging
 
 from app.dtos.error_response_dtos import ErrorResponseDto
 
@@ -17,7 +18,10 @@ from app.services.cart_services.support_function import get_cart_total, handle_d
 from app.utils.result import build, Result
 from app.libs.redis_config import redis_client, custom_json_serializer
 
+logger = logging.getLogger(__name__)
+
 CACHE_TTL = 3600
+RESPONSE_MESSAGE = "All orders accessed successfully"
 
 def my_order(
         db: Session, 
@@ -30,13 +34,18 @@ def my_order(
         redis_key = f"orders:{user_id}:{skip}:{limit}"
 
         # Check if wishlist data exists in Redis
-        cached_order = redis_client.get(redis_key)
+        cached_order = None
+        if redis_client:
+            try:
+                cached_order = redis_client.get(redis_key)
+            except Exception as cache_error:
+                logger.warning("Failed to read order list cache for key %s: %s", redis_key, cache_error)
         if cached_order:
             # Data is found in cache, return it
             order_data = json.loads(cached_order)
             return build(data=order_dtos.GetOrderInfoResponseDto(
                 status_code=status.HTTP_200_OK,
-                message=f"All orders in account with user ID {user_id} accessed successfully(from cache)",
+                message=RESPONSE_MESSAGE,
                 data=order_data['data']
             ))
         
@@ -49,14 +58,11 @@ def my_order(
         ).scalars().all()
 
         if not order_models:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=ErrorResponseDto(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    error="Not Found",
-                    message=f"No orders found in account with user ID {user_id}."
-                ).dict()
-            )
+            return build(data=order_dtos.GetOrderInfoResponseDto(
+                status_code=status.HTTP_200_OK,
+                message=RESPONSE_MESSAGE,
+                data=[]
+            ))
 
         order_dto = [
             order_dtos.GetOrderInfoDto(
@@ -79,20 +85,24 @@ def my_order(
             'data': [wish.dict() for wish in order_dto]
         }
 
-        redis_client.setex(redis_key, CACHE_TTL, json.dumps(cache_data, default=custom_json_serializer))
+        if redis_client:
+            try:
+                redis_client.setex(redis_key, CACHE_TTL, json.dumps(cache_data, default=custom_json_serializer))
+            except Exception as cache_error:
+                logger.warning("Failed to write order list cache for key %s: %s", redis_key, cache_error)
 
         # Return DTO dengan respons yang telah dibangun
         return build(data=order_dtos.GetOrderInfoResponseDto(
             status_code=status.HTTP_200_OK,
-            message=f"All orders in account with user ID {user_id} accessed successfully",
+            message=RESPONSE_MESSAGE,
             data=order_dto,
         ))
     
     except (IntegrityError, DataError) as db_error:
-        raise handle_db_error(db, db_error)
+        return build(error=handle_db_error(db, db_error))
 
     except SQLAlchemyError as e:
-        raise handle_db_error(db, e)
+        return build(error=handle_db_error(db, e))
     
     except HTTPException as http_ex:
         db.rollback()  # Rollback jika terjadi HTTPException
