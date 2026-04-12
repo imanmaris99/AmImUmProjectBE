@@ -14,6 +14,8 @@ from app.services.cart_services.support_function import handle_db_error
 
 from app.utils.result import build, Result
 
+RESPONSE_MESSAGE = "Shipment list accessed successfully"
+
 def my_shipping(
         db: Session, 
         user_id: str,  
@@ -29,14 +31,11 @@ def my_shipping(
         ).scalars().all()
 
         if not shipment_model:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=ErrorResponseDto(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    error="Not Found",
-                    message=f"All data shipping from this user ID : {user_id} not found"
-                ).dict()
-            )
+            return build(data=shipment_dtos.MyListShipmentResponseDto(
+                status_code=status.HTTP_200_OK,
+                message=RESPONSE_MESSAGE,
+                data=[]
+            ))
 
         shipment_dto = [
             shipment_dtos.MyShipmentInfoDto(
@@ -52,7 +51,7 @@ def my_shipping(
         # Return DTO dengan respons yang telah dibangun
         return build(data=shipment_dtos.MyListShipmentResponseDto(
             status_code=status.HTTP_200_OK,
-            message=f"All data shipping from user ID {user_id} accessed successfully",
+            message=RESPONSE_MESSAGE,
             data=shipment_dto
         ))
     
@@ -81,7 +80,7 @@ def my_shipping(
         ))
 
     except SQLAlchemyError as e:
-        return handle_db_error(db, e)
+        return build(error=handle_db_error(db, e))
     
     except HTTPException as http_ex:
         return build(error=http_ex)
