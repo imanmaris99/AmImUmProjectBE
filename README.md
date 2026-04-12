@@ -266,6 +266,47 @@ Status saat ini untuk kesiapan backend menuju staging/produksi:
   - `/brand/all` -> `200`
   - `/type/all` -> `200`
 
+### Checklist validasi manual flow staging
+
+#### 1. Auth dan verifikasi email
+- `POST /user/register`
+  - siapkan email uji baru yang belum pernah terdaftar
+  - verifikasi respons sukses `201`
+  - verifikasi data user terbentuk di database
+- `POST /user/verify-email`
+  - gunakan kode verifikasi yang benar dari email/sistem
+  - verifikasi user berubah menjadi terverifikasi/aktif
+  - uji juga kode salah atau kedaluwarsa untuk memastikan error terkendali
+- `POST /user/login`
+  - uji login dengan akun yang sudah terverifikasi
+  - simpan token login untuk pengujian endpoint terproteksi
+  - uji kombinasi password salah untuk memastikan respons error sesuai
+- `POST /user/auth/google-login`
+  - hanya diuji jika Firebase token uji valid tersedia
+
+#### 2. Payment dan notifikasi
+- `POST /payments/create`
+  - gunakan token login user valid
+  - gunakan order yang memang valid dan dimiliki user
+  - verifikasi transaksi Midtrans berhasil terbentuk
+- `POST /payments/handler-notifications`
+  - kirim payload notifikasi yang valid dari skenario sandbox/staging
+  - verifikasi status payment dan order ikut ter-update
+  - uji payload tidak valid untuk memastikan validation/error handling tetap aman
+
+#### 3. Endpoint publik minimum
+- `GET /docs`
+- `GET /openapi.json`
+- `GET /product/all`
+- `GET /brand/all`
+- `GET /type/all`
+
+#### 4. Catatan eksekusi aman
+- Jangan gunakan akun pelanggan riil untuk pengujian staging
+- Gunakan data uji yang bisa dibersihkan atau ditelusuri
+- Jangan commit `.env`, token, atau payload sensitif ke repo
+- Simpan hasil uji per flow: input, output, status akhir, dan blocker jika ada
+
 ## Kontribusi
 Jika kamu ingin berkontribusi pada proyek ini:
 
