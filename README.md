@@ -198,6 +198,50 @@ poetry run flake8 .
 - Hot Reloading: Uvicorn secara otomatis memuat ulang aplikasi saat ada perubahan jika dijalankan dengan flag `--reload`.
 - Debugging: Gunakan tools seperti VSCode atau PyCharm untuk debugging dengan breakpoint.
 
+## Launch Readiness Backend Checklist
+
+Status saat ini untuk kesiapan backend menuju staging/produksi:
+
+### Yang sudah tervalidasi
+- Aplikasi dapat dijalankan secara lokal
+- Endpoint dokumentasi `/docs` merespons `200`
+- Endpoint OpenAPI `/openapi.json` merespons `200`
+- Endpoint publik katalog berikut merespons `200`
+  - `/product/all`
+  - `/brand/all`
+  - `/type/all`
+- Flow inti telah melalui beberapa batch hardening pada area:
+  - service product / pack type / production
+  - checkout dan payment notification
+  - auth dan email verification
+  - firebase init, scheduler, storage, Redis, Midtrans, Supabase config
+
+### Yang masih perlu divalidasi sebelum launch penuh
+- Uji endpoint yang membutuhkan autentikasi dengan skenario nyata
+- Uji register → verify email → login → checkout → payment secara end-to-end
+- Validasi integrasi eksternal dengan kredensial produksi/staging yang final:
+  - Firebase
+  - Supabase
+  - SMTP
+  - Midtrans
+  - RajaOngkir
+  - Redis
+- Validasi migrasi database pada environment staging/production
+- Review CORS dan host/domain final
+- Review pengelolaan file upload/images pada environment deploy final
+
+### Catatan blocker saat ini
+- Folder `tests/` belum berisi suite test yang memadai, jadi regresi masih banyak bergantung pada smoke test manual
+- README dan checklist deploy masih perlu terus dijaga sinkron mengikuti perubahan implementasi
+- Belum ada healthcheck/deploy verification formal di level container/orchestrator
+
+### Rekomendasi langkah berikut
+1. Siapkan environment staging final berdasarkan `.env.example`
+2. Jalankan migrasi database di staging
+3. Uji flow end-to-end dengan akun uji dan data uji
+4. Dokumentasikan hasil uji staging
+5. Baru lanjut ke launch produksi
+
 ## Kontribusi
 Jika kamu ingin berkontribusi pada proyek ini:
 
