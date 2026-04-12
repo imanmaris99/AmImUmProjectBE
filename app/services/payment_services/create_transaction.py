@@ -162,12 +162,15 @@ def create_transaction(
         db.commit()
         db.refresh(payment)
 
-        # Invalidasi cache dengan pendekatan yang lebih efisien
+        # Invalidasi cache dengan pendekatan best-effort
         if redis_client:
-            redis_keys = [f"cart:{user_id}:*", f"carts:{user_id}"]
-            for pattern in redis_keys:
-                for key in redis_client.scan_iter(pattern):
-                    redis_client.delete(key)
+            try:
+                redis_keys = [f"cart:{user_id}:*", f"carts:{user_id}"]
+                for pattern in redis_keys:
+                    for key in redis_client.scan_iter(pattern):
+                        redis_client.delete(key)
+            except Exception as cache_error:
+                logger.warning("Failed to invalidate cart cache for user %s: %s", user_id, cache_error)
 
         # Buat DTO response
         payment_callback = PaymentMidtransResponseDTO(
