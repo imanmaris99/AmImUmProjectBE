@@ -22,7 +22,7 @@ class UserCreateDto(BaseModel):
     gender: Literal['male', 'female'] = Field(..., description="Gender of the user")
     email: EmailStr = Field(..., description="Email address of the user")
     phone: str = Field(..., description="Phone number of the user, must start with +62 and contain 10-11 digits after that")
-    password: str = Field(..., description="Password for the user account")
+    password: str = Field(..., description="Password for the user account. Must be at least 8 characters and include uppercase, lowercase, number, and special character", examples=["Amimum123!"])
 
     @validator('phone')
     def validate_phone(cls, value):

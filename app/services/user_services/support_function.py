@@ -25,19 +25,23 @@ def validate_user_data(user: user_dtos.UserCreateDto):
             detail=ErrorResponseDto(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 error="Bad Request",
-                message="Email and password must be provided."
+                message="Email dan password wajib diisi."
             ).dict()
         )
 
     is_valid, error_message = is_valid_password(user.password)
     if not is_valid:
+        password_rule_hint = (
+            "Password harus minimal 8 karakter dan mengandung huruf besar, "
+            "huruf kecil, angka, serta karakter spesial."
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={
-                "status_code": status.HTTP_400_BAD_REQUEST,
-                "error": "Bad Request",
-                "message": error_message
-            }
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error="Bad Request",
+                message=f"{error_message} {password_rule_hint}"
+            ).dict()
         )
 
 # Fungsi untuk membuat akun Firebase
