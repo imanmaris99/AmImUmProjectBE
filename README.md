@@ -110,7 +110,7 @@ Untuk memastikan skema database terbaru diterapkan:
 poetry run alembic upgrade head
 ```
 
-Untuk menjalankan aplikasi secara lokal:
+Untuk menjalankan aplikasi secara lokal dengan runtime yang lebih terkontrol:
 ```bash
 poetry run python run.py
 ```
@@ -121,6 +121,12 @@ poetry run uvicorn app.main:app --reload
 ```
 
 Aplikasi akan berjalan di `http://127.0.0.1:8000`.
+
+Catatan penting untuk QA lokal:
+- Gunakan satu metode run saja dalam satu waktu
+- Hindari menjalankan beberapa instance `uvicorn` bersamaan pada port yang sama
+- Utamakan `poetry run python run.py` saat ingin verifikasi runtime yang lebih stabil
+- Gunakan `uvicorn --reload` hanya saat memang sedang development aktif
 
 
 ## Pengujian
@@ -418,6 +424,7 @@ Gunakan format berikut setiap kali menjalankan validasi manual:
 - Saat verifikasi restart-aware, terdeteksi dua proses `uvicorn` aktif dengan interpreter berbeda
 - Kondisi ini berisiko membuat hasil QA lokal membingungkan karena request bisa tidak selalu merepresentasikan runtime yang benar-benar diharapkan
 - Untuk staging/production, jalankan hanya satu instance aplikasi yang terkontrol agar hasil verifikasi lebih dapat dipercaya
+- Untuk QA lokal, hindari mencampur interpreter global Python dan interpreter `.venv` project pada runtime yang sama
 
 ## Kontribusi
 Jika kamu ingin berkontribusi pada proyek ini:
