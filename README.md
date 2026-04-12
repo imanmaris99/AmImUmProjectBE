@@ -242,6 +242,30 @@ Status saat ini untuk kesiapan backend menuju staging/produksi:
 4. Dokumentasikan hasil uji staging
 5. Baru lanjut ke launch produksi
 
+### Hasil audit staging execution saat ini
+- Environment aktif sudah memiliki nilai untuk integrasi utama berikut:
+  - `DATABASE_URL`
+  - `FIREBASE_SERVICE_ACCOUNT_KEY`
+  - `SUPABASE_URL`
+  - `SUPABASE_KEY`
+  - `SMTP_SERVER`
+  - `FROM_EMAIL`
+  - `RAJAONGKIR_API_KEY`
+  - `MIDTRANS_SERVER_KEY`
+  - `MIDTRANS_CLIENT_KEY`
+  - `REDIS_HOST`
+- Variabel yang masih perlu dipastikan untuk staging/production final:
+  - `PORT`
+  - `APP_DEVELOPMENT`
+  - `HOST_URL`
+  - `MIDTRANS_IS_PRODUCTION`
+- Smoke test publik terakhir pada environment lokal aktif:
+  - `/docs` → `200`
+  - `/openapi.json` → `200`
+  - `/product/all` → `200`
+  - `/brand/all` → `200`
+  - `/type/all` → `200`
+
 ## Kontribusi
 Jika kamu ingin berkontribusi pada proyek ini:
 
