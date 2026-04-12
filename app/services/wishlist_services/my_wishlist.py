@@ -4,8 +4,6 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, DataError, IntegrityError
 
-from typing import List, Type
-
 from app.models.wishlist_model import WishlistModel
 from app.dtos import wishlist_dtos
 from app.dtos.error_response_dtos import ErrorResponseDto
@@ -15,20 +13,14 @@ from app.services.cart_services.support_function import handle_db_error
 from app.utils.result import build, Result
 
 import json
-from fastapi import HTTPException, status
-from sqlalchemy import select, func
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError, DataError, IntegrityError
+import logging
 
-from app.models.wishlist_model import WishlistModel
-from app.dtos import wishlist_dtos
-from app.dtos.error_response_dtos import ErrorResponseDto
-
-from app.services.cart_services.support_function import handle_db_error
-from app.utils.result import build, Result
 from app.libs.redis_config import custom_json_serializer, redis_client  # Redis client
 
+logger = logging.getLogger(__name__)
+
 CACHE_TTL = 300
+RESPONSE_MESSAGE = "Wishlist accessed successfully"
 
 def my_wishlist(
         db: Session, 
@@ -41,13 +33,18 @@ def my_wishlist(
         redis_key = f"wishlist:{user_id}:{skip}:{limit}"
 
         # Check if wishlist data exists in Redis
-        cached_wishlist = redis_client.get(redis_key)
+        cached_wishlist = None
+        if redis_client:
+            try:
+                cached_wishlist = redis_client.get(redis_key)
+            except Exception as cache_error:
+                logger.warning("Failed to read wishlist cache for key %s: %s", redis_key, cache_error)
         if cached_wishlist:
             # Data is found in cache, return it
             wishlist_data = json.loads(cached_wishlist)
             return build(data=wishlist_dtos.AllWishlistResponseCreateDto(
                 status_code=status.HTTP_200_OK,
-                message=f"All products wishlist for user ID {user_id} accessed successfully (from cache)",
+                message=RESPONSE_MESSAGE,
                 total_records=wishlist_data['total_records'],
                 data=wishlist_data['data']
             ))
@@ -61,14 +58,12 @@ def my_wishlist(
         ).scalars().all()
 
         if not wishlist_model:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=ErrorResponseDto(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    error="Not Found",
-                    message=f"Wishlist of products from this user ID : {user_id} not found"
-                ).dict()
-            )
+            return build(data=wishlist_dtos.AllWishlistResponseCreateDto(
+                status_code=status.HTTP_200_OK,
+                message=RESPONSE_MESSAGE,
+                total_records=0,
+                data=[]
+            ))
 
         # Hitung total_records
         total_records = db.execute(
@@ -95,12 +90,16 @@ def my_wishlist(
             'total_records': total_records,
             'data': [wish.dict() for wish in wishlist_dto]
         }
-        redis_client.setex(redis_key, CACHE_TTL, json.dumps(cache_data, default=custom_json_serializer))
+        if redis_client:
+            try:
+                redis_client.setex(redis_key, CACHE_TTL, json.dumps(cache_data, default=custom_json_serializer))
+            except Exception as cache_error:
+                logger.warning("Failed to write wishlist cache for key %s: %s", redis_key, cache_error)
 
         # Return DTO with success message
         return build(data=wishlist_dtos.AllWishlistResponseCreateDto(
             status_code=status.HTTP_200_OK,
-            message=f"All products wishlist for user ID {user_id} accessed successfully",
+            message=RESPONSE_MESSAGE,
             total_records=total_records,
             data=wishlist_dto
         ))
@@ -128,7 +127,7 @@ def my_wishlist(
         ))
 
     except SQLAlchemyError as e:
-        return handle_db_error(db, e)
+        return build(error=handle_db_error(db, e))
     
     except HTTPException as http_ex:
         return build(error=http_ex)
