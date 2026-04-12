@@ -8,6 +8,7 @@ from app.models.cart_product_model import CartProductModel
 from app.dtos import cart_dtos
 
 import json
+import logging
 
 from app.dtos.error_response_dtos import ErrorResponseDto
 
@@ -17,7 +18,10 @@ from app.services.cart_services.support_function import get_total_records
 from app.utils.result import build, Result
 from app.libs.redis_config import custom_json_serializer, redis_client
 
+logger = logging.getLogger(__name__)
+
 CACHE_TTL = 3600
+RESPONSE_MESSAGE = "Total cart items retrieved successfully"
 
 def total_items(
         db: Session, 
@@ -28,12 +32,17 @@ def total_items(
         redis_key = f"carts:{user_id}"
 
         # Check if product data exists in Redis
-        cached_user = redis_client.get(redis_key)
+        cached_user = None
+        if redis_client:
+            try:
+                cached_user = redis_client.get(redis_key)
+            except Exception as cache_error:
+                logger.warning("Failed to read cart total cache for key %s: %s", redis_key, cache_error)
         if cached_user:
             total_notifications = cart_dtos.TotalItemNotificationDto(**json.loads(cached_user))
             return build(data=cart_dtos.AllItemNotificationDto(
                 status_code=200,
-                message="Total of item products in cart successfully retrieved (from cache)",
+                message=RESPONSE_MESSAGE,
                 data=total_notifications
             ))
 
@@ -44,14 +53,11 @@ def total_items(
         ).scalars().all()
 
         if not cart_items:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=ErrorResponseDto(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    error="Not Found",
-                    message=f"No products found in cart for user ID {user_id}."
-                ).dict()
-            )
+            return build(data=cart_dtos.AllItemNotificationDto(
+                status_code=status.HTTP_200_OK,
+                message=RESPONSE_MESSAGE,
+                data=cart_dtos.TotalItemNotificationDto(total_items=0)
+            ))
 
         # Hitung total_records
         total_records = get_total_records(db, user_id)
@@ -60,12 +66,16 @@ def total_items(
             total_items=total_records
         )
 
-        redis_client.setex(redis_key, CACHE_TTL, json.dumps(total_notifications.dict(), default=custom_json_serializer))
+        if redis_client:
+            try:
+                redis_client.setex(redis_key, CACHE_TTL, json.dumps(total_notifications.dict(), default=custom_json_serializer))
+            except Exception as cache_error:
+                logger.warning("Failed to write cart total cache for key %s: %s", redis_key, cache_error)
 
         # Return DTO dengan respons yang telah dibangun
         return build(data=cart_dtos.AllItemNotificationDto(
             status_code=status.HTTP_200_OK,
-            message=f"All products in cart for user ID {user_id} have been successfully calculated",
+            message=RESPONSE_MESSAGE,
             data=total_notifications
         ))
     
@@ -83,7 +93,7 @@ def total_items(
         ))
     
     except SQLAlchemyError as e:
-        return handle_db_error(db, e)
+        return build(error=handle_db_error(db, e))
     
     except HTTPException as http_ex:
         db.rollback()  # Rollback jika terjadi HTTPException
