@@ -307,6 +307,44 @@ Status saat ini untuk kesiapan backend menuju staging/produksi:
 - Jangan commit `.env`, token, atau payload sensitif ke repo
 - Simpan hasil uji per flow: input, output, status akhir, dan blocker jika ada
 
+### Template pencatatan hasil QA staging
+
+Gunakan format berikut setiap kali menjalankan validasi manual:
+
+```markdown
+#### [FLOW NAME]
+- Endpoint:
+- Method:
+- Preconditions:
+- Test data:
+- Expected result:
+- Actual result:
+- Status: PASS / FAIL / BLOCKED
+- Blocker / notes:
+```
+
+### Hasil QA dasar yang sudah tervalidasi
+- `GET /docs`
+  - Expected: dokumentasi API dapat dibuka
+  - Actual: `200`
+  - Status: PASS
+- `GET /openapi.json`
+  - Expected: schema OpenAPI tersedia
+  - Actual: `200`
+  - Status: PASS
+- `GET /product/all`
+  - Expected: daftar produk publik dapat diakses
+  - Actual: `200`, payload produk berhasil diterima
+  - Status: PASS
+- `GET /brand/all`
+  - Expected: daftar brand publik dapat diakses
+  - Actual: `200`
+  - Status: PASS
+- `GET /type/all`
+  - Expected: daftar tipe/variant publik dapat diakses
+  - Actual: `200`
+  - Status: PASS
+
 ## Kontribusi
 Jika kamu ingin berkontribusi pada proyek ini:
 
