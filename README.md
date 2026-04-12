@@ -345,6 +345,62 @@ Gunakan format berikut setiap kali menjalankan validasi manual:
   - Actual: `200`
   - Status: PASS
 
+### Auth dan payment QA execution prep
+
+#### Contoh payload aman untuk register
+```json
+{
+  "firstname": "Test",
+  "lastname": "User",
+  "gender": "male",
+  "email": "staging-test@example.com",
+  "phone": "+6281234567890",
+  "password": "Test12345"
+}
+```
+
+#### Contoh payload untuk verify email
+```json
+{
+  "code": "123456",
+  "email": "staging-test@example.com"
+}
+```
+
+#### Contoh payload untuk login
+```json
+{
+  "email": "staging-test@example.com",
+  "password": "Test12345"
+}
+```
+
+#### Contoh payload untuk create payment
+```json
+{
+  "order_id": "replace-with-valid-order-id"
+}
+```
+
+#### Contoh payload untuk handler notifications
+```json
+{
+  "order_id": "replace-with-valid-order-id"
+}
+```
+
+#### Preconditions penting sebelum QA auth/payment
+- Email test harus bisa diakses jika flow verifikasi memakai email nyata
+- User test harus dibuat khusus untuk staging, bukan akun pelanggan riil
+- Order test harus valid dan memang dimiliki user test
+- Kredensial Midtrans/Firebase/SMTP harus sesuai environment yang sedang diuji
+- Token login hanya dipakai sementara untuk sesi uji dan tidak disimpan ke repo
+
+#### Blocker teknis yang perlu diingat
+- `POST /payments/create` butuh user login valid dan order valid
+- `POST /payments/handler-notifications` baru bermakna penuh jika ada transaksi/order yang memang sudah terbentuk
+- `POST /user/auth/google-login` bergantung pada token Firebase/Google yang valid
+
 ## Kontribusi
 Jika kamu ingin berkontribusi pada proyek ini:
 
