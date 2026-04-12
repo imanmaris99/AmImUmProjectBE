@@ -167,6 +167,16 @@ def send_email(to_email: str, subject: str, body: str, html: bool = False):
             server.send_message(msg)
         logger.info("Email with subject '%s' sent successfully.", subject)
     
+    except smtplib.SMTPAuthenticationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                error="Internal Server Error",
+                message="SMTP authentication failed. Periksa SMTP_USER, SMTP_PASSWORD, dan pastikan provider email mengizinkan login aplikasi atau app password yang digunakan masih valid."
+            ).dict()
+        )
+
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

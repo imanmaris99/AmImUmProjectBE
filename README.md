@@ -245,6 +245,10 @@ Status saat ini untuk kesiapan backend menuju staging/produksi:
 ### Rekomendasi langkah berikut
 1. Siapkan environment staging final berdasarkan `.env.example`
 2. Verifikasi kredensial SMTP aktif dan pastikan provider email menerima login aplikasi
+   - jika memakai Gmail, gunakan `SMTP_SERVER=smtp.gmail.com`, `SMTP_PORT=587`
+   - pastikan `SMTP_USER` sesuai akun pengirim
+   - gunakan app password yang valid, bukan password login biasa
+   - pastikan `FROM_EMAIL` sesuai identitas pengirim yang diizinkan
 3. Jalankan migrasi database di staging
 4. Uji flow end-to-end dengan akun uji dan data uji
 5. Dokumentasikan hasil uji staging
@@ -254,6 +258,7 @@ Status saat ini untuk kesiapan backend menuju staging/produksi:
 - QA runtime register terbaru:
   - payload register invalid password -> `400` dengan pesan validasi yang lebih jelas
   - payload register valid -> saat ini mentok di pengiriman email verifikasi karena SMTP login ditolak provider
+  - koneksi SMTP ke `smtp.gmail.com:587` dan `STARTTLS` berhasil, tetapi `server.login(...)` gagal dengan `535 Username and Password not accepted`
 - Environment aktif sudah memiliki nilai untuk integrasi utama berikut:
   - `DATABASE_URL`
   - `FIREBASE_SERVICE_ACCOUNT_KEY`
