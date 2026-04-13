@@ -84,7 +84,8 @@ SMTP_PASSWORD=
 FROM_EMAIL=
 
 RAJAONGKIR_API_KEY=
-RAJAONGKIR_API_HOST=api.rajaongkir.com
+RAJAONGKIR_API_HOST=rajaongkir.komerce.id
+RAJAONGKIR_API_BASE_PATH=/api/v1
 
 MIDTRANS_SERVER_KEY=
 MIDTRANS_CLIENT_KEY=
@@ -152,6 +153,11 @@ docker-compose up --build
 ```
 
 Pastikan file `.env` sudah terisi sebelum menjalankan container, karena service `app` membaca konfigurasi dari environment tersebut.
+
+Catatan penting untuk shipping cost Komerce:
+- gunakan `RAJAONGKIR_API_HOST=rajaongkir.komerce.id`
+- gunakan `RAJAONGKIR_API_BASE_PATH=/api/v1`
+- jangan gunakan lagi endpoint lama `api.rajaongkir.com/starter/*` karena sudah nonaktif
 
 ### 2. Menggunakan Poetry dalam Development
 #### Membuat Virtual Environment Otomatis
