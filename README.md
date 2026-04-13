@@ -210,6 +210,46 @@ poetry run flake8 .
 - Hot Reloading: Uvicorn secara otomatis memuat ulang aplikasi saat ada perubahan jika dijalankan dengan flag `--reload`.
 - Debugging: Gunakan tools seperti VSCode atau PyCharm untuk debugging dengan breakpoint.
 
+## Deploy Readiness Minimum (Railway)
+
+Jika backend akan dinaikkan ke Railway sebagai target staging atau awal production, gunakan acuan minimum berikut:
+
+### Start command
+- Railway dapat menjalankan aplikasi dengan command:
+
+```bash
+python run.py
+```
+
+### Environment minimum yang wajib dipastikan
+- `PORT`
+- `DATABASE_URL`
+- `SECRET_KEY`
+- `MIDTRANS_SERVER_KEY`
+- `MIDTRANS_CLIENT_KEY`
+- `MIDTRANS_IS_PRODUCTION`
+- `RAJAONGKIR_API_KEY`
+- `RAJAONGKIR_API_HOST=rajaongkir.komerce.id`
+- `RAJAONGKIR_API_BASE_PATH=/api/v1`
+- `SMTP_SERVER`
+- `SMTP_PORT`
+- `SMTP_USER`
+- `SMTP_PASSWORD`
+- `FROM_EMAIL`
+
+### Smoke test pasca deploy
+- `GET /docs` -> harus `200`
+- `GET /openapi.json` -> harus `200`
+- `GET /product/all` -> harus `200`
+- `GET /brand/all` -> harus `200`
+- `GET /type/all` -> harus `200`
+
+### Catatan sebelum mengklaim production penuh
+- pastikan hanya satu runtime app aktif
+- jalankan migrasi database pada environment target
+- verifikasi ulang flow checkout -> payment -> callback pada environment deploy
+- jangan copy `.env` lokal mentah, isi ulang env Railway satu per satu dengan nilai yang benar
+
 ## Launch Readiness Backend Checklist
 
 Status saat ini untuk kesiapan backend menuju staging/produksi:

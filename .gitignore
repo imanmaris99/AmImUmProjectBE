@@ -186,3 +186,5 @@ cython_debug/
 #.idea/
 
 guide.md
+coba.py
+server.err.log
