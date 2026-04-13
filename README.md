@@ -366,6 +366,14 @@ Gunakan format berikut setiap kali menjalankan validasi manual:
   - Expected: daftar tipe/variant publik dapat diakses
   - Actual: `200`
   - Status: PASS
+- `POST /rajaongkir/shipping-cost`
+  - Expected: kalkulasi ongkir domestic Komerce dapat dipanggil
+  - Actual: `200`, daftar layanan ongkir valid berhasil diterima
+  - Status: PASS
+- `POST /payments/handler-notifications`
+  - Expected: callback publik Midtrans dengan signature valid dapat diproses
+  - Actual: `200`, status pembayaran berhasil diperbarui pada simulasi callback
+  - Status: PASS
 
 ### Auth dan payment QA execution prep
 
@@ -407,7 +415,12 @@ Gunakan format berikut setiap kali menjalankan validasi manual:
 #### Contoh payload untuk handler notifications
 ```json
 {
-  "order_id": "replace-with-valid-order-id"
+  "order_id": "replace-with-valid-order-id",
+  "transaction_status": "settlement",
+  "fraud_status": "accept",
+  "payment_type": "bank_transfer",
+  "gross_amount": "21000.00",
+  "signature_key": "replace-with-valid-midtrans-signature"
 }
 ```
 
@@ -441,6 +454,9 @@ Gunakan format berikut setiap kali menjalankan validasi manual:
 - Kondisi ini berisiko membuat hasil QA lokal membingungkan karena request bisa tidak selalu merepresentasikan runtime yang benar-benar diharapkan
 - Untuk staging/production, jalankan hanya satu instance aplikasi yang terkontrol agar hasil verifikasi lebih dapat dipercaya
 - Untuk QA lokal, hindari mencampur interpreter global Python dan interpreter `.venv` project pada runtime yang sama
+- Endpoint shipping cost lama `api.rajaongkir.com/starter/*` sudah nonaktif, gunakan host `rajaongkir.komerce.id` dengan base path `/api/v1`
+- Flow courier dan shipment sekarang mengasumsikan satu record aktif per user, create baru akan menonaktifkan pilihan aktif sebelumnya
+- Masih ada warning relasi SQLAlchemy pada area shipment/address (`SAWarning: Multiple rows returned with uselist=False`) yang perlu dibersihkan sebelum menyatakan production full-clean
 
 ## Kontribusi
 Jika kamu ingin berkontribusi pada proyek ini:
