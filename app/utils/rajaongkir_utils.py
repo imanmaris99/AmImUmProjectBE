@@ -1,5 +1,6 @@
 import http.client
 import json
+from urllib.parse import urlencode
 
 from fastapi import HTTPException, status
 
@@ -62,11 +63,12 @@ def send_get_request(host: str, url: str, headers: dict):
         )
 
 
-def send_post_request(host: str, url: str, headers: dict, body: dict):
+def send_post_request(host: str, url: str, headers: dict, body, encode_json: bool = True):
     """Mengirimkan permintaan POST ke server RajaOngkir dan menangani responsnya."""
     try:
         conn = http.client.HTTPSConnection(host)
-        conn.request("POST", url, body=json.dumps(body), headers=headers)
+        payload = json.dumps(body) if encode_json else urlencode(body)
+        conn.request("POST", url, body=payload, headers=headers)
         response = conn.getresponse()
         data = response.read()
         conn.close()

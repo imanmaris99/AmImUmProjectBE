@@ -1,6 +1,11 @@
 from pydantic import BaseModel, Field
 from typing import List, Literal, Optional
 
+SUPPORTED_DOMESTIC_COURIERS = (
+    'jne', 'sicepat', 'ide', 'sap', 'jnt', 'ninja', 'tiki', 'lion',
+    'anteraja', 'pos', 'ncs', 'rex', 'rpx', 'sentral', 'star', 'wahana', 'dse'
+)
+
 # DTO untuk Province
 class ProvinceDto(BaseModel):
     province_id: int
@@ -26,10 +31,10 @@ class AllCitiesResponseCreateDto(BaseModel):
 
 
 class ShippingCostRequest(BaseModel):
-    origin: int = Field(..., description="ID kota atau kabupaten asal")
-    destination: int = Field(..., description="ID kota atau kabupaten tujuan")
+    origin: int = Field(..., description="ID origin domestic destination dari Komerce/RajaOngkir")
+    destination: int = Field(..., description="ID destination domestic destination dari Komerce/RajaOngkir")
     weight: int = Field(..., description="Berat dalam gram")
-    courier: Literal['jne', 'pos', 'tiki'] = Field(..., description="Kurir jasa Kirim")
+    courier: Literal[*SUPPORTED_DOMESTIC_COURIERS] = Field(..., description="Kode kurir domestic yang didukung Komerce/RajaOngkir")
 
 # DTO untuk detail biaya pengiriman
 class ShippingCostDetailDto(BaseModel):

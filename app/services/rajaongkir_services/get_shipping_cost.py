@@ -12,9 +12,9 @@ from app.libs.redis_config import redis_client
 from app.utils.rajaongkir_utils import send_post_request
 from app.utils import optional
 
-# Fungsi untuk validasi respons dari API RajaOngkir
+# Fungsi untuk validasi respons dari API RajaOngkir/Komerce
 def validate_shipping_cost_response(response: dict):
-    if not isinstance(response, dict) or "rajaongkir" not in response:
+    if not isinstance(response, dict) or "meta" not in response:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorResponseDto(
@@ -24,7 +24,18 @@ def validate_shipping_cost_response(response: dict):
             ).dict()
         )
 
-    results = response.get("rajaongkir", {}).get("results", [])
+    meta = response.get("meta") or {}
+    if meta.get("code") != 200:
+        raise HTTPException(
+            status_code=meta.get("code", status.HTTP_500_INTERNAL_SERVER_ERROR),
+            detail=ErrorResponseDto(
+                status_code=meta.get("code", status.HTTP_500_INTERNAL_SERVER_ERROR),
+                error="API Error",
+                message=meta.get("message", "Unknown error occurred.")
+            ).dict()
+        )
+
+    results = response.get("data") or []
     if not results:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -34,8 +45,8 @@ def validate_shipping_cost_response(response: dict):
                 message="No shipping cost data found."
             ).dict()
         )
-    
-    return results[0]  # Mengembalikan data kurir pertama
+
+    return results
 
 # Fungsi untuk parsing detail biaya pengiriman ke DTO
 def parse_shipping_cost_details(details: list) -> list[ShippingCostDetailDto]:
@@ -49,28 +60,27 @@ def parse_shipping_cost_details(details: list) -> list[ShippingCostDetailDto]:
             ).dict()
         )
 
-    # Mapping setiap detail pengiriman ke ShippingCostDetailDto
     return [
         ShippingCostDetailDto(
             service=d["service"],
             description=d["description"],
-            cost=d["cost"][0]["value"],
-            etd=d["cost"][0]["etd"]
+            cost=d["cost"],
+            etd=d["etd"]
         )
-        for d in details if d.get("cost")
+        for d in details
     ]
 
 # Fungsi utama untuk mendapatkan biaya pengiriman dari API RajaOngkir
 def get_shipping_cost(request_data: ShippingCostRequest) -> optional.Optional[ShippingCostDto, HTTPException]:
     headers = {
         'key': Config.RAJAONGKIR_API_KEY,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/x-www-form-urlencoded'
     }
 
     body = {
-        "origin": request_data.origin,
-        "destination": request_data.destination,
-        "weight": request_data.weight,
+        "origin": str(request_data.origin),
+        "destination": str(request_data.destination),
+        "weight": str(request_data.weight),
         "courier": request_data.courier
     }
 
@@ -86,19 +96,18 @@ def get_shipping_cost(request_data: ShippingCostRequest) -> optional.Optional[Sh
         
         # Kirim permintaan POST ke API RajaOngkir
         response = send_post_request(
-            Config.RAJAONGKIR_API_HOST, 
-            "/starter/cost", 
-            headers, 
-            body
+            Config.RAJAONGKIR_API_HOST,
+            f"{Config.RAJAONGKIR_API_BASE_PATH}/calculate/domestic-cost",
+            headers,
+            body,
+            encode_json=False
         )
 
         courier_data = validate_shipping_cost_response(response)
-        shipping_details = parse_shipping_cost_details(courier_data.get("costs", []))
+        shipping_details = parse_shipping_cost_details(courier_data)
 
-        # return optional.build(data=ShippingCostDto(courier=courier_data["name"], details=shipping_details))
-        # Buat DTO untuk respons
         shipping_cost_dto = ShippingCostDto(
-            courier=courier_data["name"],
+            courier=request_data.courier,
             details=shipping_details
         )
 
