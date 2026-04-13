@@ -40,25 +40,6 @@ def create_transaction(
         Result[PaymentMidtransResponseDTO, Exception]: Hasil transaksi atau error.
     """
     try:
-        # Mendapatkan item keranjang aktif
-        cart_items = db.execute(
-            select(CartProductModel)
-            .filter(
-                CartProductModel.customer_id == user_id,
-                CartProductModel.is_active == True  # Filter hanya item aktif
-            )
-        ).scalars().all()
-        
-        if not cart_items:
-            raise HTTPException(
-                status_code=400, 
-                detail=ErrorResponseDto(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    error="Not Found",
-                    message=f"Information about cart active from Customer with ID {user_id} not found."
-                ).dict()
-            )
-        
         # Ambil detail order dari database
         order = db.execute(
             select(OrderModel)
@@ -141,29 +122,22 @@ def create_transaction(
             select(OrderItemModel).where(OrderItemModel.order_id == order.id)
         ).scalars().all()
 
-        order_items_total = 0.0
         if not existing_order_items:
-            for item in cart_items:
-                line_total = float(item.total_price or 0.0)
-                order_items_total += line_total
-                order_item = OrderItemModel(
-                    order_id=order.id,
-                    product_id=item.product_id,
-                    variant_id=item.variant_id,
-                    quantity=item.quantity,
-                    price_per_item=item.product_price,
-                    total_price=line_total,
+            return build(
+                error=HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Order belum memiliki item yang valid untuk pembayaran."
                 )
-                db.add(order_item)
-        else:
-            order_items_total = sum(float(order_item.total_price or 0.0) for order_item in existing_order_items)
+            )
+
+        order_items_total = sum(float(order_item.total_price or 0.0) for order_item in existing_order_items)
 
         shipping_cost = float(order.shipping_cost or 0.0)
         recalculated_gross_amount = order_items_total + shipping_cost
         if recalculated_gross_amount > 0:
             order.total_price = recalculated_gross_amount
 
-        # Menghapus item aktif dari keranjang setelah order dibuat
+        # Menghapus item aktif dari keranjang setelah order dibuat, best-effort
         db.query(CartProductModel).filter(
             CartProductModel.customer_id == user_id,
             CartProductModel.is_active == True
