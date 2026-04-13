@@ -4,8 +4,8 @@ from typing import List, Annotated
 
 from sqlalchemy.orm import Session
 
-from app.dtos import courier_dtos
-from app.services import courier_services
+from app.dtos import courier_dtos, rajaongkir_dtos
+from app.services import courier_services, rajaongkir_services
 
 from app.libs.sql_alchemy_lib import get_db
 from app.libs.jwt_lib import jwt_dto, jwt_service
@@ -77,7 +77,7 @@ router = APIRouter(
     summary="Post Data of Courier to Database"
 )
 def get_and_save_shipping_cost(
-    request_data: courier_dtos.CourierCreateDto, 
+    request_data: rajaongkir_dtos.ShippingCostRequest,
     jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],
     db: Session = Depends(get_db)
 ):
@@ -97,8 +97,32 @@ def get_and_save_shipping_cost(
     - **403 Forbidden**: Token tidak valid atau pengguna tidak memiliki akses.
     - **500 Internal Server Error**: Terjadi kesalahan dalam server atau database saat memproses data pengiriman.
     """
+    shipping_cost_result = rajaongkir_services.get_shipping_cost(request_data)
+    if shipping_cost_result.error:
+        raise shipping_cost_result.error
+
+    shipping_cost_data = shipping_cost_result.data
+    shipping_cost_detail = shipping_cost_data.details[0] if shipping_cost_data and shipping_cost_data.details else None
+    if not shipping_cost_detail:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "status_code": status.HTTP_404_NOT_FOUND,
+                "error": "Not Found",
+                "message": "No shipping cost detail returned from Komerce shipping provider."
+            }
+        )
+
+    courier_request = courier_dtos.CourierCreateDto(
+        courier_name=request_data.courier,
+        weight=request_data.weight,
+        service_type=shipping_cost_detail.service,
+        cost=shipping_cost_detail.cost,
+        estimated_delivery=shipping_cost_detail.etd,
+    )
+
     result = courier_services.process_shipping_cost(
-        request_data, 
+        courier_request,
         jwt_token.id,
         db
     )
