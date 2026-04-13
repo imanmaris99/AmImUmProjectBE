@@ -79,17 +79,6 @@ def edit_order(
         db.commit()
         db.refresh(order_model)
 
-        # --- Buat DTO Response ---
-        order_response = order_dtos.OrderCreateInfoDTO(
-            id=order_model.id,
-            status=order_model.status,
-            total_price=order_model.total_price,
-            shipment_id=order_model.shipment_id,
-            delivery_type=order_model.delivery_type,
-            notes=order_model.notes,
-            created_at=order_model.created_at
-        )
-
         # Invalidasi cache dengan pendekatan yang lebih efisien
         redis_keys = [
             f"orders:{user_id}:*", 
@@ -99,11 +88,19 @@ def edit_order(
             for key in redis_client.scan_iter(pattern):
                 redis_client.delete(key)
 
-        return build(data=order_dtos.OrderInfoResponseDto(
-            status_code=200,
-            message="Your order has been updated successfully.",
-            data=order_response
-        ))
+        return build(data={
+            "status_code": 200,
+            "message": "Your order has been updated successfully.",
+            "data": {
+                "id": order_model.id,
+                "status": order_model.status,
+                "total_price": float(order_model.total_price),
+                "shipment_id": order_model.shipment_id,
+                "delivery_type": order_model.delivery_type,
+                "notes": order_model.notes,
+                "created_at": order_model.created_at,
+            }
+        })
 
     except (IntegrityError, DataError) as db_error:
         db.rollback()

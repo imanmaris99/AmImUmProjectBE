@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import JSONResponse
 
 from sqlalchemy.orm import Session
 from typing import List, Annotated
@@ -115,8 +116,7 @@ router = APIRouter(
 
 
 @router.post(
-    "/checkout", 
-    response_model=order_dtos.OrderInfoResponseDto
+    "/checkout"
 )
 def initiate_checkout(
     jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],
@@ -126,8 +126,12 @@ def initiate_checkout(
 
     if result.error:
         raise result.error
+
+    payload = result.data
+    if isinstance(payload, dict):
+        return JSONResponse(status_code=payload.get("status_code", 200), content=payload)
     
-    return result.unwrap()
+    return JSONResponse(status_code=200, content=payload)
 
 
 @router.get(

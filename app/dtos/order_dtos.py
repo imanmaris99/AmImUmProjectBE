@@ -28,7 +28,16 @@ class OrderCreateInfoDTO(BaseModel):
     id: str
     status: str
     total_price: float
-    shipment_id: Optional[int] = None
+    shipment_id: Optional[str] = None
+    delivery_type: DeliveryTypeEnum
+    notes: Optional[str] = None
+    created_at: datetime
+
+class OrderInfoResponseDataDto(BaseModel):
+    id: str
+    status: str
+    total_price: float
+    shipment_id: Optional[str] = None
     delivery_type: DeliveryTypeEnum
     notes: Optional[str] = None
     created_at: datetime
@@ -36,7 +45,7 @@ class OrderCreateInfoDTO(BaseModel):
 class OrderInfoResponseDto(BaseModel):
     status_code: int = Field(default=201)
     message: str = Field(default="Your order has been saved")
-    data: OrderCreateInfoDTO
+    data: OrderInfoResponseDataDto
 
 class GetOrderInfoDto(BaseModel):
     id: str

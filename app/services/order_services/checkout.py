@@ -22,15 +22,14 @@ def checkout(
     Membuat order baru dari item aktif di keranjang.
     """
     try:
-        # --- Validasi Item Keranjang ---
         cart_items = db.execute(
             select(CartProductModel)
             .filter(
                 CartProductModel.customer_id == user_id,
-                CartProductModel.is_active == True  # Filter hanya item aktif
+                CartProductModel.is_active == True
             )
         ).scalars().all()
-        
+
         if not cart_items:
             raise HTTPException(
                 status_code=400,
@@ -41,19 +40,16 @@ def checkout(
                 ).dict()
             )
 
-        # --- Validasi Pengiriman ---
         shipment = db.query(ShipmentModel).filter(
             ShipmentModel.customer_id == user_id,
             ShipmentModel.is_active == True
         ).first()
 
         shipping_cost = float(shipment.shipping_cost or 0.0) if shipment else 0.0
-
-        # --- Hitung Total Biaya Order ---
-        cart_total_items_response = get_cart_total(cart_items).total_all_active_prices
+        cart_totals = get_cart_total(cart_items)
+        cart_total_items_response = float(cart_totals.total_all_active_prices or 0.0)
         total_cost = cart_total_items_response + shipping_cost
 
-        # --- Buat Order Baru ---
         order = OrderModel(
             customer_id=user_id,
             total_price=total_cost,
@@ -63,35 +59,45 @@ def checkout(
             notes=None,
         )
         db.add(order)
+        db.flush()
+
+        for item in cart_items:
+            line_total = float(item.total_price or 0.0)
+            order_item = OrderItemModel(
+                order_id=order.id,
+                product_id=item.product_id,
+                variant_id=item.variant_id,
+                quantity=item.quantity,
+                price_per_item=float(item.product_price or 0.0),
+                total_price=line_total,
+            )
+            db.add(order_item)
+
         db.commit()
         db.refresh(order)
 
-        # --- Buat DTO Response ---
-        order_response = order_dtos.OrderCreateInfoDTO(
-            id=order.id,
-            status=order.status,
-            total_price=order.total_price,
-            shipment_id=order.shipment_id,
-            delivery_type=order.delivery_type,
-            notes=order.notes,
-            created_at=order.created_at
-        )
-
-        # Invalidasi cache dengan pendekatan yang lebih efisien
         if redis_client:
             redis_keys = [
-                f"orders:{user_id}:*", 
+                f"orders:{user_id}:*",
                 f"order:{user_id}:*"
             ]
             for pattern in redis_keys:
                 for key in redis_client.scan_iter(pattern):
                     redis_client.delete(key)
 
-        return build(data=order_dtos.OrderInfoResponseDto(
-            status_code=201,
-            message="Your order has been created successfully.",
-            data=order_response
-        ))
+        return build(data={
+            "status_code": 201,
+            "message": "Your order has been created successfully.",
+            "data": {
+                "id": str(order.id),
+                "status": str(order.status),
+                "total_price": float(order.total_price or 0.0),
+                "shipment_id": str(order.shipment_id) if order.shipment_id else None,
+                "delivery_type": getattr(order.delivery_type, "value", order.delivery_type),
+                "notes": order.notes,
+                "created_at": order.created_at.isoformat() if order.created_at else None,
+            }
+        })
 
     except (IntegrityError, DataError) as db_error:
         db.rollback()

@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Any, Dict, Optional
 from sqlalchemy import Column, Integer, Boolean, DateTime, ForeignKey, String, func
 from sqlalchemy.dialects.mysql import CHAR
@@ -59,31 +60,32 @@ class CartProductModel(Base):
     # Properti untuk harga promo (diskon)
     @property
     def promo(self):
-        return float(self.pack_type.promo) if self.pack_type and self.pack_type.promo else 0
+        return Decimal(str(self.pack_type.discount)) if self.pack_type and self.pack_type.discount else Decimal("0")
     
     # Total promo yang diterapkan
     @property
     def total_promo(self):
         promo_amount = self.promo
-        return promo_amount * self.quantity if promo_amount else 0
+        return promo_amount * self.quantity if promo_amount else Decimal("0")
     
     # Total harga tanpa diskon
     @property
     def total_price_no_discount(self):
-        price = self.product_price
-        return price * self.quantity if price else 0
+        price = Decimal(str(self.product_price or 0))
+        return price * self.quantity if price else Decimal("0")
     
     # Total harga setelah diskon
     @property
     def total_price_with_discount(self):
-        price_after_discount = self.product_price - self.promo
-        return max(price_after_discount, 0) * self.quantity if price_after_discount else 0
+        product_price = Decimal(str(self.product_price or 0))
+        price_after_discount = product_price - self.promo
+        return max(price_after_discount, Decimal("0")) * self.quantity if price_after_discount else Decimal("0")
     
     # Total harga berdasarkan apakah ada promo atau tidak
     @property
     def total_price(self):
         # Jika ada promo, gunakan harga setelah diskon, jika tidak, harga tanpa diskon
-        return self.total_price_with_discount if self.promo else self.total_price_no_discount
+        return self.total_price_with_discount if self.promo > 0 else self.total_price_no_discount
         
     # Mengambil info varian berdasarkan `variant_id` yang dipilih
     @property

@@ -117,17 +117,6 @@ def create_order(
 
         db.commit()
 
-        # Buat DTO response
-        order_response = order_dtos.OrderCreateInfoDTO(
-            id=order.id,
-            status=order.status,
-            total_price=order.total_price,
-            shipment_id=order.shipment_id,
-            delivery_type=order.delivery_type,
-            notes=order.notes,
-            created_at=order.created_at
-        )
-
         # Invalidasi cache dengan pendekatan yang lebih efisien
         redis_keys = [
             f"orders:{user_id}:*", 
@@ -137,11 +126,19 @@ def create_order(
             for key in redis_client.scan_iter(pattern):
                 redis_client.delete(key)
 
-        return build(data=order_dtos.OrderInfoResponseDto(
-            status_code=201,
-            message="Your order has been created",
-            data=order_response
-        ))
+        return build(data={
+            "status_code": 201,
+            "message": "Your order has been created",
+            "data": {
+                "id": order.id,
+                "status": order.status,
+                "total_price": float(order.total_price),
+                "shipment_id": order.shipment_id,
+                "delivery_type": order.delivery_type,
+                "notes": order.notes,
+                "created_at": order.created_at,
+            }
+        })
 
     except (IntegrityError, DataError) as db_error:
         raise handle_db_error(db, db_error)

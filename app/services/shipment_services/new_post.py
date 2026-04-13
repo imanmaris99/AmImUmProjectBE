@@ -72,20 +72,25 @@ def new_post(
             )
 
         # Buat Shipment
-        with db.begin():  # Transaksi aman
-            shipment = ShipmentModel(
-                code_tracking="in process",
-                courier_id=request_data.courier_id,
-                address_id=request_data.address_id,
-                is_active=True
-            )
-            db.add(shipment)
-            db.flush()  # Simpan ke database tanpa commit
-            db.refresh(shipment)
+        shipment = ShipmentModel(
+            code_tracking="in process",
+            courier_id=request_data.courier_id,
+            address_id=request_data.address_id,
+            customer_id=user_id,
+            is_active=True
+        )
+        db.add(shipment)
+        db.commit()
+        db.refresh(shipment)
 
         # Buat DTO Response
         shipment_response = shipment_dtos.ShipmentInfoDto(
-            **shipment.dict()
+            shipment_id=shipment.id,
+            courier_id=shipment.courier_id,
+            address_id=shipment.address_id,
+            code_tracking=shipment.code_tracking,
+            created_at=shipment.created_at,
+            is_active=shipment.is_active,
         )
 
         return build(data=shipment_dtos.ShipmentResponseDto(
