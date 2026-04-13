@@ -45,7 +45,8 @@ class UserCreateResponseDto(BaseModel):
     address: Optional[str] = None
     photo_url: Optional[str] = None
     role: Optional[str]
-    is_active: bool 
+    is_active: bool
+    verification_code: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 

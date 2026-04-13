@@ -2,6 +2,7 @@
 from fastapi import HTTPException, status
 
 from datetime import datetime, timedelta
+import os
 
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -61,6 +62,8 @@ def create_user(db: Session, user: user_dtos.UserCreateDto) -> optional.Optional
         except Exception as cleanup_exc:
             logger.warning("Skip delete_unverified_users cleanup after register because of error: %s", cleanup_exc)
 
+        app_development = os.getenv("APP_DEVELOPMENT", "False").strip().lower() == "true"
+
         # Mempersiapkan response data yang sudah sesuai dengan DTO
         user_data_dto = user_dtos.UserCreateResponseDto(
             id=user_model.id,
@@ -74,6 +77,7 @@ def create_user(db: Session, user: user_dtos.UserCreateDto) -> optional.Optional
             photo_url=user_model.photo_url,
             role=user_model.role,
             is_active=user_model.is_active,
+            verification_code=verification_code if app_development else None,
             created_at=user_model.created_at,
             updated_at=user_model.updated_at
         )
@@ -88,6 +92,11 @@ def create_user(db: Session, user: user_dtos.UserCreateDto) -> optional.Optional
                 f"Account is not yet active.\n"
                 f"Your verification code is {verification_code}.\n"
                 f"{email_delivery_warning}"
+            )
+        elif app_development:
+            success_message = (
+                f"{success_message}\n"
+                f"Verification code: {verification_code}"
             )
 
         return optional.build(data=user_dtos.UserResponseDto(
