@@ -11,6 +11,8 @@ from email.mime.multipart import MIMEMultipart
 import logging
 import os
 
+import requests
+
 from dotenv import load_dotenv
 import json
 
@@ -142,8 +144,75 @@ def delete_firebase_user(firebase_uid: str) -> None:
         )
     
     
-def send_email(to_email: str, subject: str, body: str, html: bool = False):
-    """Mengirim email melalui SMTP dengan opsi HTML atau teks biasa."""
+def _send_email_via_brevo_api(to_email: str, subject: str, body: str, html: bool = False):
+    brevo_api_key = os.getenv("BREVO_API_KEY")
+    from_email = os.getenv("FROM_EMAIL")
+    timeout_seconds = float(os.getenv("SMTP_TIMEOUT_SECONDS", "15"))
+
+    if not brevo_api_key:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                error="Service Unavailable",
+                message="BREVO_API_KEY belum dikonfigurasi pada environment."
+            ).dict()
+        )
+
+    payload = {
+        "sender": {"email": from_email},
+        "to": [{"email": to_email}],
+        "subject": subject,
+    }
+    if html:
+        payload["htmlContent"] = body
+    else:
+        payload["textContent"] = body
+
+    try:
+        response = requests.post(
+            "https://api.brevo.com/v3/smtp/email",
+            headers={
+                "accept": "application/json",
+                "api-key": brevo_api_key,
+                "content-type": "application/json",
+            },
+            json=payload,
+            timeout=timeout_seconds,
+        )
+        response.raise_for_status()
+        logger.info("Brevo API email with subject '%s' sent successfully.", subject)
+    except requests.Timeout:
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+                error="Gateway Timeout",
+                message="Brevo API did not respond in time while sending email."
+            ).dict()
+        )
+    except requests.HTTPError as exc:
+        error_detail = exc.response.text if exc.response is not None else str(exc)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                error="Bad Gateway",
+                message=f"Brevo API rejected email delivery request: {error_detail}"
+            ).dict()
+        )
+    except requests.RequestException as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                error="Bad Gateway",
+                message=f"Brevo API request failed: {str(exc)}"
+            ).dict()
+        )
+
+
+def _send_email_via_smtp(to_email: str, subject: str, body: str, html: bool = False):
     smtp_server = os.getenv("SMTP_SERVER")
     smtp_port = int(os.getenv("SMTP_PORT"))
     smtp_user = os.getenv("SMTP_USER")
@@ -156,11 +225,10 @@ def send_email(to_email: str, subject: str, body: str, html: bool = False):
     msg['To'] = to_email
     msg['Subject'] = subject
 
-    # Tentukan tipe konten berdasarkan parameter html
     if html:
-        msg.attach(MIMEText(body, 'html'))  # Mengirim dalam format HTML
+        msg.attach(MIMEText(body, 'html'))
     else:
-        msg.attach(MIMEText(body, 'plain'))  # Mengirim teks biasa
+        msg.attach(MIMEText(body, 'plain'))
 
     try:
         with smtplib.SMTP(smtp_server, smtp_port, timeout=smtp_timeout) as server:
@@ -198,6 +266,14 @@ def send_email(to_email: str, subject: str, body: str, html: bool = False):
                 message=f"Error sending email: {str(e)}"
             ).dict()
         )
+
+
+def send_email(to_email: str, subject: str, body: str, html: bool = False):
+    """Mengirim email melalui provider yang dikonfigurasi."""
+    email_provider = os.getenv("EMAIL_PROVIDER", "smtp").strip().lower()
+    if email_provider == "brevo_api":
+        return _send_email_via_brevo_api(to_email, subject, body, html=html)
+    return _send_email_via_smtp(to_email, subject, body, html=html)
 
 
 def send_email_verification(to_email: str, verification_code: str, verification_link: str, firstname: str):

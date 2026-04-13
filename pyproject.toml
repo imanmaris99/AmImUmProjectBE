@@ -27,6 +27,7 @@ midtransclient = "^1.4.2"
 pillow = "^11.0.0"
 apscheduler = "^3.10.4"
 redis = "^5.2.0"
+requests = "^2.32.3"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"
