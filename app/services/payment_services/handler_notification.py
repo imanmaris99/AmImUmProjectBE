@@ -6,7 +6,6 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 import requests
 import base64
 import hashlib
-import hmac
 from app.models.payment_model import PaymentModel
 from app.models.order_model import OrderModel
 from app.models.enums import TransactionStatusEnum, FraudStatusEnum
@@ -50,6 +49,7 @@ def handler_notification(notification_data: dict, db: Session) -> Result[dict, E
                 }
             ))
 
+        normalized_notification = notification.dict()
         order_id = notification.order_id
         logger.info(f"Memproses notifikasi untuk order_id: {order_id}")
 
@@ -66,13 +66,17 @@ def handler_notification(notification_data: dict, db: Session) -> Result[dict, E
                 detail="Signature key tidak valid."
             ))
 
-        # Ambil status transaksi dari Midtrans untuk sinkronisasi final
+        # Ambil status transaksi dari Midtrans untuk sinkronisasi final, namun tetap fail-soft
         midtrans_result = fetch_midtrans_transaction_status(order_id)
         if midtrans_result.error:
-            logger.error(f"Error saat mengambil status Midtrans: {midtrans_result.error}")
-            return build(error=midtrans_result.error)
-
-        midtrans_data = midtrans_result.data
+            logger.warning("Fetch status Midtrans gagal untuk order_id %s, fallback ke payload callback: %s", order_id, midtrans_result.error)
+            midtrans_data = normalized_notification
+        else:
+            fetched_data = midtrans_result.data or {}
+            midtrans_data = {
+                **normalized_notification,
+                **{key: value for key, value in fetched_data.items() if value is not None}
+            }
         logger.debug(f"Data transaksi Midtrans: {midtrans_data}")
 
         # Validasi dan ambil data pembayaran dari database
@@ -85,7 +89,7 @@ def handler_notification(notification_data: dict, db: Session) -> Result[dict, E
             ))
 
         # Update data pembayaran di database
-        update_payment_data(payment, midtrans_data or notification_data, db)
+        update_payment_data(payment, midtrans_data or normalized_notification, db)
 
         # Validasi dan update status pesanan
         order = get_order_by_id(payment.order_id, db)
@@ -97,7 +101,7 @@ def handler_notification(notification_data: dict, db: Session) -> Result[dict, E
             ))
 
         # Map status pembayaran ke status pesanan
-        transaction_status = TransactionStatusEnum(midtrans_data.get("transaction_status"))
+        transaction_status = resolve_transaction_status(midtrans_data.get("transaction_status"))
         order.status = map_payment_status_to_order_status(transaction_status)
         logger.info(f"Status pesanan diperbarui menjadi: {order.status}")
 
@@ -152,12 +156,24 @@ def handler_notification(notification_data: dict, db: Session) -> Result[dict, E
 
 def validate_signature_key(order_id: str, status_code: str, gross_amount: str, server_key: str, signature_key: str) -> bool:
     key = f"{order_id}{status_code}{gross_amount}{server_key}"
-    generated_key = hmac.new(
-        server_key.encode(),
-        key.encode(),
-        hashlib.sha512
-    ).hexdigest()
+    generated_key = hashlib.sha512(key.encode()).hexdigest()
     return generated_key == signature_key
+
+
+def resolve_transaction_status(status_value: str) -> TransactionStatusEnum:
+    try:
+        return TransactionStatusEnum(status_value)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=f"Status transaksi Midtrans tidak dikenali: {status_value}") from exc
+
+
+def resolve_fraud_status(fraud_value: str | None) -> FraudStatusEnum:
+    candidate = fraud_value or FraudStatusEnum.accept.value
+    try:
+        return FraudStatusEnum(candidate)
+    except ValueError:
+        logger.warning("Fraud status Midtrans tidak dikenali: %s. Fallback ke accept.", candidate)
+        return FraudStatusEnum.accept
 
 
 def fetch_midtrans_transaction_status(order_id: str) -> Result[dict, Exception]:
@@ -213,10 +229,9 @@ def update_payment_data(payment, midtrans_data, db):
     Memperbarui data pembayaran di database.
     """
     payment.transaction_id = midtrans_data.get("transaction_id") or payment.transaction_id
-    payment.payment_type = midtrans_data.get("payment_type")
-    payment.transaction_status = TransactionStatusEnum(midtrans_data.get("transaction_status"))
-    fraud_status = midtrans_data.get("fraud_status") or FraudStatusEnum.accept.value
-    payment.fraud_status = FraudStatusEnum(fraud_status)
+    payment.payment_type = midtrans_data.get("payment_type") or payment.payment_type
+    payment.transaction_status = resolve_transaction_status(midtrans_data.get("transaction_status"))
+    payment.fraud_status = resolve_fraud_status(midtrans_data.get("fraud_status"))
     payment.payment_response = midtrans_data
     db.add(payment)
     logger.info(f"Pembayaran untuk order_id {payment.order_id} diperbarui.")

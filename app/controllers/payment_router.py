@@ -98,13 +98,18 @@ def receive_payment_notification(
     status_code=status.HTTP_200_OK,
     tags=["Payments"],
     summary="Menerima notifikasi pembayaran dari Midtrans",
-    description="Endpoint ini digunakan untuk menerima notifikasi pembayaran dari Midtrans dan memperbarui status pembayaran serta pesanan di sistem.",
+    description="Endpoint publik callback Midtrans untuk memperbarui status pembayaran serta pesanan di sistem.",
     openapi_extra={
         "requestBody": {
             "content": {
                 "application/json": {
                     "example": {
-                        "order_id": "11111111-2222-3333-4444-555555555555"
+                        "order_id": "11111111-2222-3333-4444-555555555555",
+                        "transaction_status": "settlement",
+                        "fraud_status": "accept",
+                        "payment_type": "bank_transfer",
+                        "gross_amount": "21000.00",
+                        "signature_key": "midtrans-signature-key"
                     }
                 }
             }
@@ -112,7 +117,7 @@ def receive_payment_notification(
     }
 )
 def receive_payment_notification(
-    notification_data: payment_dtos.InfoTransactionIdDto,
+    notification_data: payment_dtos.MidtransNotificationDto,
     db: Session = Depends(get_db),
 ):
     """
