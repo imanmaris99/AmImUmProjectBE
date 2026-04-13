@@ -18,11 +18,11 @@ class AllProvincesResponseCreateDto(BaseModel):
 
 class CityDto(BaseModel):
     city_id: int
-    province_id: int
-    province: str
-    type: str
+    province_id: int = 0
+    province: str = ""
+    type: str = "city"
     city_name: str
-    postal_code: int
+    postal_code: int = 0
 
 class AllCitiesResponseCreateDto(BaseModel):
     status_code: int = Field(default=200)

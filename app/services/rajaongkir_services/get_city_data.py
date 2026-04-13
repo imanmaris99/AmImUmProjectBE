@@ -71,10 +71,10 @@ def parse_city_data(cities: List[dict]) -> List[CityDto]:
         postal_code = c.get("zip_code") or c.get("postal_code") or c.get("postalCode") or 0
         city_type = c.get("type") or c.get("city_type") or "city"
 
-        if city_id is not None and province_id is not None and city_name:
+        if city_id is not None and city_name:
             city_dtos.append(CityDto(
                 city_id=int(city_id),
-                province_id=int(province_id),
+                province_id=int(province_id or 0),
                 province=str(province_name),
                 type=str(city_type),
                 city_name=str(city_name),

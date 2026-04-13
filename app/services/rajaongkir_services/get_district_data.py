@@ -56,6 +56,7 @@ def parse_district_data(districts: List[dict]) -> List[DistrictDto]:
         district_name = (
             district.get("district_name")
             or district.get("subdistrict_name")
+            or district.get("district")
             or district.get("name")
             or district.get("label")
             or district.get("text")
