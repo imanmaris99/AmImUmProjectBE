@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, status
 
 from typing import List
 
-from app.services.rajaongkir_services import get_province_data, get_city_data, get_city_data_by_keyword, get_shipping_cost
-from app.dtos.rajaongkir_dtos import ProvinceDto, AllProvincesResponseCreateDto, CityDto, AllCitiesResponseCreateDto, ShippingCostRequest, ShippingCostDto
+from app.services.rajaongkir_services import get_province_data, get_city_data, get_district_data, get_shipping_cost
+from app.dtos.rajaongkir_dtos import ProvinceDto, CityDto, DistrictDto, ShippingCostRequest, ShippingCostDto
 from app.dtos.error_response_dtos import ErrorResponseDto
 
 
@@ -69,8 +69,7 @@ def fetch_provinces():
     return result.unwrap()
 
 @router.get(
-    "/cities", 
-    # response_model=AllCitiesResponseCreateDto,
+    "/cities/{province_id}",
     response_model=List[CityDto],
     status_code=status.HTTP_200_OK,
     responses={
@@ -103,7 +102,7 @@ def fetch_provinces():
     },
     summary="Get list of all Cities"
 )
-def fetch_cities():
+def fetch_cities(province_id: int):
     """
     # Menampilkan Daftar Semua Data Kota #
 
@@ -117,7 +116,7 @@ def fetch_cities():
         - Kesalahan tak terduga saat memproses permintaan.
         
     """ 
-    result = get_city_data()
+    result = get_city_data(province_id)
 
     if result.error:
         raise result.error
@@ -125,74 +124,13 @@ def fetch_cities():
     return result.unwrap()
 
 @router.get(
-    "/cities/{city_name}",
-    response_model=AllCitiesResponseCreateDto,
+    "/districts/{city_id}",
+    response_model=List[DistrictDto],
     status_code=status.HTTP_200_OK,
-        responses={
-        status.HTTP_200_OK: {
-            "description": "Kota berhasil ditemukan berdasarkan nama",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "status_code": 200,
-                        "message": "Successfully fetched city data",
-                        "data": [
-                            {
-                                "city_id": 1,
-                                "city_name": "Jakarta",
-                                "province": "DKI Jakarta",
-                                "country": "Indonesia"
-                            }
-                        ]
-                    }
-                }
-            }
-        },
-        status.HTTP_404_NOT_FOUND: {
-            "description": "Kota tidak ditemukan",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "status_code": 404,
-                        "error": "Not Found",
-                        "message": "Kota tidak ditemukan dengan kata kunci yang diberikan."
-                    }
-                }
-            }
-        },
-        status.HTTP_500_INTERNAL_SERVER_ERROR: {
-            "description": "Terjadi kesalahan pada server saat mengambil data kota",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "status_code": 500,
-                        "error": "Internal Server Error",
-                        "message": "Kesalahan tak terduga saat mengambil data kota."
-                    }
-                }
-            }
-        }
-    },
-    summary="Search some city by keyword name"
+    summary="Get list of districts by city id"
 )
-async def search_cities(
-    city_name: str 
-) -> AllCitiesResponseCreateDto:
-    """
-    # Mencari Kota Berdasarkan Nama #
-
-    Endpoint untuk mencari kota berdasarkan nama. Jika tidak ada nama kota yang diberikan,
-    maka akan mengembalikan semua kota.
-
-    **Parameter:**
-    - **city_name** (str): Nama kota yang dicari. Bisa berupa bagian dari nama kota.
-
-    **Return:**
-    - **200 OK**: Kota berhasil ditemukan dan dikembalikan dalam bentuk daftar.
-    - **404 Not Found**: Jika tidak ada kota yang ditemukan berdasarkan kata kunci.
-    - **500 Internal Server Error**: Jika terjadi kesalahan saat mengambil data.
-    """
-    result= get_city_data_by_keyword(city_name=city_name)
+def fetch_districts(city_id: int):
+    result = get_district_data(city_id)
 
     if result.error:
         raise result.error

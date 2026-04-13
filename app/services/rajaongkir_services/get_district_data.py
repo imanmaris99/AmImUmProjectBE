@@ -5,7 +5,7 @@ import json
 from fastapi import HTTPException, status
 
 from app.utils.rajaongkir_utils import send_get_request
-from app.dtos.rajaongkir_dtos import CityDto
+from app.dtos.rajaongkir_dtos import DistrictDto
 from app.dtos.error_response_dtos import ErrorResponseDto
 from app.libs.rajaongkir_config import Config
 from app.libs.redis_config import redis_client
@@ -25,48 +25,39 @@ def validate_response(response: dict):
             ).dict()
         )
 
-    cities = response.get("data", [])
-    if not cities:
+    districts = response.get("data", [])
+    if not districts:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=ErrorResponseDto(
                 status_code=status.HTTP_404_NOT_FOUND,
                 error="Not Found",
-                message="Info about cities not found"
+                message="Info about districts not found"
             ).dict()
         )
 
-    if not isinstance(cities, list):
+    if not isinstance(districts, list):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message="Unexpected format in cities data"
+                message="Unexpected format in districts data"
             ).dict()
         )
 
-    return cities
+    return districts
 
 
-def parse_city_data(cities: List[dict]) -> List[CityDto]:
-    city_dtos = []
-    for c in cities:
-        city_id = c.get("id")
-        province_id = c.get("province_id")
-        province_name = c.get("province") or c.get("province_name") or ""
-        city_name = c.get("city_name") or c.get("label") or ""
-        postal_code = c.get("zip_code") or c.get("postal_code") or 0
-        city_type = c.get("type") or "city"
-
-        if city_id is not None and province_id is not None and city_name:
-            city_dtos.append(CityDto(
-                city_id=city_id,
-                province_id=province_id,
-                province=province_name,
-                type=city_type,
-                city_name=city_name,
-                postal_code=postal_code
+def parse_district_data(districts: List[dict]) -> List[DistrictDto]:
+    district_dtos = []
+    for district in districts:
+        district_id = district.get("id")
+        district_name = district.get("district_name") or district.get("subdistrict_name") or district.get("label")
+        if district_id is not None and district_name:
+            district_dtos.append(DistrictDto(
+                district_id=district_id,
+                district=district_name,
             ))
         else:
             raise HTTPException(
@@ -74,34 +65,34 @@ def parse_city_data(cities: List[dict]) -> List[CityDto]:
                 detail=ErrorResponseDto(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     error="Internal Server Error",
-                    message="Unexpected data format for a city"
+                    message="Unexpected data format for a district"
                 ).dict()
             )
-    return city_dtos
+    return district_dtos
 
 
-def get_city_data(province_id: int) -> optional.Optional[List[CityDto], HTTPException]:
+def get_district_data(city_id: int) -> optional.Optional[List[DistrictDto], HTTPException]:
     try:
-        cache_key = f"cities:{province_id}"
+        cache_key = f"districts:{city_id}"
         cached_data = redis_client.get(cache_key)
         if cached_data:
-            city_dtos = [CityDto(**city) for city in json.loads(cached_data)]
-            return optional.build(data=city_dtos)
+            district_dtos = [DistrictDto(**district) for district in json.loads(cached_data)]
+            return optional.build(data=district_dtos)
 
         headers = {'key': Config.RAJAONGKIR_API_KEY}
-        url = f"{Config.RAJAONGKIR_API_BASE_PATH}/destination/city/{province_id}"
+        url = f"{Config.RAJAONGKIR_API_BASE_PATH}/destination/district/{city_id}"
         response = send_get_request(Config.RAJAONGKIR_API_HOST, url, headers)
 
-        cities = validate_response(response)
-        city_dtos = parse_city_data(cities)
+        districts = validate_response(response)
+        district_dtos = parse_district_data(districts)
 
         redis_client.setex(
             cache_key,
             CACHE_TTL,
-            json.dumps([city.dict() for city in city_dtos])
+            json.dumps([district.dict() for district in district_dtos])
         )
 
-        return optional.build(data=city_dtos)
+        return optional.build(data=district_dtos)
 
     except HTTPException as e:
         return optional.build(error=e)

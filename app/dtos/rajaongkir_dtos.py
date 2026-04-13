@@ -29,6 +29,15 @@ class AllCitiesResponseCreateDto(BaseModel):
     message: str = Field(default="All Data Cities from Database success to access")
     data: List[CityDto]
 
+class DistrictDto(BaseModel):
+    district_id: int
+    district: str
+
+class AllDistrictsResponseCreateDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="All Data Districts from Database success to access")
+    data: List[DistrictDto]
+
 
 class ShippingCostRequest(BaseModel):
     origin: int = Field(..., description="ID origin domestic destination dari Komerce/RajaOngkir")
