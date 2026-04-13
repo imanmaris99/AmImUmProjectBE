@@ -81,22 +81,26 @@ class PaymentNotificationResponseDto(BaseModel):
 class MidtransNotificationDto(BaseModel):
     order_id: str = Field(..., description="ID pesanan unik yang diberikan oleh sistem.")
     transaction_status: Optional[str] = Field(
-        None, 
+        None,
         description="Status transaksi dari Midtrans, seperti 'settlement', 'pending', atau 'cancel'."
     )
+    status_code: Optional[str] = Field(
+        None,
+        description="HTTP-like status code dari payload callback Midtrans, biasanya string seperti '200'."
+    )
     fraud_status: Optional[str] = Field(
-        None, 
+        None,
         description="Status penipuan (fraud) dari Midtrans, biasanya bernilai 'accept' atau 'deny'."
     )
     payment_type: Optional[str] = Field(
-        None, 
+        None,
         description="Jenis pembayaran seperti 'credit_card', 'bank_transfer', atau lainnya."
     )
     gross_amount: Optional[str] = Field(
-        None, 
+        None,
         description="Jumlah pembayaran dalam bentuk string untuk mendukung format dari Midtrans."
     )
     signature_key: Optional[str] = Field(
-        None, 
+        None,
         description="Kunci tanda tangan yang digunakan untuk validasi keamanan."
     )

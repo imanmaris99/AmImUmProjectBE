@@ -53,26 +53,46 @@ def handler_notification(notification_data: dict, db: Session) -> Result[dict, E
         order_id = notification.order_id
         logger.info(f"Memproses notifikasi untuk order_id: {order_id}")
 
-        if not validate_signature_key(
-            order_id=order_id,
-            status_code="200",
-            gross_amount=notification.gross_amount,
-            server_key=MIDTRANS_SERVER_KEY,
-            signature_key=notification.signature_key,
-        ):
-            logger.warning(f"Signature key tidak valid untuk order_id: {order_id}")
+        # Ambil status transaksi dari Midtrans untuk sinkronisasi final, namun tetap fail-soft
+        midtrans_result = fetch_midtrans_transaction_status(order_id)
+        fetched_data = midtrans_result.data if not midtrans_result.error else {}
+
+        candidate_status_codes = [
+            notification.status_code,
+            fetched_data.get("status_code") if fetched_data else None,
+            "200",
+        ]
+        signature_valid = False
+        for candidate_status_code in candidate_status_codes:
+            if not candidate_status_code:
+                continue
+            if validate_signature_key(
+                order_id=order_id,
+                status_code=str(candidate_status_code),
+                gross_amount=notification.gross_amount,
+                server_key=MIDTRANS_SERVER_KEY,
+                signature_key=notification.signature_key,
+            ):
+                signature_valid = True
+                break
+
+        if not signature_valid:
+            logger.warning(
+                "Signature key tidak valid untuk order_id: %s. candidate_status_codes=%s gross_amount=%s",
+                order_id,
+                candidate_status_codes,
+                notification.gross_amount,
+            )
             return build(error=HTTPException(
                 status_code=400,
                 detail="Signature key tidak valid."
             ))
 
-        # Ambil status transaksi dari Midtrans untuk sinkronisasi final, namun tetap fail-soft
-        midtrans_result = fetch_midtrans_transaction_status(order_id)
         if midtrans_result.error:
             logger.warning("Fetch status Midtrans gagal untuk order_id %s, fallback ke payload callback: %s", order_id, midtrans_result.error)
             midtrans_data = normalized_notification
         else:
-            fetched_data = midtrans_result.data or {}
+            fetched_data = fetched_data or {}
             midtrans_data = {
                 **normalized_notification,
                 **{key: value for key, value in fetched_data.items() if value is not None}
