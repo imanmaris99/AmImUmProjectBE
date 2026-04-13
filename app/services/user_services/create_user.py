@@ -45,8 +45,15 @@ def create_user(db: Session, user: user_dtos.UserCreateDto) -> optional.Optional
         db.commit()
         db.refresh(user_model)
 
-        # Kirim email verifikasi
-        send_verification_email(firebase_user, user.firstname, verification_code)
+        email_delivery_warning = None
+        try:
+            send_verification_email(firebase_user, user.firstname, verification_code)
+        except HTTPException as email_exc:
+            logger.warning("Verification email delivery failed for %s: %s", user.email, email_exc.detail)
+            email_delivery_warning = (
+                f"Account created but verification email could not be sent automatically to {user.email}. "
+                "Please retry verification email delivery after SMTP is healthy."
+            )
 
         # Best effort cleanup, tidak boleh menggagalkan register utama
         try:
@@ -71,13 +78,21 @@ def create_user(db: Session, user: user_dtos.UserCreateDto) -> optional.Optional
             updated_at=user_model.updated_at
         )
 
+        success_message = (
+            f"Account is not yet active.\n"
+            f"A verification email has been sent to {user.email}.\n"
+            "Please verify your email within 10 minutes to activate your account."
+        )
+        if email_delivery_warning:
+            success_message = (
+                f"Account is not yet active.\n"
+                f"Your verification code is {verification_code}.\n"
+                f"{email_delivery_warning}"
+            )
+
         return optional.build(data=user_dtos.UserResponseDto(
             status_code=status.HTTP_201_CREATED,
-            message=(
-                f"Account is not yet active.\n"
-                f"A verification email has been sent to {user.email}.\n"
-                "Please verify your email within 10 minutes to activate your account."
-            ),
+            message=success_message,
             data=user_data_dto
         ))
 
