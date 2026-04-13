@@ -21,15 +21,19 @@ def send_get_request(host: str, url: str, headers: dict):
         result = json.loads(data.decode("utf-8"))
 
         if response.status != 200:
+            api_message = (
+                result.get("rajaongkir", {}).get("status", {}).get("description")
+                or result.get("meta", {}).get("message")
+                or result.get("message")
+                or "Unknown error occurred."
+            )
             raise HTTPException(
                 status_code=response.status,
                 detail=ErrorResponseDto(
                     status_code=response.status,
                     error="API Error",
-                    message=result.get("rajaongkir", {}).get("status", {}).get("description", "Unknown error occurred.")
+                    message=api_message
                 ).dict()
-                # error="API Error",
-                # message=result.get("rajaongkir", {}).get("status", {}).get("description", "Unknown error occurred.")
             )
 
         return result

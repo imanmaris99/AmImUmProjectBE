@@ -16,9 +16,9 @@ from app.utils import optional
 CACHE_TTL = 3600  # 1 hour TTL for cache
 
 
-# Fungsi untuk validasi respons dari API RajaOngkir
+# Fungsi untuk validasi respons dari API RajaOngkir/Komerce
 def validate_response(response: dict):
-    if not isinstance(response, dict) or "rajaongkir" not in response:
+    if not isinstance(response, dict):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorResponseDto(
@@ -28,7 +28,7 @@ def validate_response(response: dict):
             ).dict()
         )
 
-    cities = response.get("rajaongkir", {}).get("results", [])
+    cities = response.get("data", [])
     if not cities:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -55,14 +55,21 @@ def validate_response(response: dict):
 def parse_city_data(cities: List[dict]) -> List[CityDto]:
     city_dtos = []
     for c in cities:
-        if all(key in c for key in ("city_id", "province_id", "province", "type", "city_name", "postal_code")):
+        city_id = c.get("id")
+        province_id = c.get("province_id")
+        province_name = c.get("province") or c.get("province_name") or ""
+        city_name = c.get("city_name") or c.get("label") or ""
+        postal_code = c.get("zip_code") or c.get("postal_code") or 0
+        city_type = c.get("type") or "city"
+
+        if city_id is not None and province_id is not None and city_name:
             city_dtos.append(CityDto(
-                city_id=c["city_id"],
-                province_id=c["province_id"],
-                province=c["province"],
-                type=c["type"],
-                city_name=c["city_name"],
-                postal_code=c["postal_code"]
+                city_id=city_id,
+                province_id=province_id,
+                province=province_name,
+                type=city_type,
+                city_name=city_name,
+                postal_code=postal_code
             ))
         else:
             raise HTTPException(
@@ -107,7 +114,7 @@ def get_city_data() -> optional.Optional[List[CityDto], HTTPException]:
             return optional.build(data=city_dtos)
         
         headers = {'key': Config.RAJAONGKIR_API_KEY}
-        url = "/starter/city"
+        url = f"{Config.RAJAONGKIR_API_BASE_PATH}/destination/city"
 
         response = send_get_request(Config.RAJAONGKIR_API_HOST, url, headers)
     
@@ -142,7 +149,7 @@ def get_city_data_by_keyword(city_name: str = None) -> optional.Optional[AllCiti
         else:
     
             headers = {'key': Config.RAJAONGKIR_API_KEY}
-            url = "/starter/city"
+            url = f"{Config.RAJAONGKIR_API_BASE_PATH}/destination/city"
 
             response = send_get_request(Config.RAJAONGKIR_API_HOST, url, headers)
         

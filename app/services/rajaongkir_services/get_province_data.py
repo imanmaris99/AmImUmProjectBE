@@ -15,9 +15,9 @@ from app.utils import optional
 
 CACHE_TTL = 3600  # 1 hour TTL for cache
 
-# Fungsi untuk validasi respons dari API RajaOngkir
+# Fungsi untuk validasi respons dari API RajaOngkir/Komerce
 def validate_province_response(response: dict):
-    if not isinstance(response, dict) or "rajaongkir" not in response:
+    if not isinstance(response, dict):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorResponseDto(
@@ -27,7 +27,7 @@ def validate_province_response(response: dict):
             ).dict()
         )
 
-    provinces = response.get("rajaongkir", {}).get("results", [])
+    provinces = response.get("data", [])
     if not provinces:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -54,10 +54,12 @@ def validate_province_response(response: dict):
 def parse_province_data(provinces: List[dict]) -> List[ProvinceDto]:
     province_dtos = []
     for p in provinces:
-        if all(key in p for key in ("province_id", "province")):
+        province_id = p.get("id")
+        province_name = p.get("province_name") or p.get("province")
+        if province_id is not None and province_name:
             province_dtos.append(ProvinceDto(
-                province_id=p["province_id"],
-                province=p["province"]
+                province_id=province_id,
+                province=province_name
             ))
         else:
             raise HTTPException(
@@ -103,7 +105,7 @@ def get_province_data() -> optional.Optional[List[ProvinceDto], HTTPException]:
             return optional.build(data=province_dtos)
         
         headers = {'key': Config.RAJAONGKIR_API_KEY}
-        url = "/starter/province"
+        url = f"{Config.RAJAONGKIR_API_BASE_PATH}/destination/province"
 
         response = send_get_request(Config.RAJAONGKIR_API_HOST, url, headers)
     
@@ -113,9 +115,9 @@ def get_province_data() -> optional.Optional[List[ProvinceDto], HTTPException]:
 
         # Simpan data di Redis
         redis_client.setex(
-            "cities", 
-            CACHE_TTL, 
-            json.dumps([city.dict() for city in province_dtos])
+            "provinces",
+            CACHE_TTL,
+            json.dumps([province.dict() for province in province_dtos])
         )
 
         return optional.build(data=province_dtos)
