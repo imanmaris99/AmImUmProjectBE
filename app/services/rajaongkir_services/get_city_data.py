@@ -52,21 +52,33 @@ def validate_response(response: dict):
 def parse_city_data(cities: List[dict]) -> List[CityDto]:
     city_dtos = []
     for c in cities:
-        city_id = c.get("id")
-        province_id = c.get("province_id")
-        province_name = c.get("province") or c.get("province_name") or ""
-        city_name = c.get("city_name") or c.get("label") or ""
-        postal_code = c.get("zip_code") or c.get("postal_code") or 0
-        city_type = c.get("type") or "city"
+        city_id = c.get("id") or c.get("city_id") or c.get("cityId")
+        province_id = c.get("province_id") or c.get("provinceId")
+        province_name = (
+            c.get("province")
+            or c.get("province_name")
+            or c.get("provinceName")
+            or ""
+        )
+        city_name = (
+            c.get("city_name")
+            or c.get("city")
+            or c.get("name")
+            or c.get("label")
+            or c.get("text")
+            or ""
+        )
+        postal_code = c.get("zip_code") or c.get("postal_code") or c.get("postalCode") or 0
+        city_type = c.get("type") or c.get("city_type") or "city"
 
         if city_id is not None and province_id is not None and city_name:
             city_dtos.append(CityDto(
-                city_id=city_id,
-                province_id=province_id,
-                province=province_name,
-                type=city_type,
-                city_name=city_name,
-                postal_code=postal_code
+                city_id=int(city_id),
+                province_id=int(province_id),
+                province=str(province_name),
+                type=str(city_type),
+                city_name=str(city_name),
+                postal_code=int(postal_code),
             ))
         else:
             raise HTTPException(
@@ -74,7 +86,7 @@ def parse_city_data(cities: List[dict]) -> List[CityDto]:
                 detail=ErrorResponseDto(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     error="Internal Server Error",
-                    message="Unexpected data format for a city"
+                    message=f"Unexpected data format for a city: {c}"
                 ).dict()
             )
     return city_dtos

@@ -54,12 +54,22 @@ def validate_province_response(response: dict):
 def parse_province_data(provinces: List[dict]) -> List[ProvinceDto]:
     province_dtos = []
     for p in provinces:
-        province_id = p.get("id")
-        province_name = p.get("province_name") or p.get("province")
+        province_id = (
+            p.get("id")
+            or p.get("province_id")
+            or p.get("provinceId")
+        )
+        province_name = (
+            p.get("province_name")
+            or p.get("province")
+            or p.get("name")
+            or p.get("label")
+            or p.get("text")
+        )
         if province_id is not None and province_name:
             province_dtos.append(ProvinceDto(
-                province_id=province_id,
-                province=province_name
+                province_id=int(province_id),
+                province=str(province_name)
             ))
         else:
             raise HTTPException(
@@ -67,7 +77,7 @@ def parse_province_data(provinces: List[dict]) -> List[ProvinceDto]:
                 detail=ErrorResponseDto(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     error="Internal Server Error",
-                    message="Unexpected data format for a province"
+                    message=f"Unexpected data format for a province: {p}"
                 ).dict()
             )
     return province_dtos

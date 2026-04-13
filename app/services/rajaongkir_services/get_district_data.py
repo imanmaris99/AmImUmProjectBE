@@ -52,12 +52,18 @@ def validate_response(response: dict):
 def parse_district_data(districts: List[dict]) -> List[DistrictDto]:
     district_dtos = []
     for district in districts:
-        district_id = district.get("id")
-        district_name = district.get("district_name") or district.get("subdistrict_name") or district.get("label")
+        district_id = district.get("id") or district.get("district_id") or district.get("districtId")
+        district_name = (
+            district.get("district_name")
+            or district.get("subdistrict_name")
+            or district.get("name")
+            or district.get("label")
+            or district.get("text")
+        )
         if district_id is not None and district_name:
             district_dtos.append(DistrictDto(
-                district_id=district_id,
-                district=district_name,
+                district_id=int(district_id),
+                district=str(district_name),
             ))
         else:
             raise HTTPException(
@@ -65,7 +71,7 @@ def parse_district_data(districts: List[dict]) -> List[DistrictDto]:
                 detail=ErrorResponseDto(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     error="Internal Server Error",
-                    message="Unexpected data format for a district"
+                    message=f"Unexpected data format for a district: {district}"
                 ).dict()
             )
     return district_dtos
