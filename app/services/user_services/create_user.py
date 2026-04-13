@@ -17,8 +17,12 @@ from app.services.user_services.support_function import (
     validate_user_data,
 )
 
+import logging
+
 from app.utils.firebase_utils import send_verification_email
 from app.utils import optional
+
+logger = logging.getLogger(__name__)
 
 
 # Fungsi utama untuk membuat user baru - customer
@@ -44,8 +48,11 @@ def create_user(db: Session, user: user_dtos.UserCreateDto) -> optional.Optional
         # Kirim email verifikasi
         send_verification_email(firebase_user, user.firstname, verification_code)
 
-        # **Panggil fungsi untuk menghapus user yang tidak terverifikasi**
-        delete_unverified_users(db)  # Menghapus user yang sudah tidak aktif dalam waktu yang ditentukan
+        # Best effort cleanup, tidak boleh menggagalkan register utama
+        try:
+            delete_unverified_users(db)
+        except Exception as cleanup_exc:
+            logger.warning("Skip delete_unverified_users cleanup after register because of error: %s", cleanup_exc)
 
         # Mempersiapkan response data yang sudah sesuai dengan DTO
         user_data_dto = user_dtos.UserCreateResponseDto(

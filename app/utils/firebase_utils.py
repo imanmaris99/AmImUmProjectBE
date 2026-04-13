@@ -5,6 +5,7 @@ from firebase_admin import credentials, auth
 from firebase_admin.exceptions import FirebaseError
 
 import smtplib
+import socket
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import logging
@@ -148,6 +149,7 @@ def send_email(to_email: str, subject: str, body: str, html: bool = False):
     smtp_user = os.getenv("SMTP_USER")
     smtp_password = os.getenv("SMTP_PASSWORD")
     from_email = os.getenv("FROM_EMAIL")
+    smtp_timeout = float(os.getenv("SMTP_TIMEOUT_SECONDS", "15"))
 
     msg = MIMEMultipart()
     msg['From'] = from_email
@@ -161,19 +163,29 @@ def send_email(to_email: str, subject: str, body: str, html: bool = False):
         msg.attach(MIMEText(body, 'plain'))  # Mengirim teks biasa
 
     try:
-        with smtplib.SMTP(smtp_server, smtp_port) as server:
+        with smtplib.SMTP(smtp_server, smtp_port, timeout=smtp_timeout) as server:
             server.starttls()
             server.login(smtp_user, smtp_password)
             server.send_message(msg)
         logger.info("Email with subject '%s' sent successfully.", subject)
-    
-    except smtplib.SMTPAuthenticationError as e:
+
+    except smtplib.SMTPAuthenticationError:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
                 message="SMTP authentication failed. Periksa SMTP_USER, SMTP_PASSWORD, dan pastikan provider email mengizinkan login aplikasi atau app password yang digunakan masih valid."
+            ).dict()
+        )
+
+    except (socket.timeout, TimeoutError):
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+                error="Gateway Timeout",
+                message="SMTP server did not respond in time while sending email verification."
             ).dict()
         )
 
