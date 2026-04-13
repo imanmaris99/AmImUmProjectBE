@@ -22,7 +22,7 @@ class ShipmentAddressModel(Base):
     # Relationships
     # customer = relationship("UserModel", back_populates="shipment_addresses", lazy='select')  # Lazy loading
     # shipments = relationship("ShipmentModel", back_populates="shipment_address", lazy='select')  # Lazy loading
-    shipments: Mapped["ShipmentModel"] = relationship(
-        "ShipmentModel", 
-        back_populates="shipment_address", 
-        lazy='selectin')  # Optimasi eager loading
+    shipments: Mapped[list["ShipmentModel"]] = relationship(
+        "ShipmentModel",
+        back_populates="shipment_address",
+        lazy='selectin')  # Satu alamat dapat dipakai banyak shipment historis

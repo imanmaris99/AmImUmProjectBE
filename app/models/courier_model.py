@@ -29,10 +29,10 @@ class CourierModel(Base):
     
     # Relationships
     # shipments = relationship("ShipmentModel", back_populates="courier", lazy='select')  # Lazy loading
-    shipments: Mapped["ShipmentModel"] = relationship(
-        "ShipmentModel", 
-        back_populates="courier", 
-        lazy='selectin')  # Optimasi eager loading
+    shipments: Mapped[list["ShipmentModel"]] = relationship(
+        "ShipmentModel",
+        back_populates="courier",
+        lazy='selectin')  # Satu pilihan courier dapat direferensikan banyak shipment historis
     
     user: Mapped["UserModel"] = relationship(
         "UserModel",
