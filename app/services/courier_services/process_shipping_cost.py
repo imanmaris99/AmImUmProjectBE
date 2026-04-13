@@ -17,8 +17,11 @@ def process_shipping_cost(
         db: Session
         ) -> Result[courier_dtos.CourierResponseDto, Exception]:
     try:
+        db.query(CourierModel).filter(
+            CourierModel.customer_id == user_id,
+            CourierModel.is_active == True
+        ).update({CourierModel.is_active: False}, synchronize_session=False)
 
-        # courier = CourierModel(**request_data.model_dump().where(CourierModel.customer_id==user_id))
         courier = CourierModel(
             courier_name=request_data.courier_name,
             weight=request_data.weight,

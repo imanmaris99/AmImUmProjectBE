@@ -71,6 +71,11 @@ def new_post(
                 ).dict()
             )
 
+        db.query(ShipmentModel).filter(
+            ShipmentModel.customer_id == user_id,
+            ShipmentModel.is_active == True
+        ).update({ShipmentModel.is_active: False}, synchronize_session=False)
+
         # Buat Shipment
         shipment = ShipmentModel(
             code_tracking="in process",
