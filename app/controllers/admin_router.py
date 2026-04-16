@@ -268,6 +268,74 @@ def admin_get_payment_detail(
 
     return result.unwrap()
 
+
+@router.get(
+    "/users",
+    response_model=user_dtos.AdminUserListResponseDto,
+    summary="Admin get all users"
+)
+def admin_get_all_users(
+    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.admin_access_required)],
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=100, ge=1, le=500),
+    role: str | None = Query(default=None),
+    is_active: bool | None = Query(default=None),
+    db: Session = Depends(get_db),
+):
+    result = user_services.list_all_users(
+        db=db,
+        skip=skip,
+        limit=limit,
+        role=role,
+        is_active=is_active,
+    )
+
+    if result.error:
+        raise result.error
+
+    return result.unwrap()
+
+
+@router.get(
+    "/users/{user_id}",
+    response_model=user_dtos.AdminUserDetailResponseDto,
+    summary="Admin get user detail"
+)
+def admin_get_user_detail(
+    user_id: str,
+    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.admin_access_required)],
+    db: Session = Depends(get_db),
+):
+    result = user_services.get_user_detail_admin(db=db, user_id=user_id)
+
+    if result.error:
+        raise result.error
+
+    return result.unwrap()
+
+
+@router.patch(
+    "/users/{user_id}/status",
+    response_model=user_dtos.AdminUserStatusUpdateResponseDto,
+    summary="Admin update user active status"
+)
+def admin_update_user_status(
+    user_id: str,
+    payload: user_dtos.AdminUserStatusUpdateRequestDto,
+    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.admin_access_required)],
+    db: Session = Depends(get_db),
+):
+    result = user_services.update_user_active_status_admin(
+        db=db,
+        user_id=user_id,
+        is_active=payload.is_active,
+    )
+
+    if result.error:
+        raise result.error
+
+    return result.unwrap()
+
 ## == USER - FORGOT_PASSWORD == ##
 # @router.post(
 #     "/forgot-password",

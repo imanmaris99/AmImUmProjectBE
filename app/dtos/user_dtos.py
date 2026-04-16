@@ -156,4 +156,57 @@ class DeleteUserResponseDto(BaseModel):
     user_id: str
     username: str
     email: str
+
+class AdminUserInfoDto(BaseModel):
+    id: str
+    firstname: Optional[str] = None
+    lastname: Optional[str] = None
+    email: EmailStr
+    phone: Optional[str] = None
+    role: Optional[str] = None
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+
+class AdminUserDetailDto(BaseModel):
+    id: str
+    firstname: Optional[str] = None
+    lastname: Optional[str] = None
+    fullname: Optional[str] = None
+    gender: Optional[str] = None
+    email: EmailStr
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    photo_url: Optional[str] = None
+    role: Optional[str] = None
+    firebase_uid: Optional[str] = None
+    is_active: bool
+    verification_code: Optional[str] = None
+    verification_expiry: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+
+class AdminUserListResponseDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="Admin user list accessed successfully")
+    data: list[AdminUserInfoDto]
+
+class AdminUserDetailResponseDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="Admin user detail accessed successfully")
+    data: AdminUserDetailDto
+
+class AdminUserStatusUpdateDto(BaseModel):
+    id: str
+    email: EmailStr
+    role: Optional[str] = None
+    is_active: bool
+
+class AdminUserStatusUpdateRequestDto(BaseModel):
+    is_active: bool
+
+class AdminUserStatusUpdateResponseDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="Admin user status updated successfully")
+    data: AdminUserStatusUpdateDto
     
