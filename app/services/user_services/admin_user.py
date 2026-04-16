@@ -6,12 +6,14 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.models.user_model import UserModel
 from app.dtos import user_dtos
 from app.dtos.error_response_dtos import ErrorResponseDto
+from app.services.admin_filter_utils import normalize_optional_filter, validate_allowed_filter
 from app.utils import optional
 
 
 ADMIN_USER_LIST_MESSAGE = "Admin user list accessed successfully"
 ADMIN_USER_DETAIL_MESSAGE = "Admin user detail accessed successfully"
 ADMIN_USER_STATUS_MESSAGE = "Admin user status updated successfully"
+ALLOWED_ADMIN_USER_ROLES = {"admin", "customer"}
 
 
 def _to_user_summary(user: UserModel) -> user_dtos.AdminUserInfoDto:
@@ -38,8 +40,14 @@ def list_all_users(
     try:
         stmt = select(UserModel)
 
-        if role:
-            stmt = stmt.where(UserModel.role == role)
+        normalized_role = validate_allowed_filter(
+            value=role,
+            allowed_values=ALLOWED_ADMIN_USER_ROLES,
+            field_name="User role",
+        )
+
+        if normalized_role:
+            stmt = stmt.where(UserModel.role == normalized_role)
         if is_active is not None:
             stmt = stmt.where(UserModel.is_active == is_active)
 
@@ -134,6 +142,16 @@ def update_user_active_status_admin(db: Session, user_id: str, is_active: bool):
                     status_code=status.HTTP_404_NOT_FOUND,
                     error="Not Found",
                     message=f"User with ID {user_id} not found."
+                ).dict()
+            ))
+
+        if normalize_optional_filter(user.role) == "admin":
+            return optional.build(error=HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=ErrorResponseDto(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    error="Forbidden",
+                    message="Admin account status must not be changed from this endpoint."
                 ).dict()
             ))
 
