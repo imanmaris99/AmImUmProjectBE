@@ -7,7 +7,8 @@ from app.libs.sql_alchemy_lib import get_db
 from app.libs.jwt_lib import jwt_service, jwt_dto
 
 from app.services import user_services, order_services, payment_services
-from app.dtos import user_dtos, order_dtos, payment_dtos
+from app.services.admin_dashboard_summary import get_admin_dashboard_summary
+from app.dtos import user_dtos, order_dtos, payment_dtos, admin_dashboard_dtos
 
 
 router = APIRouter(
@@ -330,6 +331,23 @@ def admin_update_user_status(
         user_id=user_id,
         is_active=payload.is_active,
     )
+
+    if result.error:
+        raise result.error
+
+    return result.unwrap()
+
+
+@router.get(
+    "/dashboard/summary",
+    response_model=admin_dashboard_dtos.AdminDashboardSummaryResponseDto,
+    summary="Admin dashboard summary"
+)
+def admin_dashboard_summary(
+    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.admin_access_required)],
+    db: Session = Depends(get_db),
+):
+    result = get_admin_dashboard_summary(db=db)
 
     if result.error:
         raise result.error
