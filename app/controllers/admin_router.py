@@ -1,11 +1,13 @@
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.libs.sql_alchemy_lib import get_db
 from app.libs.jwt_lib import jwt_service, jwt_dto
 
-from app.services import user_services
-from app.dtos import user_dtos
+from app.services import user_services, order_services
+from app.dtos import user_dtos, order_dtos
 
 
 router = APIRouter(
@@ -156,6 +158,72 @@ def admin_login(user: user_dtos.UserLoginPayloadDto, db: Session = Depends(get_d
         "message": "Your user account has been logged in successfully",
         "data":user_data
     }
+
+
+@router.get(
+    "/orders",
+    response_model=order_dtos.GetOrderInfoResponseDto,
+    summary="Admin get all orders"
+)
+def admin_get_all_orders(
+    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.admin_access_required)],
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=100, ge=1, le=500),
+    order_status: str | None = Query(default=None, alias="status"),
+    db: Session = Depends(get_db),
+):
+    result = order_services.list_all_orders(
+        db=db,
+        skip=skip,
+        limit=limit,
+        status_filter=order_status,
+    )
+
+    if result.error:
+        raise result.error
+
+    return result.unwrap()
+
+
+@router.get(
+    "/orders/{order_id}",
+    response_model=order_dtos.GetOrderDetailResponseDto,
+    summary="Admin get order detail"
+)
+def admin_get_order_detail(
+    order_id: str,
+    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.admin_access_required)],
+    db: Session = Depends(get_db),
+):
+    result = order_services.get_order_detail_admin(db=db, order_id=order_id)
+
+    if result.error:
+        raise result.error
+
+    return result.unwrap()
+
+
+@router.patch(
+    "/orders/{order_id}/status",
+    response_model=order_dtos.OrderInfoResponseDto,
+    summary="Admin update order status"
+)
+def admin_update_order_status(
+    order_id: str,
+    payload: order_dtos.AdminOrderStatusUpdateDto,
+    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.admin_access_required)],
+    db: Session = Depends(get_db),
+):
+    result = order_services.update_order_status_admin(
+        db=db,
+        order_id=order_id,
+        new_status=payload.status,
+    )
+
+    if result.error:
+        raise result.error
+
+    return result.unwrap()
 
 ## == USER - FORGOT_PASSWORD == ##
 # @router.post(

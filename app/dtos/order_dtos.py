@@ -47,6 +47,9 @@ class OrderInfoResponseDto(BaseModel):
     message: str = Field(default="Your order has been saved")
     data: OrderInfoResponseDataDto
 
+class AdminOrderStatusUpdateDto(BaseModel):
+    status: str
+
 class GetOrderInfoDto(BaseModel):
     id: str
     status: str
