@@ -6,6 +6,7 @@ from sqlalchemy.exc import SQLAlchemyError, DataError, IntegrityError
 from app.models.order_model import OrderModel
 from app.dtos import order_dtos
 from app.dtos.error_response_dtos import ErrorResponseDto
+from app.services.admin_filter_utils import validate_allowed_filter
 from app.services.cart_services.support_function import handle_db_error
 from app.utils.result import build, Result
 
@@ -49,9 +50,14 @@ def list_all_orders(
 ) -> Result[order_dtos.GetOrderInfoResponseDto, Exception]:
     try:
         stmt = select(OrderModel)
+        normalized_status_filter = validate_allowed_filter(
+            value=status_filter,
+            allowed_values=ALLOWED_ADMIN_ORDER_STATUSES,
+            field_name="Order status",
+        )
 
-        if status_filter:
-            stmt = stmt.where(OrderModel.status == status_filter)
+        if normalized_status_filter:
+            stmt = stmt.where(OrderModel.status == normalized_status_filter)
 
         order_models = db.execute(
             stmt.order_by(OrderModel.created_at.desc()).offset(skip).limit(limit)

@@ -7,12 +7,22 @@ from app.models.payment_model import PaymentModel
 from app.models.order_model import OrderModel
 from app.dtos import payment_dtos
 from app.dtos.error_response_dtos import ErrorResponseDto
+from app.services.admin_filter_utils import validate_allowed_filter
 from app.services.cart_services.support_function import handle_db_error
 from app.utils.result import build, Result
 
 
 ADMIN_PAYMENT_LIST_MESSAGE = "Admin payment list accessed successfully"
 ADMIN_PAYMENT_DETAIL_MESSAGE = "Admin payment detail accessed successfully"
+ALLOWED_ADMIN_PAYMENT_STATUSES = {
+    "pending",
+    "settlement",
+    "expire",
+    "cancel",
+    "deny",
+    "refund",
+    "capture",
+}
 
 
 def _build_payment_item(payment: PaymentModel) -> payment_dtos.AdminPaymentInfoDto:
@@ -41,9 +51,14 @@ def list_all_payments(
 ) -> Result[payment_dtos.AdminPaymentListResponseDto, Exception]:
     try:
         stmt = select(PaymentModel)
+        normalized_transaction_status_filter = validate_allowed_filter(
+            value=transaction_status_filter,
+            allowed_values=ALLOWED_ADMIN_PAYMENT_STATUSES,
+            field_name="Payment status",
+        )
 
-        if transaction_status_filter:
-            stmt = stmt.where(PaymentModel.transaction_status == transaction_status_filter)
+        if normalized_transaction_status_filter:
+            stmt = stmt.where(PaymentModel.transaction_status == normalized_transaction_status_filter)
 
         payment_models = db.execute(
             stmt.order_by(PaymentModel.created_at.desc()).offset(skip).limit(limit)
