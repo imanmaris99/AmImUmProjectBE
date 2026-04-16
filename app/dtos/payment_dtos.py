@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field, validator
 from typing import Optional, Any
+from datetime import datetime
 from app.models.enums import PaymentTypeEnum, TransactionStatusEnum, FraudStatusEnum  # Mengimpor Enum
 
 class PaymentOrderByIdDto(BaseModel):
@@ -61,6 +62,33 @@ class PaymentNotificationResponseDto(BaseModel):
     status_code: int = Field(default=200)
     message: str = Field(default="Success access")
     data: PaymentNotificationSchemaDto
+
+class AdminPaymentInfoDto(BaseModel):
+    id: str
+    order_id: str
+    transaction_id: str
+    payment_type: Optional[str] = None
+    gross_amount: float = 0.0
+    transaction_status: Optional[str] = None
+    fraud_status: Optional[str] = None
+    customer_name: Optional[str] = None
+    customer_email: Optional[str] = None
+    order_status: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+class AdminPaymentDetailDto(AdminPaymentInfoDto):
+    payment_response: Optional[dict] = None
+
+class AdminPaymentListResponseDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="Admin payment list accessed successfully")
+    data: list[AdminPaymentInfoDto]
+
+class AdminPaymentDetailResponseDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="Admin payment detail accessed successfully")
+    data: AdminPaymentDetailDto
 
 # class MidtransNotificationDto(BaseModel):
 #     order_id: str

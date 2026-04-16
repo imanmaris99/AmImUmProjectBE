@@ -6,8 +6,8 @@ from sqlalchemy.orm import Session
 from app.libs.sql_alchemy_lib import get_db
 from app.libs.jwt_lib import jwt_service, jwt_dto
 
-from app.services import user_services, order_services
-from app.dtos import user_dtos, order_dtos
+from app.services import user_services, order_services, payment_services
+from app.dtos import user_dtos, order_dtos, payment_dtos
 
 
 router = APIRouter(
@@ -219,6 +219,49 @@ def admin_update_order_status(
         order_id=order_id,
         new_status=payload.status,
     )
+
+    if result.error:
+        raise result.error
+
+    return result.unwrap()
+
+
+@router.get(
+    "/payments",
+    response_model=payment_dtos.AdminPaymentListResponseDto,
+    summary="Admin get all payments"
+)
+def admin_get_all_payments(
+    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.admin_access_required)],
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=100, ge=1, le=500),
+    transaction_status: str | None = Query(default=None, alias="status"),
+    db: Session = Depends(get_db),
+):
+    result = payment_services.list_all_payments(
+        db=db,
+        skip=skip,
+        limit=limit,
+        transaction_status_filter=transaction_status,
+    )
+
+    if result.error:
+        raise result.error
+
+    return result.unwrap()
+
+
+@router.get(
+    "/payments/order/{order_id}",
+    response_model=payment_dtos.AdminPaymentDetailResponseDto,
+    summary="Admin get payment detail by order"
+)
+def admin_get_payment_detail(
+    order_id: str,
+    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.admin_access_required)],
+    db: Session = Depends(get_db),
+):
+    result = payment_services.get_payment_detail_by_order_id(db=db, order_id=order_id)
 
     if result.error:
         raise result.error
