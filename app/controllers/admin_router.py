@@ -165,7 +165,7 @@ def admin_login(user: user_dtos.UserLoginPayloadDto, db: Session = Depends(get_d
     "/orders",
     response_model=order_dtos.GetOrderInfoResponseDto,
     summary="Admin get all orders",
-    description="Mengambil seluruh order untuk kebutuhan dashboard admin. Mendukung pagination dasar dan filter status.",
+    description="Mengambil seluruh order untuk kebutuhan dashboard admin. Mendukung pagination dasar dan filter status. Allowed status: pending, paid, processing, shipped, completed, cancelled, failed, capture, refund.",
 )
 def admin_get_all_orders(
     jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.admin_access_required)],
@@ -210,7 +210,7 @@ def admin_get_order_detail(
     "/orders/{order_id}/status",
     response_model=order_dtos.OrderInfoResponseDto,
     summary="Admin update order status",
-    description="Memperbarui status order oleh admin. Gunakan status yang sudah didukung service admin order.",
+    description="Memperbarui status order oleh admin. Allowed status: pending, paid, processing, shipped, completed, cancelled, failed, capture, refund.",
     openapi_extra={
         "requestBody": {
             "content": {
@@ -245,7 +245,7 @@ def admin_update_order_status(
     "/payments",
     response_model=payment_dtos.AdminPaymentListResponseDto,
     summary="Admin get all payments",
-    description="Mengambil seluruh payment untuk monitoring admin, dengan filter status transaksi dan pagination dasar.",
+    description="Mengambil seluruh payment untuk monitoring admin, dengan filter status transaksi dan pagination dasar. Allowed status: pending, settlement, expire, cancel, deny, refund, capture.",
 )
 def admin_get_all_payments(
     jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.admin_access_required)],
@@ -290,7 +290,7 @@ def admin_get_payment_detail(
     "/users",
     response_model=user_dtos.AdminUserListResponseDto,
     summary="Admin get all users",
-    description="Mengambil seluruh user untuk admin. Mendukung filter role, status aktif, dan pagination dasar.",
+    description="Mengambil seluruh user untuk admin. Mendukung filter role, status aktif, dan pagination dasar. Allowed role: admin, customer.",
 )
 def admin_get_all_users(
     jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.admin_access_required)],
@@ -337,7 +337,7 @@ def admin_get_user_detail(
     "/users/{user_id}/status",
     response_model=user_dtos.AdminUserStatusUpdateResponseDto,
     summary="Admin update user active status",
-    description="Mengaktifkan atau menonaktifkan akun user dari dashboard admin.",
+    description="Mengaktifkan atau menonaktifkan akun user dari dashboard admin. Endpoint ini tidak dipakai untuk mengubah status akun admin.",
     openapi_extra={
         "requestBody": {
             "content": {

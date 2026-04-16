@@ -434,8 +434,13 @@ Catatan:
 - Semua endpoint admin di atas membutuhkan token admin yang valid, kecuali `POST /admin/login`.
 - Query filter yang sudah tersedia saat ini:
   - orders: `status`, `skip`, `limit`
+    - allowed status: `pending`, `paid`, `processing`, `shipped`, `completed`, `cancelled`, `failed`, `capture`, `refund`
   - payments: `status`, `skip`, `limit`
+    - allowed status: `pending`, `settlement`, `expire`, `cancel`, `deny`, `refund`, `capture`
   - users: `role`, `is_active`, `skip`, `limit`
+    - allowed role: `admin`, `customer`
+- Guard tambahan saat ini:
+  - endpoint status user admin tidak dipakai untuk mengubah status akun yang role-nya `admin`
 - Swagger untuk route admin sudah diberi summary/description dasar agar lebih mudah dipakai saat QA dan integrasi frontend admin.
 
 ### Auth dan payment QA execution prep
