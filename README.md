@@ -415,6 +415,29 @@ Gunakan format berikut setiap kali menjalankan validasi manual:
   - Actual: `200`, status pembayaran berhasil diperbarui pada simulasi callback
   - Status: PASS
 
+### Admin dashboard API readiness
+
+Endpoint admin yang sudah siap dipakai untuk dashboard internal:
+
+- `POST /admin/login`
+- `GET /admin/orders`
+- `GET /admin/orders/{order_id}`
+- `PATCH /admin/orders/{order_id}/status`
+- `GET /admin/payments`
+- `GET /admin/payments/order/{order_id}`
+- `GET /admin/users`
+- `GET /admin/users/{user_id}`
+- `PATCH /admin/users/{user_id}/status`
+- `GET /admin/dashboard/summary`
+
+Catatan:
+- Semua endpoint admin di atas membutuhkan token admin yang valid, kecuali `POST /admin/login`.
+- Query filter yang sudah tersedia saat ini:
+  - orders: `status`, `skip`, `limit`
+  - payments: `status`, `skip`, `limit`
+  - users: `role`, `is_active`, `skip`, `limit`
+- Swagger untuk route admin sudah diberi summary/description dasar agar lebih mudah dipakai saat QA dan integrasi frontend admin.
+
 ### Auth dan payment QA execution prep
 
 #### Contoh payload aman untuk register

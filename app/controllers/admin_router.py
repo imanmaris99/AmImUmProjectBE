@@ -164,7 +164,8 @@ def admin_login(user: user_dtos.UserLoginPayloadDto, db: Session = Depends(get_d
 @router.get(
     "/orders",
     response_model=order_dtos.GetOrderInfoResponseDto,
-    summary="Admin get all orders"
+    summary="Admin get all orders",
+    description="Mengambil seluruh order untuk kebutuhan dashboard admin. Mendukung pagination dasar dan filter status.",
 )
 def admin_get_all_orders(
     jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.admin_access_required)],
@@ -189,7 +190,8 @@ def admin_get_all_orders(
 @router.get(
     "/orders/{order_id}",
     response_model=order_dtos.GetOrderDetailResponseDto,
-    summary="Admin get order detail"
+    summary="Admin get order detail",
+    description="Mengambil detail satu order tertentu untuk admin tanpa pembatasan user pemilik order.",
 )
 def admin_get_order_detail(
     order_id: str,
@@ -207,7 +209,19 @@ def admin_get_order_detail(
 @router.patch(
     "/orders/{order_id}/status",
     response_model=order_dtos.OrderInfoResponseDto,
-    summary="Admin update order status"
+    summary="Admin update order status",
+    description="Memperbarui status order oleh admin. Gunakan status yang sudah didukung service admin order.",
+    openapi_extra={
+        "requestBody": {
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "processing"
+                    }
+                }
+            }
+        }
+    }
 )
 def admin_update_order_status(
     order_id: str,
@@ -230,7 +244,8 @@ def admin_update_order_status(
 @router.get(
     "/payments",
     response_model=payment_dtos.AdminPaymentListResponseDto,
-    summary="Admin get all payments"
+    summary="Admin get all payments",
+    description="Mengambil seluruh payment untuk monitoring admin, dengan filter status transaksi dan pagination dasar.",
 )
 def admin_get_all_payments(
     jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.admin_access_required)],
@@ -255,7 +270,8 @@ def admin_get_all_payments(
 @router.get(
     "/payments/order/{order_id}",
     response_model=payment_dtos.AdminPaymentDetailResponseDto,
-    summary="Admin get payment detail by order"
+    summary="Admin get payment detail by order",
+    description="Mengambil detail payment berdasarkan order_id untuk kebutuhan audit dan troubleshooting admin.",
 )
 def admin_get_payment_detail(
     order_id: str,
@@ -273,7 +289,8 @@ def admin_get_payment_detail(
 @router.get(
     "/users",
     response_model=user_dtos.AdminUserListResponseDto,
-    summary="Admin get all users"
+    summary="Admin get all users",
+    description="Mengambil seluruh user untuk admin. Mendukung filter role, status aktif, dan pagination dasar.",
 )
 def admin_get_all_users(
     jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.admin_access_required)],
@@ -300,7 +317,8 @@ def admin_get_all_users(
 @router.get(
     "/users/{user_id}",
     response_model=user_dtos.AdminUserDetailResponseDto,
-    summary="Admin get user detail"
+    summary="Admin get user detail",
+    description="Mengambil detail lengkap satu user untuk kebutuhan admin operasional.",
 )
 def admin_get_user_detail(
     user_id: str,
@@ -318,7 +336,19 @@ def admin_get_user_detail(
 @router.patch(
     "/users/{user_id}/status",
     response_model=user_dtos.AdminUserStatusUpdateResponseDto,
-    summary="Admin update user active status"
+    summary="Admin update user active status",
+    description="Mengaktifkan atau menonaktifkan akun user dari dashboard admin.",
+    openapi_extra={
+        "requestBody": {
+            "content": {
+                "application/json": {
+                    "example": {
+                        "is_active": true
+                    }
+                }
+            }
+        }
+    }
 )
 def admin_update_user_status(
     user_id: str,
@@ -341,7 +371,8 @@ def admin_update_user_status(
 @router.get(
     "/dashboard/summary",
     response_model=admin_dashboard_dtos.AdminDashboardSummaryResponseDto,
-    summary="Admin dashboard summary"
+    summary="Admin dashboard summary",
+    description="Mengambil ringkasan metrik utama untuk landing dashboard admin.",
 )
 def admin_dashboard_summary(
     jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.admin_access_required)],
