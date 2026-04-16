@@ -430,6 +430,30 @@ Endpoint admin yang sudah siap dipakai untuk dashboard internal:
 - `PATCH /admin/users/{user_id}/status`
 - `GET /admin/dashboard/summary`
 
+Ringkasan metric dashboard admin saat ini mencakup:
+- users:
+  - `total_users`
+  - `total_active_users`
+- orders:
+  - `total_orders`
+  - `total_pending_orders`
+  - `total_paid_orders`
+  - `total_processing_orders`
+  - `total_shipped_orders`
+  - `total_completed_orders`
+  - `total_cancelled_orders`
+  - `total_failed_orders`
+- payments:
+  - `total_pending_payments`
+  - `total_settlement_payments`
+  - `total_expire_payments`
+  - `total_cancel_payments`
+  - `total_deny_payments`
+  - `total_refund_payments`
+  - `total_capture_payments`
+- revenue:
+  - `gross_revenue_paid_orders`
+
 Catatan:
 - Semua endpoint admin di atas membutuhkan token admin yang valid, kecuali `POST /admin/login`.
 - Query filter yang sudah tersedia saat ini:
