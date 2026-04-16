@@ -343,7 +343,7 @@ def admin_get_user_detail(
             "content": {
                 "application/json": {
                     "example": {
-                        "is_active": true
+                        "is_active": True
                     }
                 }
             }
