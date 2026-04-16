@@ -80,10 +80,16 @@ class AdminPaymentInfoDto(BaseModel):
 class AdminPaymentDetailDto(AdminPaymentInfoDto):
     payment_response: Optional[dict] = None
 
+class AdminListMetaDto(BaseModel):
+    skip: int = 0
+    limit: int = 100
+    count: int = 0
+
 class AdminPaymentListResponseDto(BaseModel):
     status_code: int = Field(default=200)
     message: str = Field(default="Admin payment list accessed successfully")
     data: list[AdminPaymentInfoDto]
+    meta: Optional[AdminListMetaDto] = None
 
 class AdminPaymentDetailResponseDto(BaseModel):
     status_code: int = Field(default=200)

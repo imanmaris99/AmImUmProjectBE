@@ -62,10 +62,16 @@ class GetOrderInfoDto(BaseModel):
     shipping_cost: Optional[float] = 0.0
     order_item_lists: List[OrderItemDto]
 
+class PaginationMetaDto(BaseModel):
+    skip: int = 0
+    limit: int = 100
+    count: int = 0
+
 class GetOrderInfoResponseDto(BaseModel):
     status_code: int = Field(default=200)
     message: str = Field(default="Information about your order successfully retrieved")
     data: List[GetOrderInfoDto]
+    meta: Optional[PaginationMetaDto] = None
 
 class GetOrderDetailDto(BaseModel):
     id: str

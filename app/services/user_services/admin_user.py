@@ -47,10 +47,17 @@ def list_all_users(
             stmt.order_by(UserModel.created_at.desc()).offset(skip).limit(limit)
         ).scalars().all()
 
+        user_items = [_to_user_summary(user) for user in user_models]
+
         return optional.build(data=user_dtos.AdminUserListResponseDto(
             status_code=status.HTTP_200_OK,
             message=ADMIN_USER_LIST_MESSAGE,
-            data=[_to_user_summary(user) for user in user_models],
+            data=user_items,
+            meta=user_dtos.AdminUserListMetaDto(
+                skip=skip,
+                limit=limit,
+                count=len(user_items),
+            ),
         ))
 
     except SQLAlchemyError as e:

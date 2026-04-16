@@ -186,10 +186,16 @@ class AdminUserDetailDto(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+class AdminUserListMetaDto(BaseModel):
+    skip: int = 0
+    limit: int = 100
+    count: int = 0
+
 class AdminUserListResponseDto(BaseModel):
     status_code: int = Field(default=200)
     message: str = Field(default="Admin user list accessed successfully")
     data: list[AdminUserInfoDto]
+    meta: Optional[AdminUserListMetaDto] = None
 
 class AdminUserDetailResponseDto(BaseModel):
     status_code: int = Field(default=200)

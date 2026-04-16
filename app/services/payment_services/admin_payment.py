@@ -55,6 +55,11 @@ def list_all_payments(
             status_code=status.HTTP_200_OK,
             message=ADMIN_PAYMENT_LIST_MESSAGE,
             data=payment_items,
+            meta=payment_dtos.AdminListMetaDto(
+                skip=skip,
+                limit=limit,
+                count=len(payment_items),
+            ),
         ))
 
     except (IntegrityError, DataError) as db_error:

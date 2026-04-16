@@ -63,6 +63,11 @@ def list_all_orders(
             status_code=status.HTTP_200_OK,
             message=ADMIN_ORDER_LIST_MESSAGE,
             data=order_dtos_list,
+            meta=order_dtos.PaginationMetaDto(
+                skip=skip,
+                limit=limit,
+                count=len(order_dtos_list),
+            ),
         ))
 
     except (IntegrityError, DataError) as db_error:
