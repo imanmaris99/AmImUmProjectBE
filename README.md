@@ -417,6 +417,16 @@ Gunakan format berikut setiap kali menjalankan validasi manual:
 
 ### Admin dashboard API readiness
 
+Role resmi project saat ini:
+- `owner` -> level tertinggi, pemilik toko
+- `admin` -> operasional internal
+- `customer` -> pembeli
+
+Prinsip akses internal saat ini:
+- endpoint panel internal dapat diakses oleh `admin` dan `owner`
+- `customer` tidak boleh mengakses endpoint internal
+- role `owner` adalah penerus penamaan singkat dari konsep `pemilik_toko`
+
 Endpoint admin yang sudah siap dipakai untuk dashboard internal:
 
 - `POST /admin/login`
@@ -455,14 +465,15 @@ Ringkasan metric dashboard admin saat ini mencakup:
   - `gross_revenue_paid_orders`
 
 Catatan:
-- Semua endpoint admin di atas membutuhkan token admin yang valid, kecuali `POST /admin/login`.
+- Semua endpoint admin di atas membutuhkan token internal yang valid dengan role `admin` atau `owner`, kecuali `POST /admin/login`.
 - Query filter yang sudah tersedia saat ini:
   - orders: `status`, `skip`, `limit`
     - allowed status: `pending`, `paid`, `processing`, `shipped`, `completed`, `cancelled`, `failed`, `capture`, `refund`
   - payments: `status`, `skip`, `limit`
     - allowed status: `pending`, `settlement`, `expire`, `cancel`, `deny`, `refund`, `capture`
   - users: `role`, `is_active`, `skip`, `limit`
-    - allowed role: `admin`, `customer`
+    - allowed role saat ini di list admin backend: `admin`, `customer`
+    - catatan policy project terbaru: role resmi global adalah `owner`, `admin`, `customer`
 - Guard tambahan saat ini:
   - endpoint status user admin tidak dipakai untuk mengubah status akun yang role-nya `admin`
 - Swagger untuk route admin sudah diberi summary/description dasar agar lebih mudah dipakai saat QA dan integrasi frontend admin.
