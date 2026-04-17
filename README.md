@@ -597,6 +597,54 @@ Pemisahan role yang disarankan di frontend:
 - jangan tampilkan dashboard internal untuk `customer`
 - siapkan ekstensi berikutnya untuk owner-only actions tanpa merusak panel admin operasional
 
+### Role access matrix
+
+#### A. Customer area
+- Public catalog, brand, type, category, article:
+  - guest/customer allowed
+- Cart, wishlist, shipment address, shipment selection:
+  - `customer`
+- Checkout, payment create, my orders, my profile:
+  - `customer`
+- Customer hanya boleh mengakses resource miliknya sendiri.
+
+#### B. Internal operational area
+- Dashboard summary:
+  - `admin`
+  - `owner`
+- Order management:
+  - `admin`
+  - `owner`
+- Payment monitoring:
+  - `admin`
+  - `owner`
+- User management operasional:
+  - `admin`
+  - `owner`
+- Product, category, production, article, pack type management internal:
+  - `admin`
+  - `owner`
+
+#### C. Owner-only area (policy target)
+Area berikut disepakati sebagai owner-only secara policy project, walau sebagian implementasi endpoint spesifiknya masih perlu ditutup bertahap:
+- pengelolaan akun admin/internal level tinggi
+- perubahan role strategis user internal
+- kontrol penuh atas akun `owner`
+- keputusan sensitif yang memengaruhi struktur operasional internal
+
+#### D. Forbidden matrix
+- `customer` tidak boleh masuk panel internal
+- `admin` tidak boleh diperlakukan setara penuh dengan `owner`
+- endpoint sensitif level owner tidak boleh dibuka ke `customer`
+- endpoint sensitif level owner tidak boleh dibuka otomatis ke seluruh `admin` tanpa review policy
+
+#### E. Implementation direction
+Prioritas implementasi berikutnya agar tetap konsisten:
+1. pertahankan guard internal untuk `admin` dan `owner`
+2. tambah guard owner-only saat endpoint strategis mulai dibuat
+3. pisahkan menu frontend berdasarkan role hasil login
+4. hindari hardcode akses yang menyamakan semua role internal
+
 ### Auth dan payment QA execution prep
 
 #### Contoh payload aman untuk register
