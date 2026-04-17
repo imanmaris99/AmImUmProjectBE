@@ -217,6 +217,20 @@ class AdminUserStatusUpdateResponseDto(BaseModel):
     data: AdminUserStatusUpdateDto
 
 
+class AdminUserEditRequestDto(BaseModel):
+    fullname: str
+    firstname: str
+    lastname: str
+    phone: str
+    address: str
+
+
+class AdminUserEditResponseDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="Admin user updated successfully")
+    data: AdminUserDetailDto
+
+
 class AdminSelfProfileResponseDto(BaseModel):
     status_code: int = Field(default=200)
     message: str = Field(default="Admin profile retrieved successfully")

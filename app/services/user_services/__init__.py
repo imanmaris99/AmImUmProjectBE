@@ -17,3 +17,4 @@ from .verify_user_email import verify_user_email
 from .support_function import validate_user_data, create_firebase_user_account, delete_unverified_users, save_user_to_db, save_admin_to_db, handle_integrity_error
 from .admin_user import list_all_users, get_user_detail_admin, update_user_active_status_admin
 from .admin_profile import get_admin_profile, update_admin_profile, update_admin_photo, change_admin_password
+from .admin_user_update import update_user_profile_admin

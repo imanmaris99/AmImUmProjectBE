@@ -333,6 +333,30 @@ def admin_get_user_detail(
     return result.unwrap()
 
 
+@router.put(
+    "/users/{user_id}",
+    response_model=user_dtos.AdminUserEditResponseDto,
+    summary="Owner update user profile",
+    description="Memperbarui data profil user lain dari dashboard internal. Endpoint ini owner-only agar pengelolaan data user tetap terkontrol.",
+)
+def admin_update_user_profile(
+    user_id: str,
+    payload: user_dtos.AdminUserEditRequestDto,
+    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.owner_access_required)],
+    db: Session = Depends(get_db),
+):
+    result = user_services.update_user_profile_admin(
+        db=db,
+        user_id=user_id,
+        payload=payload,
+    )
+
+    if result.error:
+        raise result.error
+
+    return result.unwrap()
+
+
 @router.patch(
     "/users/{user_id}/status",
     response_model=user_dtos.AdminUserStatusUpdateResponseDto,
