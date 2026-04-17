@@ -123,6 +123,7 @@ def get_current_user(jwt_token: TokenPayLoad = Depends(get_jwt_pyload)):
 
 
 ADMIN_PANEL_ROLES = {"admin", "owner"}
+OWNER_PANEL_ROLES = {"owner"}
 
 
 # Fungsi untuk memastikan user memiliki akses ke panel internal
@@ -135,6 +136,20 @@ def admin_access_required(jwt_token: TokenPayLoad = Depends(get_jwt_pyload)):
                 "status_code": status.HTTP_403_FORBIDDEN,
                 "error":"Forbidden",
                 "message":"You do not have permission to access this resource."
+            },
+        )
+    return jwt_token
+
+
+# Fungsi untuk memastikan user memiliki akses owner-only
+def owner_access_required(jwt_token: TokenPayLoad = Depends(get_jwt_pyload)):
+    if not jwt_token or jwt_token.role not in OWNER_PANEL_ROLES:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "status_code": status.HTTP_403_FORBIDDEN,
+                "error": "Forbidden",
+                "message": "You do not have owner permission to access this resource."
             },
         )
     return jwt_token

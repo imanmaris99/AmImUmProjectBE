@@ -563,6 +563,7 @@ Endpoint yang siap dipakai:
 - `GET /admin/users`
 - `GET /admin/users/{user_id}`
 - `PATCH /admin/users/{user_id}/status`
+  - policy terbaru: owner-only
 
 Filter list yang siap:
 - `role`
@@ -644,6 +645,8 @@ Prioritas implementasi berikutnya agar tetap konsisten:
 2. tambah guard owner-only saat endpoint strategis mulai dibuat
 3. pisahkan menu frontend berdasarkan role hasil login
 4. hindari hardcode akses yang menyamakan semua role internal
+5. terapkan owner-only guard bertahap pada endpoint sensitif
+   - saat ini `PATCH /admin/users/{user_id}/status` mulai dibatasi untuk `owner`
 
 ### Endpoint access audit summary
 

@@ -336,8 +336,8 @@ def admin_get_user_detail(
 @router.patch(
     "/users/{user_id}/status",
     response_model=user_dtos.AdminUserStatusUpdateResponseDto,
-    summary="Admin update user active status",
-    description="Mengaktifkan atau menonaktifkan akun user dari dashboard admin. Endpoint ini tidak dipakai untuk mengubah status akun admin.",
+    summary="Owner update user active status",
+    description="Mengaktifkan atau menonaktifkan akun user dari dashboard internal. Endpoint ini dibatasi untuk owner agar kontrol status user internal lebih aman.",
     openapi_extra={
         "requestBody": {
             "content": {
@@ -353,7 +353,7 @@ def admin_get_user_detail(
 def admin_update_user_status(
     user_id: str,
     payload: user_dtos.AdminUserStatusUpdateRequestDto,
-    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.admin_access_required)],
+    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.owner_access_required)],
     db: Session = Depends(get_db),
 ):
     result = user_services.update_user_active_status_admin(
