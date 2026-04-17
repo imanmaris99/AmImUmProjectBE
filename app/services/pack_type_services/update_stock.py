@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.models.pack_type_model import PackTypeModel
-from app.dtos.pack_type_dtos import TypeIdToUpdateDto, PackTypeEditInfoDto, VariantProductDto, PackTypeEditInfoResponseDto 
+from app.dtos.pack_type_dtos import TypeIdToUpdateDto, PackTypeEditInfoDto, PackTypeUpdatedInfoDto, PackTypeEditInfoResponseDto 
 from app.dtos.error_response_dtos import ErrorResponseDto
 
 from app.utils.result import build, Result
@@ -36,13 +36,21 @@ def update_stock(
         db.commit()
         db.refresh(type_model)
 
-        # Buat response DTO
-        response_data = PackTypeEditInfoDto(
+        # Buat response DTO yang lebih kaya untuk sinkronisasi dashboard
+        response_data = PackTypeUpdatedInfoDto(
+            id=type_model.id,
+            product_id=type_model.product_id,
+            product=type_model.product,
+            name=type_model.name,
+            img=type_model.img,
+            variant=type_model.variant,
+            expiration=type_model.expiration,
             stock=type_model.stock,
-            discount=type_model.discount
+            discount=type_model.discount,
+            discounted_price=float(type_model.discounted_price),
+            updated_at=type_model.updated_at
         )
 
-        # return build(data=user_model)
         return build(data=PackTypeEditInfoResponseDto(
             status_code=200,
             message="Edit stock and discount product has been success",

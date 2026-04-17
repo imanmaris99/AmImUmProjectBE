@@ -243,6 +243,8 @@ python run.py
 - `GET /product/all` -> harus `200`
 - `GET /brand/all` -> harus `200`
 - `GET /type/all` -> harus `200` dan mengembalikan contract variant list yang memuat `product_id`, `product`, `name`, `variant`, `expiration`, `stock`, `discount`, `discounted_price`, `img`, `updated_at`
+- `POST /type/create` -> respons create variant harus minimal memuat `product_id`, `name`, `variant`, `expiration`, `stock`, `discount`, `created_at`, `updated_at`
+- `PUT /type/{type_id}` -> respons update variant sebaiknya mengembalikan payload variant yang kaya agar dashboard mudah sinkron setelah update
 
 ### Catatan sebelum mengklaim production penuh
 - pastikan hanya satu runtime app aktif

@@ -38,6 +38,19 @@ class PackTypeEditInfoDto(BaseModel):
     stock: int = Field(default=100)  # Nilai default diatur ke 100
     discount: Optional[float] = Field(default=30.0)  # Nilai default diatur ke 30.0, bukan 30%
 
+class PackTypeUpdatedInfoDto(BaseModel):
+    id: int
+    product_id: str
+    product: Optional[str] = None
+    name: str
+    img: Optional[str] = None
+    variant: Optional[str] = None
+    expiration: Optional[str] = None
+    stock: int
+    discount: Optional[float] = None
+    discounted_price: Optional[float] = None
+    updated_at: datetime
+
 class EditPhotoProductDto(BaseModel):
     img: str
 
@@ -62,7 +75,7 @@ class VariantProductDto(BaseModel):
 class PackTypeEditInfoResponseDto(BaseModel):
     status_code: int = Field(default=200)
     message: str = Field(default="Edit stock and discount product has been success")
-    data: PackTypeEditInfoDto
+    data: PackTypeUpdatedInfoDto
 
 class VariantAllProductDto(BaseModel):
     id: Optional[int] = None

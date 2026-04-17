@@ -30,6 +30,7 @@ def create_type(
         pack_type_response = PackTypeInfoDto(
             id=pack_type_instance.id,
             img=pack_type_instance.img,
+            product_id=pack_type_instance.product_id,
             name=pack_type_instance.name,
             min_amount=pack_type_instance.min_amount,
             variant=pack_type_instance.variant,
