@@ -215,4 +215,10 @@ class AdminUserStatusUpdateResponseDto(BaseModel):
     status_code: int = Field(default=200)
     message: str = Field(default="Admin user status updated successfully")
     data: AdminUserStatusUpdateDto
+
+
+class AdminSelfProfileResponseDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="Admin profile retrieved successfully")
+    data: UserCreateResponseDto
     

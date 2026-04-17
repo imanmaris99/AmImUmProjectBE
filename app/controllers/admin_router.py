@@ -385,6 +385,93 @@ def admin_dashboard_summary(
 
     return result.unwrap()
 
+
+@router.get(
+    "/profile",
+    response_model=user_dtos.AdminSelfProfileResponseDto,
+    summary="Admin get own profile",
+    description="Mengambil profil akun internal yang sedang login untuk kebutuhan halaman profile dashboard.",
+)
+def admin_get_my_profile(
+    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.admin_access_required)],
+    db: Session = Depends(get_db),
+):
+    result = user_services.get_admin_profile(db=db, user_id=jwt_token.id)
+
+    if result.error:
+        raise result.error
+
+    return result.unwrap()
+
+
+@router.put(
+    "/edit-info",
+    response_model=user_dtos.UserEditResponseDto,
+    summary="Admin update own profile without photo",
+    description="Memperbarui profil pribadi akun internal yang sedang login tanpa mengganti foto.",
+)
+async def admin_update_my_profile(
+    payload: user_dtos.UserEditProfileDto,
+    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.admin_access_required)],
+    db: Session = Depends(get_db),
+):
+    result = user_services.update_admin_profile(
+        db=db,
+        user_id=jwt_token.id,
+        payload=payload,
+    )
+
+    if result.error:
+        raise result.error
+
+    return result.unwrap()
+
+
+@router.put(
+    "/edit-photo",
+    response_model=user_dtos.UserEditPhotoProfileResponseDto,
+    summary="Admin update own profile photo",
+    description="Memperbarui foto profil akun internal yang sedang login.",
+)
+async def admin_update_my_photo(
+    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.admin_access_required)],
+    db: Session = Depends(get_db),
+    file: UploadFile = File(...),
+):
+    result = await user_services.update_admin_photo(
+        db=db,
+        user_id=jwt_token.id,
+        file=file,
+    )
+
+    if result.error:
+        raise result.error
+
+    return result.unwrap()
+
+
+@router.put(
+    "/change-password",
+    response_model=user_dtos.ChangePasswordResponseDto,
+    summary="Admin change own password",
+    description="Mengganti password akun internal yang sedang login dengan verifikasi password lama.",
+)
+async def admin_change_my_password(
+    payload: user_dtos.ChangePasswordDto,
+    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.admin_access_required)],
+    db: Session = Depends(get_db),
+):
+    result = await user_services.change_admin_password(
+        db=db,
+        user_id=jwt_token.id,
+        payload=payload,
+    )
+
+    if result.error:
+        raise result.error
+
+    return result.unwrap()
+
 ## == USER - FORGOT_PASSWORD == ##
 # @router.post(
 #     "/forgot-password",
