@@ -645,6 +645,52 @@ Prioritas implementasi berikutnya agar tetap konsisten:
 3. pisahkan menu frontend berdasarkan role hasil login
 4. hindari hardcode akses yang menyamakan semua role internal
 
+### Endpoint access audit summary
+
+#### 1. Public / guest-first endpoints
+Endpoint berikut secara fungsi produk cocok diperlakukan sebagai area publik sebelum login:
+- katalog dan detail produk (`product_router` read endpoints)
+- brand/type/category public listing
+- article/news public listing
+- RajaOngkir lookup dan shipping cost helper yang dipakai frontend checkout flow
+
+#### 2. Customer-auth endpoints
+Endpoint berikut cocok diperlakukan sebagai area customer setelah login:
+- cart (`cart_router`)
+- wishlist (`wishlist_router`)
+- shipment address (`shipment_address_router`)
+- shipment selection (`shipment_router`)
+- courier selection (`courier_router`)
+- checkout dan my orders (`order_router`)
+- payment create untuk order customer (`payment_router` create flow)
+- profile/update profile/password/photo (`user_router` self-service endpoints)
+- rating product oleh customer (`rating_router`)
+
+#### 3. Internal endpoints
+Endpoint berikut cocok diperlakukan sebagai area internal untuk `admin` dan `owner`:
+- `admin_router`
+- create/update/delete article internal
+- create/update category internal
+- product management internal
+- production management internal
+- pack type management internal
+
+#### 4. Owner-only policy candidates
+Dari audit struktur saat ini, area berikut paling layak dipindahkan bertahap ke owner-only policy ketika endpoint spesifiknya mulai dipisah:
+- perubahan role user internal
+- pengelolaan akun admin/owner
+- kontrol sensitif atas user internal level tinggi
+- keputusan strategis yang mengubah struktur operasional internal
+
+#### 5. Kesimpulan audit endpoint saat ini
+- struktur global backend sudah mengarah ke 3 lapisan akses yang sehat:
+  - public / guest
+  - customer-auth
+  - internal (`admin` + `owner`)
+- guard internal utama sekarang sudah menerima `admin` dan `owner`
+- customer flow tetap cocok dipertahankan seperti marketplace umum: login hanya diperlukan saat mulai memakai resource personal/transaksional
+- langkah implementasi berikutnya sebaiknya fokus pada pemisahan lebih tegas antara internal-operational vs owner-only
+
 ### Auth dan payment QA execution prep
 
 #### Contoh payload aman untuk register
