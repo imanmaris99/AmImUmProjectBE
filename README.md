@@ -478,6 +478,125 @@ Catatan:
   - endpoint status user admin tidak dipakai untuk mengubah status akun yang role-nya `admin`
 - Swagger untuk route admin sudah diberi summary/description dasar agar lebih mudah dipakai saat QA dan integrasi frontend admin.
 
+### Frontend admin integration map
+
+Role resmi yang dipakai frontend dan backend:
+- `owner`
+- `admin`
+- `customer`
+
+#### 1. Internal login
+- Route login internal:
+  - `POST /admin/login`
+- Role yang boleh masuk panel internal:
+  - `owner`
+  - `admin`
+- Role `customer` tidak boleh diarahkan ke dashboard internal.
+
+#### 2. Dashboard owner/admin
+Landing dashboard internal saat ini dapat memakai:
+- `GET /admin/dashboard/summary`
+
+Widget minimum yang siap dipakai:
+- total users
+- total active users
+- total orders
+- total pending orders
+- total paid orders
+- total processing orders
+- total shipped orders
+- total completed orders
+- total cancelled orders
+- total failed orders
+- total pending payments
+- total settlement payments
+- total expire payments
+- total cancel payments
+- total deny payments
+- total refund payments
+- total capture payments
+- gross revenue paid orders
+
+#### 3. Order management screen
+Endpoint yang siap dipakai:
+- `GET /admin/orders`
+- `GET /admin/orders/{order_id}`
+- `PATCH /admin/orders/{order_id}/status`
+
+Filter list yang siap:
+- `status`
+- `skip`
+- `limit`
+
+Allowed order status saat ini:
+- `pending`
+- `paid`
+- `processing`
+- `shipped`
+- `completed`
+- `cancelled`
+- `failed`
+- `capture`
+- `refund`
+
+#### 4. Payment monitoring screen
+Endpoint yang siap dipakai:
+- `GET /admin/payments`
+- `GET /admin/payments/order/{order_id}`
+
+Filter list yang siap:
+- `status`
+- `skip`
+- `limit`
+
+Allowed payment status saat ini:
+- `pending`
+- `settlement`
+- `expire`
+- `cancel`
+- `deny`
+- `refund`
+- `capture`
+
+#### 5. User management screen
+Endpoint yang siap dipakai:
+- `GET /admin/users`
+- `GET /admin/users/{user_id}`
+- `PATCH /admin/users/{user_id}/status`
+
+Filter list yang siap:
+- `role`
+- `is_active`
+- `skip`
+- `limit`
+
+Catatan penting user management saat ini:
+- endpoint status user tidak dipakai untuk mengubah status akun internal level admin/owner
+- list admin backend saat ini masih memvalidasi role filter `admin` dan `customer`
+- policy project resmi tetap memakai 3 role: `owner`, `admin`, `customer`
+
+#### 6. Navigasi frontend admin yang disarankan
+Menu minimum internal panel:
+- Dashboard
+- Orders
+- Payments
+- Users
+
+Pemisahan role yang disarankan di frontend:
+- `owner`
+  - lihat semua menu internal
+  - disiapkan untuk menu strategis tambahan di fase berikutnya
+- `admin`
+  - lihat dashboard operasional, orders, payments, users
+- `customer`
+  - tidak boleh melihat menu internal
+
+#### 7. Catatan implementasi frontend
+- simpan token internal dari `POST /admin/login`
+- gunakan guard route frontend berbasis role `owner` atau `admin`
+- jangan tampilkan dashboard internal untuk `customer`
+- siapkan ekstensi berikutnya untuk owner-only actions tanpa merusak panel admin operasional
+
 ### Auth dan payment QA execution prep
 
 #### Contoh payload aman untuk register
