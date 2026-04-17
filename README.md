@@ -694,6 +694,92 @@ Dari audit struktur saat ini, area berikut paling layak dipindahkan bertahap ke 
 - customer flow tetap cocok dipertahankan seperti marketplace umum: login hanya diperlukan saat mulai memakai resource personal/transaksional
 - langkah implementasi berikutnya sebaiknya fokus pada pemisahan lebih tegas antara internal-operational vs owner-only
 
+### Frontend internal role-based screen map
+
+#### 1. Public storefront layer
+Screen publik tanpa login:
+- Home / landing toko
+- Product listing
+- Product detail
+- Brand / category / type exploration
+- Article / news / info page
+
+Tujuan:
+- calon customer bisa eksplor tanpa hambatan login
+- role belum dipakai untuk area ini
+
+#### 2. Customer-auth layer
+Screen customer setelah login:
+- My account / profile
+- Edit profile / password / photo
+- Wishlist
+- Cart
+- Shipment address
+- Shipment selection / courier selection
+- Checkout
+- My orders
+- Payment follow-up
+- Product rating
+
+Prinsip:
+- customer hanya melihat dan mengelola resource miliknya sendiri
+
+#### 3. Internal shared layer (`admin` + `owner`)
+Screen internal yang boleh dipakai oleh `admin` dan `owner`:
+- Internal login
+- Dashboard summary
+- Order management list
+- Order detail
+- Payment monitoring list
+- Payment detail by order
+- User list
+- User detail
+- Product management
+- Category management
+- Article management
+- Production / pack type management
+
+Prinsip:
+- fokus pada operasional harian
+- layout dan navigation internal sebaiknya sama untuk `admin` dan `owner`
+
+#### 4. Owner-only layer
+Screen/aksi yang sebaiknya disiapkan sebagai owner-only:
+- sensitive user control
+- internal role control
+- admin/owner management
+- strategic settings and future high-risk actions
+
+Status implementasi saat ini:
+- owner-only action yang sudah mulai aktif di backend:
+  - `PATCH /admin/users/{user_id}/status`
+
+#### 5. UX/navigation recommendation
+Sidebar internal minimum:
+- Dashboard
+- Orders
+- Payments
+- Users
+- Catalog Management
+- Content Management
+
+Role-aware navigation:
+- `owner`
+  - lihat semua menu internal
+  - owner-only action/button tampil
+- `admin`
+  - lihat menu operasional internal
+  - owner-only action/button disembunyikan
+- `customer`
+  - tidak boleh melihat internal sidebar
+
+#### 6. Frontend implementation notes
+- pisahkan route group publik, customer-auth, dan internal
+- simpan token internal terpisah secara jelas pada flow dashboard internal
+- lakukan role check setelah login sebelum render internal menu
+- jangan gunakan pendekatan satu layout untuk semua role tanpa filtering permission
+- tandai action sensitif sejak awal agar owner-only mudah dirawat saat frontend membesar
+
 ### Auth dan payment QA execution prep
 
 #### Contoh payload aman untuk register
