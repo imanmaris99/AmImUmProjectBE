@@ -35,7 +35,8 @@ def all_types(
         # Konversi produk menjadi DTO
         types_dto = [
             VariantAllProductDto(
-                id=types.id, 
+                id=types.id,
+                product_id=types.product_id,
                 product=types.product,
                 name=types.name,
                 img=types.img,

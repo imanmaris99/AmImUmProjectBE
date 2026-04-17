@@ -242,7 +242,7 @@ python run.py
 - `GET /openapi.json` -> harus `200`
 - `GET /product/all` -> harus `200`
 - `GET /brand/all` -> harus `200`
-- `GET /type/all` -> harus `200`
+- `GET /type/all` -> harus `200` dan mengembalikan contract variant list yang memuat `product_id`, `product`, `name`, `variant`, `expiration`, `stock`, `discount`, `discounted_price`, `img`, `updated_at`
 
 ### Catatan sebelum mengklaim production penuh
 - pastikan hanya satu runtime app aktif

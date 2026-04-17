@@ -66,8 +66,13 @@ class PackTypeEditInfoResponseDto(BaseModel):
 
 class VariantAllProductDto(BaseModel):
     id: Optional[int] = None
+    product_id: Optional[str] = None
+    product: Optional[str] = None
+    name: Optional[str] = None
     variant: Optional[str] = None
     img: Optional[str] = None
+    expiration: Optional[str] = None
+    stock: Optional[int] = None
     discount: Optional[float] = None
     discounted_price: Optional[float] = None
     updated_at: datetime
