@@ -497,117 +497,108 @@ async def admin_change_my_password(
     return result.unwrap()
 
 ## == USER - FORGOT_PASSWORD == ##
-# @router.post(
-#     "/forgot-password",
-#     # response_model=jwt_dto.AccessTokenDto,
-#     response_model= user_dtos.ForgotPasswordResponseDto,
-#     responses={
-#         status.HTTP_404_NOT_FOUND: {
-#             "description": "Email not found",
-#             "content": {
-#                 "application/json": {
-#                     "example": {
-#                         "status_code": 404,
-#                         "error": "Not Found",
-#                         "message": "Email not found."
-#                     }
-#                 }
-#             }
-#         },
-#         status.HTTP_500_INTERNAL_SERVER_ERROR: {
-#             "description": "Failed to send reset password email",
-#             "content": {
-#                 "application/json": {
-#                     "example": {
-#                         "status_code": 500,
-#                         "error": "Internal Server Error",
-#                         "message": "Failed to send reset password email: {error_message}"
-#                     }
-#                 }
-#             }
-#         }
-#     },
-#     summary="Send password reset email"
-# )
-# def forgot_password(payload: user_dtos.ForgotPasswordDto, db: Session = Depends(get_db)):    
-#     """
-#     Kirim permintaan reset password ke email.
+@router.post(
+    "/forgot-password",
+    response_model=user_dtos.ForgotPasswordResponseDto,
+    responses={
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Email not found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 404,
+                        "error": "Not Found",
+                        "message": "Email not found."
+                    }
+                }
+            }
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "description": "Failed to send reset password email",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 500,
+                        "error": "Internal Server Error",
+                        "message": "Failed to send reset password email: {error_message}"
+                    }
+                }
+            }
+        }
+    },
+    summary="Send internal password reset email",
+    description="Mengirim email reset password untuk akun internal dashboard admin dan owner."
+)
+def admin_forgot_password(payload: user_dtos.ForgotPasswordDto, db: Session = Depends(get_db)):
+    result = user_services.send_reset_password_request(db, payload)
 
-#     Kriteria Password:
-#     - Password harus minimal 8 karakter.
-#     - Password harus mengandung setidaknya satu huruf besar.
-#     - Password harus mengandung setidaknya satu huruf kecil.
-#     - Password harus mengandung setidaknya satu angka.
-#     - Password harus mengandung setidaknya satu karakter spesial.
-#     """
-#     # Implementasi send_reset_password_request yang mengirim email dengan token
-#     result = user_services.send_reset_password_request(db, payload)  # Pass the DTO directly
-#     return result.unwrap()
+    if result.error:
+        raise result.error
+
+    return result.unwrap()
 
 
-## == USER - CONFIRM_NEW_PASSWORD == ##
-# @router.post(
-#     "/password-reset/confirm/",
-#     response_model=user_dtos.ConfirmResetPasswordResponseDto,
-#     responses={
-#         status.HTTP_404_NOT_FOUND: {
-#             "description": "Email not found",
-#             "content": {
-#                 "application/json": {
-#                     "example": {
-#                         "status_code": 404,
-#                         "error": "Not Found",
-#                         "message": "Email not found."
-#                     }
-#                 }
-#             }
-#         },
-#         status.HTTP_400_BAD_REQUEST: {
-#             "description": "Invalid password criteria",
-#             "content": {
-#                 "application/json": {
-#                     "example": {
-#                         "status_code": 400,
-#                         "error": "Bad Request",
-#                         "message": "Password must meet the required criteria."
-#                     }
-#                 }
-#             }
-#         },
-#         status.HTTP_500_INTERNAL_SERVER_ERROR: {
-#             "description": "Failed to reset password",
-#             "content": {
-#                 "application/json": {
-#                     "example": {
-#                         "status_code": 500,
-#                         "error": "Internal Server Error",
-#                         "message": "Failed to reset password: {error_message}"
-#                     }
-#                 }
-#             }
-#         }
-#     },
-#     summary="Confirm password reset"
-# )
-# def confirm_reset_password(payload: user_dtos.ConfirmResetPasswordDto, db: Session = Depends(get_db)):
-#     """
-#     API untuk mengkonfirmasi reset password setelah pengguna melakukannya di client-side.
+## == ADMIN - CONFIRM_NEW_PASSWORD == ##
+@router.post(
+    "/password-reset/confirm",
+    response_model=user_dtos.ResetPasswordResponseDto,
+    responses={
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Email not found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 404,
+                        "error": "Not Found",
+                        "message": "Email not found."
+                    }
+                }
+            }
+        },
+        status.HTTP_400_BAD_REQUEST: {
+            "description": "Invalid password criteria",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 400,
+                        "error": "Bad Request",
+                        "message": "Password must meet the required criteria."
+                    }
+                }
+            }
+        },
+        status.HTTP_406_NOT_ACCEPTABLE: {
+            "description": "Invalid verification code",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 406,
+                        "error": "Verification Code not Allowed",
+                        "message": "Invalid verification code."
+                    }
+                }
+            }
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "description": "Failed to reset password",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 500,
+                        "error": "Internal Server Error",
+                        "message": "Failed to reset password: {error_message}"
+                    }
+                }
+            }
+        }
+    },
+    summary="Confirm internal password reset",
+    description="Mengonfirmasi reset password untuk akun internal dashboard admin dan owner."
+)
+def admin_confirm_reset_password(payload: user_dtos.ResetPasswordDto, db: Session = Depends(get_db)):
+    result = user_services.confirm_password_reset(payload=payload, db=db)
 
-#     Dengan menggunakan tautan reset password yang dikirim melalui email, 
-    
-#     Anda memastikan bahwa hanya pengguna yang memiliki akses ke email yang terdaftar yang dapat melakukan penggantian password.
+    if result.error:
+        raise result.error
 
-#     Kriteria Password:
-#     - Password harus minimal 8 karakter.
-#     - Password harus mengandung setidaknya satu huruf besar.
-#     - Password harus mengandung setidaknya satu huruf kecil.
-#     - Password harus mengandung setidaknya satu angka.
-#     - Password harus mengandung setidaknya satu karakter spesial.
-
-#     Returns:
-
-#         dict: Pesan sukses jika password berhasil direset.
-#     """
-#     result = user_services.confirm_password_reset(payload=payload, db=db)
-
-#     return result.unwrap()  # Return the success response if no error
+    return result.unwrap()

@@ -8,12 +8,20 @@ from app.utils.firebase_utils import send_email_reset_password
 from app.libs.verification_code import generate_verification_code
 
 ALLOWED_DOMAINS = {"gmail.com", "yahoo.com", "outlook.com"}
+DEFAULT_RESET_URL = "https://amimum-herbal-dashboard.vercel.app/reset-password"
+
 
 def is_allowed_email_domain(email: str) -> bool:
     domain = email.split('@')[-1]
     return domain in ALLOWED_DOMAINS
 
-def send_reset_password_request(db: Session, payload: user_dtos.ForgotPasswordDto):
+
+
+def send_reset_password_request(
+    db: Session,
+    payload: user_dtos.ForgotPasswordDto,
+    reset_base_url: str = DEFAULT_RESET_URL,
+):
     # Validasi domain email
     if not is_allowed_email_domain(payload.email):
         raise HTTPException(
@@ -46,8 +54,9 @@ def send_reset_password_request(db: Session, payload: user_dtos.ForgotPasswordDt
         user.verification_code = verification_code
         db.commit()
 
-        # Buat link reset password menggunakan kode verifikasi kustom
-        reset_link = f"https://amimumprojectbe-production.up.railway.app/user/password-reset/confirm?email={payload.email}&code={verification_code}"
+        reset_link = (
+            f"{reset_base_url}?email={payload.email}&code={verification_code}"
+        )
 
         # Kirim email reset password
         send_email_reset_password(payload.email, verification_code, reset_link)
@@ -76,6 +85,3 @@ def send_reset_password_request(db: Session, payload: user_dtos.ForgotPasswordDt
                 "message": f"Unexpected error occurred: {str(e)}"
             }
         )
-
-
-
