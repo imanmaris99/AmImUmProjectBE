@@ -39,15 +39,23 @@ def get_articles(
                 logger.warning("Failed to read article cache for key %s: %s", cache_key, cache_error)
         
         if cached_article:
-            article_dto = [
-                article_dtos.GetAllArticleDTO(**addr)
-                for addr in json.loads(cached_article)
-            ]
-            return build(data=article_dtos.AllArticleResponseDto(
-                status_code=status.HTTP_200_OK,
-                message=RESPONSE_MESSAGE,
-                data=article_dto
-            ))
+            cached_article_data = json.loads(cached_article)
+            if all(isinstance(addr, dict) and addr.get('id') is not None for addr in cached_article_data):
+                article_dto = [
+                    article_dtos.GetAllArticleDTO(**addr)
+                    for addr in cached_article_data
+                ]
+                return build(data=article_dtos.AllArticleResponseDto(
+                    status_code=status.HTTP_200_OK,
+                    message=RESPONSE_MESSAGE,
+                    data=article_dto
+                ))
+
+            logger.info("Article cache key %s is stale, refreshing from database.", cache_key)
+            try:
+                redis_client.delete(cache_key)
+            except Exception as cache_error:
+                logger.warning("Failed to delete stale article cache for key %s: %s", cache_key, cache_error)
 
         article = db.execute(
             select(ArticleModel)
