@@ -289,11 +289,11 @@ def admin_get_payment_detail(
 @router.get(
     "/users",
     response_model=user_dtos.AdminUserListResponseDto,
-    summary="Owner get all users",
-    description="Mengambil seluruh user untuk owner. Mendukung filter role, status aktif, dan pagination dasar. Endpoint ini owner-only agar monitoring user terpusat.",
+    summary="Admin get all users",
+    description="Mengambil seluruh user untuk monitoring admin dan owner. Mendukung filter role, status aktif, dan pagination dasar.",
 )
 def admin_get_all_users(
-    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.owner_access_required)],
+    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.admin_access_required)],
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=100, ge=1, le=500),
     role: str | None = Query(default=None),
@@ -317,12 +317,12 @@ def admin_get_all_users(
 @router.get(
     "/users/{user_id}",
     response_model=user_dtos.AdminUserDetailResponseDto,
-    summary="Owner get user detail",
-    description="Mengambil detail lengkap satu user untuk kebutuhan monitoring owner. Endpoint ini owner-only.",
+    summary="Admin get user detail",
+    description="Mengambil detail lengkap satu user untuk kebutuhan monitoring admin dan owner.",
 )
 def admin_get_user_detail(
     user_id: str,
-    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.owner_access_required)],
+    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.admin_access_required)],
     db: Session = Depends(get_db),
 ):
     result = user_services.get_user_detail_admin(db=db, user_id=user_id)
