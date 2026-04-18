@@ -244,7 +244,7 @@ def read_articles(
         summary="Update an article"
     )
 def update_article(
-    article_id_update: ArticleIdToUpdateDto, 
+    article_id: int,
     article_update_dto: ArticleDataUpdateDTO,
     db: Session = Depends(get_db)
 ):
@@ -264,7 +264,11 @@ def update_article(
     - **409 Conflict**: Terjadi konflik saat memperbarui artikel.
     - **500 Internal Server Error**: Kesalahan server saat memperbarui artikel.
     """
-    result = article_services.update_article(db, article_id_update, article_update_dto)
+    result = article_services.update_article(
+        db,
+        ArticleIdToUpdateDto(article_id=article_id),
+        article_update_dto,
+    )
     
     if result.error:
         raise result.error
