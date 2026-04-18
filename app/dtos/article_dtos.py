@@ -37,6 +37,7 @@ class ArticleCreateResponseDto(BaseModel):
     data: ArticleResponseDTO
 
 class GetAllArticleDTO(BaseModel):
+    id: int
     display_id: Optional[int] = None
     title: str
     img: Optional[str] = None

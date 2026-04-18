@@ -66,6 +66,7 @@ def get_articles(
         # Konversi wishlist menjadi DTO
         article_dto = [
             article_dtos.GetAllArticleDTO(
+                id=art.id,
                 display_id=art.display_id,
                 title=art.title,
                 img=art.img,
