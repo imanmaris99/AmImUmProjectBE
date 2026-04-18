@@ -228,7 +228,7 @@ def read_types(
     summary="Update the stock of a product type"
 )
 def update_stock(
-    type_id_update: pack_type_dtos.TypeIdToUpdateDto, 
+    type_id: int,
     type_update_dto: pack_type_dtos.PackTypeEditInfoDto,
     db: Session = Depends(get_db)
 ):
@@ -250,9 +250,9 @@ def update_stock(
     
     """
     result = pack_type_services.update_stock(
-        db=db, 
-        type_id_update=type_id_update, 
-        type_update=type_update_dto  
+        db=db,
+        type_id_update=pack_type_dtos.TypeIdToUpdateDto(type_id=type_id),
+        type_update=type_update_dto
     )
 
     # Tangani error jika ada

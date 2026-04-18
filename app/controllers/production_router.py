@@ -639,7 +639,7 @@ def get_production_detail(
     summary="Update Production Company Information",
 )
 def update_info_company(
-    company_id: production_dtos.ProductionIdToUpdateDto, 
+    production_id: int,
     production_update: production_dtos.ProductionInfoUpdateDTO,
     db: Session = Depends(get_db)
 ):
@@ -664,9 +664,9 @@ def update_info_company(
     
     """
     result = production_services.edit_production(
-        db=db, 
-        company_id=company_id, 
-        production_update=production_update 
+        db=db,
+        company_id=production_dtos.ProductionIdToUpdateDto(production_id=production_id),
+        production_update=production_update
     )
 
     # Tangani error jika ada

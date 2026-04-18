@@ -946,7 +946,7 @@ def get_product_detail(
     summary="Update product details"
 )
 def update_product(
-    product_id_update: product_dtos.ProductIdToUpdateDTO, 
+    product_id: UUID,
     product_update: product_dtos.ProductUpdateDTO,
     db: Session = Depends(get_db)
 ):
@@ -968,9 +968,9 @@ def update_product(
     
     """
     result = product_services.update_product(
-        db=db, 
-        product_id_update=product_id_update, 
-        product_update=product_update  
+        db=db,
+        product_id_update=product_dtos.ProductIdToUpdateDTO(product_id=str(product_id)),
+        product_update=product_update
     )
 
     if result.error:
