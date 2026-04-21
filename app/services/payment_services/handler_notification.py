@@ -51,7 +51,7 @@ def handler_notification(notification_data: dict, db: Session) -> Result[dict, E
                 }
             ))
 
-        normalized_notification = notification.dict()
+        normalized_notification = notification.model_dump()
         order_id = notification.order_id
         logger.info(f"Memproses notifikasi untuk order_id: {order_id}")
 

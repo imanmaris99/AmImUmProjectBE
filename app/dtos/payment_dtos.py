@@ -1,7 +1,9 @@
-from pydantic import BaseModel, Field, validator
-from typing import Optional, Any
 from datetime import datetime
-from app.models.enums import PaymentTypeEnum, TransactionStatusEnum, FraudStatusEnum  # Mengimpor Enum
+from typing import Optional
+
+from pydantic import BaseModel, Field, field_validator
+
+from app.models.enums import FraudStatusEnum, PaymentTypeEnum, TransactionStatusEnum
 
 class PaymentOrderByIdDto(BaseModel):
     order_id: str  # UUID dari order yang akan dibayar
@@ -10,9 +12,9 @@ class PaymentCreateDto(BaseModel):
     order_id: str  # UUID dari order yang akan dibayar
     payment_type: str  # Jenis pembayaran (credit_card, gopay, bank_transfer, dll.)
 
-    @validator("payment_type")
-    def validate_payment_type(cls, value):
-        # Mengambil metode pembayaran yang valid
+    @field_validator("payment_type")
+    @classmethod
+    def validate_payment_type(cls, value: str) -> str:
         valid_methods = PaymentTypeEnum.load_from_midtrans()
         if value not in valid_methods:
             raise ValueError(f"Tipe pembayaran tidak valid. Pilihan yang tersedia: {', '.join(valid_methods)}")

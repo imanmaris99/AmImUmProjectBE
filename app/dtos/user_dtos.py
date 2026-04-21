@@ -1,11 +1,8 @@
-from typing import Optional, Literal
-from datetime import datetime
-
-from pydantic import BaseModel, Field, EmailStr, validator
-
 import re
+from datetime import datetime
+from typing import Literal, Optional
 
-from app.libs.jwt_lib import jwt_dto 
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 # class UserCreateDto(BaseModel):
@@ -24,8 +21,9 @@ class UserCreateDto(BaseModel):
     phone: str = Field(..., description="Phone number of the user, must start with +62 and contain 10-11 digits after that")
     password: str = Field(..., description="Password for the user account. Must be at least 8 characters and include uppercase, lowercase, number, and special character", examples=["Amimum123!"])
 
-    @validator('phone')
-    def validate_phone(cls, value):
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, value: str) -> str:
         pattern = r"^\+62\d{10,11}$"
         if not re.match(pattern, value):
             raise ValueError("Phone number must start with +62 and contain 10-11 digits after that")

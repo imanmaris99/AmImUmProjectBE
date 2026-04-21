@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field, root_validator
-from typing import List, Optional
 from datetime import datetime
+from typing import List, Optional
+
+from pydantic import BaseModel, Field, model_validator
 
 from app.dtos.order_item_dtos import OrderItemDto
 from app.dtos.shipment_dtos import MyShipmentAddressOrderInfoDto
@@ -15,14 +16,11 @@ class OrderCreateDTO(BaseModel):
     notes: Optional[str] = None
     shipment_id: Optional[str] = None
 
-    @root_validator(skip_on_failure=True)
-    def validate_pickup_notes(cls, values):
-        delivery_type = values.get("delivery_type")
-        notes = values.get("notes")
-        
-        if delivery_type == DeliveryTypeEnum.pickup and not notes:
+    @model_validator(mode="after")
+    def validate_pickup_notes(self):
+        if self.delivery_type == DeliveryTypeEnum.pickup and not self.notes:
             raise ValueError("Notes wajib diisi untuk pengiriman tipe pickup.")
-        return values
+        return self
     
 class OrderCreateInfoDTO(BaseModel):
     id: str

@@ -18,7 +18,7 @@ def user_edit(
     try:
         user_model: Type[UserModel] = db.query(UserModel).filter(UserModel.id == user_id).first()
         if user_model:
-            for field, value in user.dict().items():
+            for field, value in user.model_dump().items():
                 setattr(user_model, field, value)
 
             db.commit()

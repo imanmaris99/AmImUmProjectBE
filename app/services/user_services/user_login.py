@@ -20,7 +20,7 @@ def user_login(db: Session, user: user_dtos.UserLoginPayloadDto) -> optional.Opt
                 status_code=status.HTTP_400_BAD_REQUEST,
                 error="Bad Request",
                 message="Email and password must be provided."
-            ).dict()
+            ).model_dump()
         ))
 
     try:
@@ -33,7 +33,7 @@ def user_login(db: Session, user: user_dtos.UserLoginPayloadDto) -> optional.Opt
                     status_code=status.HTTP_404_NOT_FOUND,
                     error="Not Found",
                     message="User with the provided email does not exist."
-                ).dict()
+                ).model_dump()
             ))
 
         user_model = user_optional.data
@@ -45,7 +45,7 @@ def user_login(db: Session, user: user_dtos.UserLoginPayloadDto) -> optional.Opt
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     error="Unauthorized",
                     message="This account cannot use password login. Please use the sign-in method linked to your account."
-                ).dict()
+                ).model_dump()
             ))
 
         if not user_model.is_active:
@@ -55,7 +55,7 @@ def user_login(db: Session, user: user_dtos.UserLoginPayloadDto) -> optional.Opt
                     status_code=status.HTTP_403_FORBIDDEN,
                     error="Forbidden",
                     message="Your account is not active. Please contact support."
-                ).dict()
+                ).model_dump()
             ))
 
         if not password_lib.verify_password(plain_password=user.password, hashed_password=user_model.hash_password):
@@ -65,7 +65,7 @@ def user_login(db: Session, user: user_dtos.UserLoginPayloadDto) -> optional.Opt
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     error="Unauthorized",
                     message="Password does not match."
-                ).dict()
+                ).model_dump()
             ))
 
         access_token = jwt_service.create_access_token({
@@ -90,7 +90,7 @@ def user_login(db: Session, user: user_dtos.UserLoginPayloadDto) -> optional.Opt
                 status_code=status.HTTP_409_CONFLICT,
                 error="Conflict",
                 message=f"Database conflict: {str(e)}"
-            ).dict()
+            ).model_dump()
         ))
 
     except HTTPException as e:
@@ -103,5 +103,5 @@ def user_login(db: Session, user: user_dtos.UserLoginPayloadDto) -> optional.Opt
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
                 message="An unexpected error occurred during login."
-            ).dict()
+            ).model_dump()
         ))

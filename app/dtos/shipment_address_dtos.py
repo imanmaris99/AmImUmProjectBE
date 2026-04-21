@@ -1,8 +1,8 @@
-from datetime import datetime
-from pydantic import BaseModel, Field, validator
-from typing import List, Optional, Literal
-
 import re
+from datetime import datetime
+from typing import List, Optional
+
+from pydantic import BaseModel, Field, field_validator
 
 class ShipmentAddressIdToUpdateDto(BaseModel):
     address_id:int
@@ -17,8 +17,9 @@ class ShipmentAddressCreateDto(BaseModel):
     country: Optional[str] = None
     zip_code: Optional[int] = None
 
-    @validator('phone')
-    def validate_phone(cls, value):
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, value: str) -> str:
         pattern = r"^\+62\d{10,11}$"
         if not re.match(pattern, value):
             raise ValueError("Phone number must start with +62 and contain 10-11 digits after that")
