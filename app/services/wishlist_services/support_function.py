@@ -9,7 +9,6 @@ from app.models.wishlist_model import WishlistModel
 from app.dtos import wishlist_dtos
 from app.dtos.error_response_dtos import ErrorResponseDto
 
-from app.utils.result import build, Result
 
 
 #total product items in your cart have been successfully calculated
@@ -21,13 +20,13 @@ def get_total_records(db: Session, user_id: str):
     ).scalar()
 
 # Utility Function for Handling Database Errors
-def handle_db_error(db: Session, error: SQLAlchemyError) -> Result:
+def handle_db_error(db: Session, error: SQLAlchemyError) -> HTTPException:
     db.rollback()
-    return build(error=HTTPException(
+    return HTTPException(
         status_code=status.HTTP_409_CONFLICT,
         detail=ErrorResponseDto(
             status_code=status.HTTP_409_CONFLICT,
             error="Conflict",
             message=f"Database error: {str(error)}"
-        ).dict()
-    ))
+        ).model_dump()
+    )
