@@ -21,7 +21,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     op.add_column('pack_types', sa.Column('price', sa.DECIMAL(10, 2), nullable=True))
-    op.execute('UPDATE pack_types pt JOIN products p ON p.id = pt.product_id SET pt.price = p.price WHERE pt.price IS NULL')
+    op.execute('UPDATE pack_types AS pt SET price = p.price FROM products AS p WHERE p.id = pt.product_id AND pt.price IS NULL')
     op.alter_column('pack_types', 'price', existing_type=sa.DECIMAL(10, 2), nullable=False)
     op.alter_column('pack_types', 'product_id', existing_type=mysql.CHAR(length=36), nullable=False)
 
