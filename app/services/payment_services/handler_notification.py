@@ -1,22 +1,24 @@
+import base64
+import hashlib
+import logging
+
+import requests
 from fastapi import HTTPException
 from pydantic import ValidationError
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-import requests
-import base64
-import hashlib
-from app.models.payment_model import PaymentModel
-from app.models.order_model import OrderModel
-from app.models.enums import TransactionStatusEnum, FraudStatusEnum
+
 from app.dtos.payment_dtos import (
+    MidtransNotificationDto,
     PaymentNotificationResponseDto,
     PaymentNotificationSchemaDto,
-    MidtransNotificationDto,
 )
-from app.utils.result import build, Result
-from app.libs.midtrans_config import MIDTRANS_SERVER_KEY, MIDTRANS_IS_PRODUCTION
-import logging
+from app.libs.midtrans_config import MIDTRANS_IS_PRODUCTION, MIDTRANS_SERVER_KEY
+from app.models.enums import FraudStatusEnum, TransactionStatusEnum
+from app.models.order_model import OrderModel
+from app.models.payment_model import PaymentModel
+from app.utils.result import Result, build
 
 logger = logging.getLogger(__name__)
 
@@ -120,10 +122,11 @@ def handler_notification(notification_data: dict, db: Session) -> Result[dict, E
                 detail="Pesanan tidak ditemukan."
             ))
 
-        # Map status pembayaran ke status pesanan
+        # Map status pembayaran ke status pesanan dengan guard transisi
         transaction_status = resolve_transaction_status(midtrans_data.get("transaction_status"))
-        order.status = map_payment_status_to_order_status(transaction_status)
-        logger.info(f"Status pesanan diperbarui menjadi: {order.status}")
+        next_order_status = map_payment_status_to_order_status(transaction_status)
+        order.status = apply_order_status_transition(order.status, next_order_status)
+        logger.info("Status pesanan diperbarui menjadi: %s", order.status)
 
         # Commit perubahan ke database
         db.commit()
@@ -267,10 +270,55 @@ def map_payment_status_to_order_status(transaction_status: TransactionStatusEnum
         TransactionStatusEnum.cancel: "failed",
         TransactionStatusEnum.deny: "failed",
         TransactionStatusEnum.pending: "pending",
-        TransactionStatusEnum.capture:"capture",
-        TransactionStatusEnum.refund:"refund"
+        TransactionStatusEnum.capture: "capture",
+        TransactionStatusEnum.refund: "refund",
     }
     mapped_status = status_mapping.get(transaction_status, "unknown")
     if mapped_status == "unknown":
-        logger.warning(f"Unmapped transaction status: {transaction_status}")
+        logger.warning("Unmapped transaction status: %s", transaction_status)
     return mapped_status
+
+
+ORDER_STATUS_PRECEDENCE = {
+    "pending": 10,
+    "paid": 20,
+    "capture": 25,
+    "processing": 30,
+    "shipped": 40,
+    "completed": 50,
+    "failed": 15,
+    "cancelled": 15,
+    "refund": 60,
+}
+
+TERMINAL_ORDER_STATUSES = {"completed", "refund"}
+
+
+def apply_order_status_transition(current_status: str | None, next_status: str) -> str:
+    normalized_current = (current_status or "").strip().lower() or "pending"
+    normalized_next = (next_status or "").strip().lower()
+
+    if not normalized_next or normalized_next == "unknown":
+        logger.warning("Skip order status transition because next status is invalid: %s", next_status)
+        return normalized_current
+
+    if normalized_current in TERMINAL_ORDER_STATUSES:
+        logger.info(
+            "Skip order status transition from terminal status %s to %s",
+            normalized_current,
+            normalized_next,
+        )
+        return normalized_current
+
+    current_rank = ORDER_STATUS_PRECEDENCE.get(normalized_current, 0)
+    next_rank = ORDER_STATUS_PRECEDENCE.get(normalized_next, 0)
+
+    if next_rank < current_rank and normalized_next not in {"failed", "refund"}:
+        logger.info(
+            "Skip regressive order status transition from %s to %s",
+            normalized_current,
+            normalized_next,
+        )
+        return normalized_current
+
+    return normalized_next
