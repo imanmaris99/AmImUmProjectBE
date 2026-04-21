@@ -77,34 +77,6 @@ def create_firebase_user(email: str, password: str):
         )
 
 
-# Fungsi untuk autentikasi pengguna di Firebase
-def authenticate_firebase_user(email: str, password: str):
-    """Autentikasi pengguna di Firebase."""
-    _ensure_firebase_enabled()
-    try:
-        firebase_user = auth.get_user_by_email(email)
-        return firebase_user
-    
-    except auth.UserNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorResponseDto(
-                status_code=status.HTTP_404_NOT_FOUND,
-                error="Not Found",
-                message="User with the provided email does not exist in Firebase."
-            ).dict()
-        )
-    
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=ErrorResponseDto(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                error="Internal Server Error",
-                message=f"Error authenticating user in Firebase: {str(e)}"
-            ).dict()
-        )
-
 def delete_firebase_user(firebase_uid: str) -> None:
     """
     Menghapus akun user dari Firebase Authentication.

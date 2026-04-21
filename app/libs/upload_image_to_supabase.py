@@ -1,9 +1,14 @@
+import io
+import logging
 import re
 import time
-import io
+
 from fastapi import UploadFile, HTTPException, status
 from PIL import Image
+
 from app.libs.supabase_client import supabase
+
+logger = logging.getLogger(__name__)
 
 # Konstanta untuk validasi file
 ALLOWED_EXTENSIONS = ['png', 'jpeg', 'jpg', 'webp']
@@ -88,26 +93,22 @@ async def upload_image_to_supabase(
         if folder_name:
             unique_filename = f"{folder_name}/{unique_filename}"
 
-        # Tampilkan URL file lama yang akan dihapus
-        print(f"Old file URL: {old_file_url}")
+        logger.debug("Preparing Supabase upload for bucket=%s folder=%s", bucket_name, folder_name)
 
         # Hapus file lama jika ada
         if old_file_url:
             old_file_name = old_file_url.split('/')[-1].split('?')[0].strip()
-            print(f"Old file name extracted: {old_file_name}")
-            print(f"Attempting to delete old file: {old_file_name}")
+            logger.debug("Attempting to delete previous file %s from bucket=%s", old_file_name, bucket_name)
 
             delete_response = supabase.storage.from_(bucket_name).remove([old_file_name])
-            print(f"Delete response: {delete_response}")
 
             if isinstance(delete_response, dict) and 'error' in delete_response:
                 raise Exception(f"Error deleting old file: {delete_response['error'].get('message', 'Unknown error')}")
             elif not delete_response:
-                print("Old file not found or already deleted.")
+                logger.info("Previous file %s was not found or was already deleted.", old_file_name)
 
         # Menyimpan file ke storage Supabase
         upload_response = supabase.storage.from_(bucket_name).upload(unique_filename, file_content)
-        print(f"Upload response: {upload_response}")
         
         if isinstance(upload_response, dict) and 'error' in upload_response:
             raise Exception(f"Error uploading file: {upload_response['error'].get('message', 'Unknown error')}")
@@ -116,7 +117,6 @@ async def upload_image_to_supabase(
 
         # URL publik file yang diupload
         public_url_response = supabase.storage.from_(bucket_name).get_public_url(unique_filename)
-        print(f"Public URL response: {public_url_response}")
 
         if isinstance(public_url_response, str):
             public_url = public_url_response
@@ -126,5 +126,5 @@ async def upload_image_to_supabase(
         return public_url
 
     except Exception as e:
-        print(f"An error occurred: {str(e)}")
+        logger.exception("Failed to upload image to Supabase: %s", e)
         return None

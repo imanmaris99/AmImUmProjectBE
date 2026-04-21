@@ -51,8 +51,11 @@ def create_payment(
 
 @router.post(
     "/notifications",
+    deprecated=True,
     response_model=payment_dtos.PaymentNotificationResponseDto,
     status_code=status.HTTP_200_OK,
+    summary="Deprecated internal payment sync endpoint",
+    description="Deprecated. Gunakan /payments/handler-notifications untuk callback Midtrans publik. Endpoint ini dipertahankan sementara untuk kompatibilitas internal.",
     openapi_extra={
         "requestBody": {
             "content": {
@@ -65,23 +68,13 @@ def create_payment(
         }
     }
 )
-def receive_payment_notification(
-    notification_data: payment_dtos.InfoTransactionIdDto,  # Data dari body request
+def receive_payment_notification_legacy(
+    notification_data: payment_dtos.InfoTransactionIdDto,
     jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],
     db: Session = Depends(get_db)
 ):
-    """
-    Endpoint untuk menerima notifikasi pembayaran dari Midtrans.
-
-    Args:
-        notification_data (InfoTransactionIdDto): Data notifikasi yang dikirimkan oleh Midtrans.
-        db (Session): Sesi database yang digunakan.
-
-    Returns:
-        PaymentNotificationResponseDto: Respons sukses atau error.
-    """
     result = payment_services.handle_notification(
-        notification_data, 
+        notification_data,
         db,
         jwt_token.id
     )
