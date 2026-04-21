@@ -205,6 +205,88 @@ def test_handler_notification_updates_payment_and_order(monkeypatch, handler_not
     assert db.committed is True
 
 
+def test_handler_notification_returns_404_when_payment_missing(monkeypatch, handler_notification_module):
+    monkeypatch.setattr(handler_notification_module, "MIDTRANS_SERVER_KEY", "server-key")
+    monkeypatch.setattr(
+        handler_notification_module,
+        "fetch_midtrans_transaction_status",
+        lambda order_id: build(data={
+            "order_id": order_id,
+            "transaction_id": "trx-1",
+            "transaction_status": "settlement",
+            "status_code": "200",
+            "payment_type": "bank_transfer",
+            "gross_amount": "10000.00",
+            "signature_key": "valid-signature",
+            "fraud_status": "accept",
+        }),
+    )
+    monkeypatch.setattr(handler_notification_module, "validate_signature_key", lambda **kwargs: True)
+    monkeypatch.setattr(handler_notification_module, "get_payment_by_order_id", lambda order_id, db: None)
+
+    result = handler_notification_module.handler_notification(
+        {
+            "order_id": "order-missing",
+            "transaction_status": "settlement",
+            "status_code": "200",
+            "payment_type": "bank_transfer",
+            "gross_amount": "10000.00",
+            "signature_key": "valid-signature",
+        },
+        DummyDB(),
+    )
+
+    assert isinstance(result.error, HTTPException)
+    assert result.error.status_code == 404
+
+
+def test_handler_notification_returns_404_when_order_missing(monkeypatch, handler_notification_module):
+    db = DummyDB()
+    payment = SimpleNamespace(
+        order_id="order-1",
+        payment_type=None,
+        transaction_id=None,
+        transaction_status=None,
+        fraud_status=None,
+        payment_response=None,
+    )
+
+    monkeypatch.setattr(handler_notification_module, "MIDTRANS_SERVER_KEY", "server-key")
+    monkeypatch.setattr(
+        handler_notification_module,
+        "fetch_midtrans_transaction_status",
+        lambda order_id: build(data={
+            "order_id": order_id,
+            "transaction_id": "trx-1",
+            "transaction_status": "settlement",
+            "status_code": "200",
+            "payment_type": "bank_transfer",
+            "gross_amount": "10000.00",
+            "signature_key": "valid-signature",
+            "fraud_status": "accept",
+        }),
+    )
+    monkeypatch.setattr(handler_notification_module, "validate_signature_key", lambda **kwargs: True)
+    monkeypatch.setattr(handler_notification_module, "get_payment_by_order_id", lambda order_id, db: payment)
+    monkeypatch.setattr(handler_notification_module, "get_order_by_id", lambda order_id, db: None)
+
+    result = handler_notification_module.handler_notification(
+        {
+            "order_id": "order-1",
+            "transaction_status": "settlement",
+            "status_code": "200",
+            "payment_type": "bank_transfer",
+            "gross_amount": "10000.00",
+            "signature_key": "valid-signature",
+        },
+        db,
+    )
+
+    assert isinstance(result.error, HTTPException)
+    assert result.error.status_code == 404
+    assert db.rolled_back is False
+
+
 def test_handle_notification_delegates_to_public_callback(monkeypatch, handle_notification_module):
     captured = {}
 
