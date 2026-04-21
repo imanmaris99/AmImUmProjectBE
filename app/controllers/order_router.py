@@ -116,7 +116,70 @@ router = APIRouter(
 
 
 @router.post(
-    "/checkout"
+    "/checkout",
+    response_model=order_dtos.OrderInfoResponseDto,
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        status.HTTP_201_CREATED: {
+            "description": "Checkout berhasil dan order baru dibuat dari cart aktif.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 201,
+                        "message": "Your order has been created successfully.",
+                        "data": {
+                            "id": "c4b35d76-6e8d-4f4f-92d4-8d7d6a71f1d2",
+                            "status": "pending",
+                            "total_price": 67000,
+                            "shipment_id": "5ed9d28a-6377-4f09-8d3c-8dbe49f628bf",
+                            "delivery_type": "delivery",
+                            "notes": None,
+                            "created_at": "2026-04-21T20:25:31.120000+00:00"
+                        }
+                    }
+                }
+            }
+        },
+        status.HTTP_400_BAD_REQUEST: {
+            "description": "Cart aktif tidak ditemukan atau input checkout tidak valid.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": {
+                            "status_code": 404,
+                            "error": "Not Found",
+                            "message": "Active cart items for user user-1 not found."
+                        }
+                    }
+                }
+            }
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "User belum login atau token tidak valid.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Not authenticated"
+                    }
+                }
+            }
+        },
+        status.HTTP_409_CONFLICT: {
+            "description": "Terjadi konflik saat akses database.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": {
+                            "status_code": 409,
+                            "error": "Conflict",
+                            "message": "Database error: <detail konflik database>"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    summary="Initiate checkout"
 )
 def initiate_checkout(
     jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],
@@ -240,7 +303,105 @@ async def get_my_order(
     
     return result.unwrap()
 
-@router.get("/detail/{order_id}", response_model=order_dtos.GetOrderDetailResponseDto)
+@router.get(
+    "/detail/{order_id}",
+    response_model=order_dtos.GetOrderDetailResponseDto,
+    status_code=status.HTTP_200_OK,
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Detail order berhasil diambil.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 200,
+                        "message": "Order details accessed successfully",
+                        "data": {
+                            "id": "c4b35d76-6e8d-4f4f-92d4-8d7d6a71f1d2",
+                            "status": "pending",
+                            "total_price": 67000,
+                            "delivery_type": "delivery",
+                            "notes": "Tolong kirim sore hari",
+                            "customer_name": "M Aris",
+                            "created_at": "2026-04-21T20:25:31.120000+00:00",
+                            "shipping_cost": 17000,
+                            "my_shipping": {
+                                "id": "5ed9d28a-6377-4f09-8d3c-8dbe49f628bf",
+                                "my_address": {
+                                    "id": 12,
+                                    "name": "M Aris",
+                                    "phone": "08123456789",
+                                    "address": "Jl. Contoh No. 10, Jakarta",
+                                    "created_at": "2026-04-20T09:00:00+00:00"
+                                },
+                                "my_courier": {
+                                    "id": 4,
+                                    "courier_name": "JNE",
+                                    "weight": 1000,
+                                    "service_type": "REG",
+                                    "cost": 17000,
+                                    "estimated_delivery": "2-3 hari",
+                                    "created_at": "2026-04-20T09:05:00+00:00"
+                                },
+                                "created_at": "2026-04-20T09:10:00+00:00"
+                            },
+                            "order_item_lists": [
+                                {
+                                    "id": 1,
+                                    "product_name": "Jahe Merah Instan",
+                                    "variant_product": "Box 10 Sachet",
+                                    "variant_discount": 10,
+                                    "quantity": 2,
+                                    "price_per_item": 25000,
+                                    "total_price": 45000,
+                                    "created_at": "2026-04-21T20:25:31.120000+00:00"
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "User belum login atau token tidak valid.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Not authenticated"
+                    }
+                }
+            }
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Order tidak ditemukan.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": {
+                            "status_code": 404,
+                            "error": "Not Found",
+                            "message": "Order with ID order-x for user ID user-1 not found."
+                        }
+                    }
+                }
+            }
+        },
+        status.HTTP_409_CONFLICT: {
+            "description": "Terjadi konflik saat akses database.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": {
+                            "status_code": 409,
+                            "error": "Conflict",
+                            "message": "Database error: <detail konflik database>"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    summary="Get order detail"
+)
 def get_order_detail(
     order_id: str, 
     jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],
@@ -264,7 +425,79 @@ def get_order_detail(
 
 @router.put(
     "/complete-details/{order_id}", 
-    response_model=order_dtos.OrderInfoResponseDto
+    response_model=order_dtos.OrderInfoResponseDto,
+    status_code=status.HTTP_200_OK,
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Detail order berhasil diperbarui.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status_code": 200,
+                        "message": "Your order has been updated successfully.",
+                        "data": {
+                            "id": "c4b35d76-6e8d-4f4f-92d4-8d7d6a71f1d2",
+                            "status": "pending",
+                            "total_price": 67000,
+                            "shipment_id": "5ed9d28a-6377-4f09-8d3c-8dbe49f628bf",
+                            "delivery_type": "delivery",
+                            "notes": "Tolong kirim sore hari",
+                            "created_at": "2026-04-21T20:25:31.120000+00:00"
+                        }
+                    }
+                }
+            }
+        },
+        status.HTTP_400_BAD_REQUEST: {
+            "description": "Shipment tidak valid atau request body tidak sesuai.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Invalid or inactive shipment. Please ensure shipment_id is valid."
+                    }
+                }
+            }
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "User belum login atau token tidak valid.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Not authenticated"
+                    }
+                }
+            }
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Order tidak ditemukan.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": {
+                            "status_code": 404,
+                            "error": "Not Found",
+                            "message": "Your order with ID order-x was not found."
+                        }
+                    }
+                }
+            }
+        },
+        status.HTTP_409_CONFLICT: {
+            "description": "Terjadi konflik saat akses database.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": {
+                            "status_code": 409,
+                            "error": "Conflict",
+                            "message": "Database error: <detail konflik database>"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    summary="Update order details"
 )
 def update_order_details(
         order_updated: order_dtos.OrderIdCompleteDataDTO,

@@ -84,9 +84,10 @@ def edit_order(
             f"orders:{user_id}:*", 
             f"order:{user_id}:*"
         ]
-        for pattern in redis_keys:
-            for key in redis_client.scan_iter(pattern):
-                redis_client.delete(key)
+        if redis_client:
+            for pattern in redis_keys:
+                for key in redis_client.scan_iter(pattern):
+                    redis_client.delete(key)
 
         return build(data={
             "status_code": 200,
