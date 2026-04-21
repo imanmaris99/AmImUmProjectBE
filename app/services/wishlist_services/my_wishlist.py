@@ -88,7 +88,7 @@ def my_wishlist(
         # Save the result to Redis cache
         cache_data = {
             'total_records': total_records,
-            'data': [wish.dict() for wish in wishlist_dto]
+            'data': [wish.model_dump() for wish in wishlist_dto]
         }
         if redis_client:
             try:
