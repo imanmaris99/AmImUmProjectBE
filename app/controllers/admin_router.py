@@ -267,6 +267,25 @@ def admin_get_all_payments(
 
 
 @router.get(
+    "/payments/{payment_id}",
+    response_model=payment_dtos.AdminPaymentDetailResponseDto,
+    summary="Admin get payment detail",
+    description="Mengambil detail satu payment berdasarkan payment_id untuk kebutuhan audit dan troubleshooting admin.",
+)
+def admin_get_payment_detail_by_id(
+    payment_id: str,
+    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.admin_access_required)],
+    db: Session = Depends(get_db),
+):
+    result = payment_services.get_payment_detail_by_id(db=db, payment_id=payment_id)
+
+    if result.error:
+        raise result.error
+
+    return result.unwrap()
+
+
+@router.get(
     "/payments/order/{order_id}",
     response_model=payment_dtos.AdminPaymentDetailResponseDto,
     summary="Admin get payment detail by order",

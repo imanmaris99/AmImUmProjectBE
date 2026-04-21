@@ -96,13 +96,27 @@ def list_all_payments(
         ))
 
 
-def get_payment_detail_by_order_id(
+def _build_payment_detail_response(payment: PaymentModel) -> payment_dtos.AdminPaymentDetailResponseDto:
+    payment_detail = payment_dtos.AdminPaymentDetailDto(
+        **_build_payment_item(payment).model_dump(),
+        payment_response=payment.payment_response,
+    )
+
+    return payment_dtos.AdminPaymentDetailResponseDto(
+        status_code=status.HTTP_200_OK,
+        message=ADMIN_PAYMENT_DETAIL_MESSAGE,
+        data=payment_detail,
+    )
+
+
+
+def get_payment_detail_by_id(
     db: Session,
-    order_id: str,
+    payment_id: str,
 ) -> Result[payment_dtos.AdminPaymentDetailResponseDto, Exception]:
     try:
         payment = db.execute(
-            select(PaymentModel).where(PaymentModel.order_id == order_id)
+            select(PaymentModel).where(PaymentModel.id == payment_id)
         ).scalars().first()
 
         if not payment:
@@ -111,20 +125,11 @@ def get_payment_detail_by_order_id(
                 detail=ErrorResponseDto(
                     status_code=status.HTTP_404_NOT_FOUND,
                     error="Not Found",
-                    message=f"Payment for order ID {order_id} not found."
-                ).dict()
+                    message=f"Payment with ID {payment_id} not found."
+                ).model_dump()
             )
 
-        payment_detail = payment_dtos.AdminPaymentDetailDto(
-            **_build_payment_item(payment).dict(),
-            payment_response=payment.payment_response,
-        )
-
-        return build(data=payment_dtos.AdminPaymentDetailResponseDto(
-            status_code=status.HTTP_200_OK,
-            message=ADMIN_PAYMENT_DETAIL_MESSAGE,
-            data=payment_detail,
-        ))
+        return build(data=_build_payment_detail_response(payment))
 
     except (IntegrityError, DataError) as db_error:
         return build(error=handle_db_error(db, db_error))
@@ -141,5 +146,46 @@ def get_payment_detail_by_order_id(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
                 message=f"Unexpected error: {str(e)}"
-            ).dict()
+            ).model_dump()
+        ))
+
+
+
+def get_payment_detail_by_order_id(
+    db: Session,
+    order_id: str,
+) -> Result[payment_dtos.AdminPaymentDetailResponseDto, Exception]:
+    try:
+        payment = db.execute(
+            select(PaymentModel).where(PaymentModel.order_id == order_id)
+        ).scalars().first()
+
+        if not payment:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=ErrorResponseDto(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    error="Not Found",
+                    message=f"Payment for order ID {order_id} not found."
+                ).model_dump()
+            )
+
+        return build(data=_build_payment_detail_response(payment))
+
+    except (IntegrityError, DataError) as db_error:
+        return build(error=handle_db_error(db, db_error))
+    except SQLAlchemyError as e:
+        return build(error=handle_db_error(db, e))
+    except HTTPException as http_ex:
+        db.rollback()
+        return build(error=http_ex)
+    except Exception as e:
+        db.rollback()
+        return build(error=HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                error="Internal Server Error",
+                message=f"Unexpected error: {str(e)}"
+            ).model_dump()
         ))
