@@ -1,7 +1,7 @@
 import uuid
 from sqlalchemy import Column, Boolean, DateTime, String, Text, func
 from sqlalchemy.dialects.mysql import CHAR
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Mapped
 from app.libs.sql_alchemy_lib import Base
 
 
@@ -28,11 +28,29 @@ class UserModel(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     
     # Relationships
-    # cart_products = relationship("CartProductModel", back_populates="customer", lazy='select')  # Lazy loading
-    # wishlists = relationship("WishlistModel", back_populates="customer", lazy='select')  # Lazy loading
-    # orders = relationship("OrderModel", back_populates="customer", lazy='selectin')  # Optimized eager loading
-    # shipment_addresses = relationship("ShipmentAddressModel", back_populates="customer", lazy='select')  # Lazy loading
-    # ratings = relationship("RatingModel", back_populates="user", lazy='select')  # Lazy loading
+    cart_products: Mapped[list["CartProductModel"]] = relationship(
+        "CartProductModel",
+        back_populates="user",
+        lazy="selectin"
+    )
+
+    orders: Mapped[list["OrderModel"]] = relationship(
+        "OrderModel",
+        back_populates="user",
+        lazy="selectin"
+    )
+
+    shipments: Mapped[list["ShipmentModel"]] = relationship(
+        "ShipmentModel",
+        back_populates="user",
+        lazy="selectin"
+    )
+
+    couriers: Mapped[list["CourierModel"]] = relationship(
+        "CourierModel",
+        back_populates="user",
+        lazy="selectin"
+    )
 
     def __repr__(self):
         return f"<User(id='{self.id}', phone='{self.phone}')>" 

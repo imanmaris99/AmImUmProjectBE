@@ -36,7 +36,8 @@ class CourierModel(Base):
     
     user: Mapped["UserModel"] = relationship(
         "UserModel",
-        back_populates=""
+        back_populates="couriers",
+        lazy="selectin"
     )
 
     def __repr__(self):

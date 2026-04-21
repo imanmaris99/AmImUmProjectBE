@@ -29,7 +29,8 @@ class CartProductModel(Base):
     
     user: Mapped["UserModel"] = relationship(
         "UserModel",
-        back_populates=""
+        back_populates="cart_products",
+        lazy="selectin"
     )
 
     def __repr__(self):

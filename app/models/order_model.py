@@ -43,12 +43,14 @@ class OrderModel(Base):
     # )
     user: Mapped["UserModel"] = relationship(
         "UserModel",
-        back_populates=""
+        back_populates="orders",
+        lazy="selectin"
     )
 
     shipments: Mapped["ShipmentModel"] = relationship(
         "ShipmentModel", 
-        back_populates="", 
+        back_populates="order",
+        lazy="selectin"
     )
 
     order_items: Mapped[list["OrderItemModel"]] = relationship(

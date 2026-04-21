@@ -41,7 +41,8 @@ class ShipmentModel(Base):
 
     user: Mapped["UserModel"] = relationship(
         "UserModel",
-        back_populates=""
+        back_populates="shipments",
+        lazy="selectin"
     )
     
     def __repr__(self):
