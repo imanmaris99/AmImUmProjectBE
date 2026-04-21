@@ -11,6 +11,10 @@ class DummyDB:
     def __init__(self):
         self.committed = False
         self.rolled_back = False
+        self.added = []
+
+    def add(self, obj):
+        self.added.append(obj)
 
     def commit(self):
         self.committed = True
@@ -135,6 +139,70 @@ def test_handler_notification_rejects_invalid_signature(monkeypatch, handler_not
 
     assert isinstance(result.error, HTTPException)
     assert result.error.status_code == 400
+
+
+def test_handler_notification_updates_payment_and_order(monkeypatch, handler_notification_module):
+    db = DummyDB()
+    payment = SimpleNamespace(
+        order_id="order-1",
+        payment_type=None,
+        transaction_id=None,
+        transaction_status=None,
+        fraud_status=None,
+        payment_response=None,
+    )
+    order = SimpleNamespace(order_id="order-1", status="pending")
+
+    monkeypatch.setattr(handler_notification_module, "MIDTRANS_SERVER_KEY", "server-key")
+    monkeypatch.setattr(
+        handler_notification_module,
+        "fetch_midtrans_transaction_status",
+        lambda order_id: build(data={
+            "order_id": order_id,
+            "transaction_id": "trx-1",
+            "transaction_status": "settlement",
+            "status_code": "200",
+            "payment_type": "bank_transfer",
+            "gross_amount": "10000.00",
+            "signature_key": "valid-signature",
+            "fraud_status": "accept",
+        }),
+    )
+    monkeypatch.setattr(
+        handler_notification_module,
+        "validate_signature_key",
+        lambda **kwargs: True,
+    )
+    monkeypatch.setattr(
+        handler_notification_module,
+        "get_payment_by_order_id",
+        lambda order_id, db: payment,
+    )
+    monkeypatch.setattr(
+        handler_notification_module,
+        "get_order_by_id",
+        lambda order_id, db: order,
+    )
+
+    result = handler_notification_module.handler_notification(
+        {
+            "order_id": "order-1",
+            "transaction_status": "settlement",
+            "status_code": "200",
+            "payment_type": "bank_transfer",
+            "gross_amount": "10000.00",
+            "signature_key": "valid-signature",
+        },
+        db,
+    )
+
+    assert result.error is None
+    assert payment.transaction_id == "trx-1"
+    assert payment.payment_type == "bank_transfer"
+    assert payment.transaction_status == TransactionStatusEnum.settlement
+    assert payment.fraud_status == FraudStatusEnum.accept
+    assert order.status == "paid"
+    assert db.committed is True
 
 
 def test_handle_notification_delegates_to_public_callback(monkeypatch, handle_notification_module):
