@@ -58,6 +58,16 @@ def post_item(
                 ).dict()
             )
 
+        if variant.product_id != cart.product_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=ErrorResponseDto(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    error="Bad Request",
+                    message="Variant does not belong to the selected product."
+                ).dict()
+            )
+
         # Buat instance baru dari CartProductModel
         cart_instance = CartProductModel(
             product_id=cart.product_id,

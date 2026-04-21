@@ -80,7 +80,7 @@ def all_product(
 
         if redis_client:
             try:
-                redis_client.setex(cache_key, CACHE_TTL, json.dumps(response_dto.dict(), default=custom_json_serializer))
+                redis_client.setex(cache_key, CACHE_TTL, json.dumps(response_dto.model_dump(), default=custom_json_serializer))
             except Exception as cache_error:
                 logger.warning("Failed to write product cache for key %s: %s", cache_key, cache_error)
         

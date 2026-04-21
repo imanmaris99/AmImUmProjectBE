@@ -82,7 +82,7 @@ def infinite_scrolling_list_products_by_id_production(
         )
 
         # Simpan data ke Redis (dengan TTL 300 detik)
-        redis_client.setex(cache_key, CACHE_TTL, json.dumps(response_data.dict(), default=custom_json_serializer))
+        redis_client.setex(cache_key, CACHE_TTL, json.dumps(response_data.model_dump(), default=custom_json_serializer))
 
         return build(data=response_data)
     

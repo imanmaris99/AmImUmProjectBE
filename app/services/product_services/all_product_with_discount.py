@@ -91,7 +91,7 @@ def all_product_with_discount(
         )
 
         # Simpan data ke Redis (dengan TTL 300 detik)
-        redis_client.setex(cache_key, CACHE_TTL, json.dumps(response_dto.dict(), default=custom_json_serializer))
+        redis_client.setex(cache_key, CACHE_TTL, json.dumps(response_dto.model_dump(), default=custom_json_serializer))
         
         return build(data=response_dto)
 

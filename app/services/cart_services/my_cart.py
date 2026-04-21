@@ -75,7 +75,7 @@ def my_cart(
             cart_dtos.CartInfoDetailDto(
                 id=cart_item.id,
                 product_name=cart_item.product_name,
-                product_price=cart_item.product_price,
+                product_price=float(cart_item.product_price or 0),
                 variant_info=cart_item.variant_info,
                 quantity=cart_item.quantity,
                 is_active=cart_item.is_active,
@@ -89,7 +89,7 @@ def my_cart(
         # Save the result to Redis cache
         cache_data = {
             'total_prices': cart_total_items_response,
-            'data': [wish.dict() for wish in cart_dto]
+            'data': [wish.model_dump() for wish in cart_dto]
         }
         if redis_client:
             try:

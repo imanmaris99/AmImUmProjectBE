@@ -99,13 +99,14 @@ def create_order(
 
         # Menambahkan item order dari keranjang aktif
         for item in cart_items:
+            line_total = float(item.total_price or 0.0)
             order_item = OrderItemModel(
                 order_id=order.id,
                 product_id=item.product_id,
                 variant_id=item.variant_id,
                 quantity=item.quantity,
-                price_per_item=item.product_price,
-                total_price=cart_total_items_response,
+                price_per_item=float(item.product_price or 0.0),
+                total_price=line_total,
             )
             db.add(order_item)
 

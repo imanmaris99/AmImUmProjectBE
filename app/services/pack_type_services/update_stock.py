@@ -10,13 +10,13 @@ from app.dtos.error_response_dtos import ErrorResponseDto
 from app.utils.result import build, Result
 from app.utils.error_parser import find_errr_from_args
 
+
 def update_stock(
         db: Session, 
         type_id_update: TypeIdToUpdateDto,
         type_update: PackTypeEditInfoDto
         ) -> Result[PackTypeModel, Exception]:
     try:
-        # Mencari model PackType berdasarkan ID
         type_model = db.query(PackTypeModel).filter(PackTypeModel.id == type_id_update.type_id).first()
         if not type_model:
             return build(error= HTTPException(
@@ -25,18 +25,16 @@ def update_stock(
                     status_code=status.HTTP_404_NOT_FOUND,
                     error="Not Found",
                     message=f"Info about variant product with ID {type_id_update.type_id} not found"
-                ).dict()
+                ).model_dump()
             ))
-        
-        # Update atribut stock dan discount jika ada
-        for attr, value in type_update.model_dump().items():
+
+        update_payload = type_update.model_dump(exclude_none=True)
+        for attr, value in update_payload.items():
             setattr(type_model, attr, value)
 
-        # Simpan perubahan ke dalam database   
         db.commit()
         db.refresh(type_model)
 
-        # Buat response DTO yang lebih kaya untuk sinkronisasi dashboard
         response_data = PackTypeUpdatedInfoDto(
             id=type_model.id,
             product_id=type_model.product_id,
@@ -46,6 +44,7 @@ def update_stock(
             variant=type_model.variant,
             expiration=type_model.expiration,
             stock=type_model.stock,
+            price=float(type_model.base_price),
             discount=type_model.discount,
             discounted_price=float(type_model.discounted_price),
             updated_at=type_model.updated_at
@@ -56,21 +55,6 @@ def update_stock(
             message="Edit stock and discount product has been success",
             data=response_data
         ))
-    
-        # # Menggunakan model ter-update untuk membuat respons
-        # return build(data=PackTypeEditInfoResponseDto(
-        #     status_code=200,
-        #     message="Your pack and variant type product has been updated",
-        #     data=VariantProductDto(
-        #         id=type_model.id,
-        #         variant=type_model.variant,
-        #         expiration=type_model.expiration,
-        #         stock=type_model.stock,
-        #         discount=type_model.discount,  # Ambil discount dari model
-        #         created_at=type_model.created_at,
-        #         updated_at=type_model.updated_at
-        #     )
-        # ))
 
     except SQLAlchemyError as e:
         db.rollback()
@@ -80,7 +64,7 @@ def update_stock(
                 status_code=status.HTTP_409_CONFLICT,
                 error="Conflict",
                 message=f"Database conflict: {find_errr_from_args('pack_types', str(e.args))}"
-            ).dict()
+            ).model_dump()
         ))
     
     except HTTPException as http_ex:
@@ -94,6 +78,5 @@ def update_stock(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
                 message=f"An error occurred: {str(e)}"            
-            ).dict()
+            ).model_dump()
         ))
-

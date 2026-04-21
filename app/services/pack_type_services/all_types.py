@@ -43,8 +43,9 @@ def all_types(
                 variant=types.variant,
                 expiration=types.expiration,
                 stock=types.stock,
+                price=float(types.base_price),
                 discount=types.discount,
-                discounted_price=types.discounted_price,
+                discounted_price=float(types.discounted_price),
                 updated_at=types.updated_at
             )
             for types in pack_types
