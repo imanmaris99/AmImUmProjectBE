@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 from typing import Optional, List
 
@@ -40,17 +40,14 @@ class ProductionCreateResponseDto(BaseModel):
     data: ProductionCreateDto
 
 class AllProductionsDto(BaseModel):
+    model_config = ConfigDict()
+
     id: int
     name: str
     photo_url: Optional[str] = None
     description_list: list[str]
     category: Optional[str] = None
     created_at: datetime
-
-    class Config:
-        json_encoders = {
-            datetime: lambda v: v.isoformat()  # Mengubah datetime menjadi format ISO 8601
-        }
 
 class AllListProductionResponseDto(BaseModel):
     status_code: int = Field(default=200)
@@ -63,6 +60,8 @@ class ArticleListScrollResponseDto(BaseModel):
     has_more: bool  # Indikasi apakah masih ada data lain
 
 class DetailProductionDto(BaseModel):
+    model_config = ConfigDict()
+
     id: int
     name: str
     photo_url: Optional[str] = None
@@ -71,11 +70,6 @@ class DetailProductionDto(BaseModel):
     total_product: Optional[int] = None
     total_product_with_promo: Optional[int] = None
     created_at: datetime
-
-    class Config:
-        json_encoders = {
-            datetime: lambda v: v.isoformat()  # Mengubah datetime menjadi format ISO 8601
-        }
 
 class ProductionDetailResponseDto(BaseModel):
     status_code: int = Field(default=200)

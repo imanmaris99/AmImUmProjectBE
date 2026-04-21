@@ -125,7 +125,7 @@ def receive_payment_notification(
         PaymentNotificationResponseDto: Respons sukses atau error.
     """
     result = payment_services.handler_notification(
-        notification_data.dict(), 
+        notification_data.model_dump(), 
         db)
 
     if result.error:

@@ -83,7 +83,7 @@ def get_user_profile(
 
         if redis_client:
             try:
-                redis_client.setex(redis_key, CACHE_TTL, json.dumps(user_response.dict(), default=custom_json_serializer))
+                redis_client.setex(redis_key, CACHE_TTL, json.dumps(user_response.model_dump(), default=custom_json_serializer))
             except Exception as cache_error:
                 logger.warning("Failed to write user profile cache for key %s: %s", redis_key, cache_error)
 

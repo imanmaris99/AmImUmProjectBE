@@ -70,7 +70,7 @@ def total_items(
 
         if redis_client:
             try:
-                redis_client.setex(redis_key, CACHE_TTL, json.dumps(quantity_items.dict()))
+                redis_client.setex(redis_key, CACHE_TTL, json.dumps(quantity_items.model_dump(), default=custom_json_serializer))
             except Exception as cache_error:
                 logger.warning("Failed to write wishlist total cache for key %s: %s", redis_key, cache_error)
 

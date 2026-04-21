@@ -37,7 +37,7 @@ def post_item(
                     status_code=status.HTTP_404_NOT_FOUND,
                     error="Not Found",
                     message=f"Information about product with ID {cart.product_id} not found."
-                ).dict()
+                ).model_dump()
             )
         
         # Mencari model PackType (variant produk) berdasarkan ID
@@ -55,7 +55,7 @@ def post_item(
                     status_code=status.HTTP_404_NOT_FOUND,
                     error="Not Found",
                     message=f"Information about variant with ID {cart.variant_id} not found."
-                ).dict()
+                ).model_dump()
             )
 
         if variant.product_id != cart.product_id:
@@ -65,7 +65,7 @@ def post_item(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     error="Bad Request",
                     message="Variant does not belong to the selected product."
-                ).dict()
+                ).model_dump()
             )
 
         # Buat instance baru dari CartProductModel
@@ -119,5 +119,5 @@ def post_item(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
                 message=f"Unexpected error: {str(e)}"
-            ).dict()
+            ).model_dump()
         ))

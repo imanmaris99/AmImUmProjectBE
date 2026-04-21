@@ -68,7 +68,7 @@ def total_items(
 
         if redis_client:
             try:
-                redis_client.setex(redis_key, CACHE_TTL, json.dumps(total_notifications.dict(), default=custom_json_serializer))
+                redis_client.setex(redis_key, CACHE_TTL, json.dumps(total_notifications.model_dump(), default=custom_json_serializer))
             except Exception as cache_error:
                 logger.warning("Failed to write cart total cache for key %s: %s", redis_key, cache_error)
 
