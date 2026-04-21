@@ -279,19 +279,17 @@ def map_payment_status_to_order_status(transaction_status: TransactionStatusEnum
     return mapped_status
 
 
-ORDER_STATUS_PRECEDENCE = {
-    "pending": 10,
-    "paid": 20,
-    "capture": 25,
-    "processing": 30,
-    "shipped": 40,
-    "completed": 50,
-    "failed": 15,
-    "cancelled": 15,
-    "refund": 60,
+PAYMENT_TO_ORDER_STATUS_MATRIX = {
+    "pending": {"pending", "paid", "capture", "failed", "refund"},
+    "paid": {"paid", "capture", "processing", "failed", "refund"},
+    "capture": {"capture", "processing", "failed", "refund"},
+    "processing": {"processing", "shipped", "completed", "refund"},
+    "shipped": {"shipped", "completed", "refund"},
+    "completed": {"completed", "refund"},
+    "failed": {"failed", "refund"},
+    "cancelled": {"cancelled", "refund"},
+    "refund": {"refund"},
 }
-
-TERMINAL_ORDER_STATUSES = {"completed", "refund"}
 
 
 def apply_order_status_transition(current_status: str | None, next_status: str) -> str:
@@ -302,20 +300,17 @@ def apply_order_status_transition(current_status: str | None, next_status: str) 
         logger.warning("Skip order status transition because next status is invalid: %s", next_status)
         return normalized_current
 
-    if normalized_current in TERMINAL_ORDER_STATUSES:
-        logger.info(
-            "Skip order status transition from terminal status %s to %s",
+    allowed_targets = PAYMENT_TO_ORDER_STATUS_MATRIX.get(normalized_current)
+    if not allowed_targets:
+        logger.warning(
+            "Current order status %s is not in transition matrix. Keeping existing status.",
             normalized_current,
-            normalized_next,
         )
         return normalized_current
 
-    current_rank = ORDER_STATUS_PRECEDENCE.get(normalized_current, 0)
-    next_rank = ORDER_STATUS_PRECEDENCE.get(normalized_next, 0)
-
-    if next_rank < current_rank and normalized_next not in {"failed", "refund"}:
+    if normalized_next not in allowed_targets:
         logger.info(
-            "Skip regressive order status transition from %s to %s",
+            "Skip disallowed order status transition from %s to %s",
             normalized_current,
             normalized_next,
         )

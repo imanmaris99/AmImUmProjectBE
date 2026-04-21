@@ -383,6 +383,147 @@ def test_handler_notification_does_not_regress_processing_order_to_pending(monke
     assert db.committed is True
 
 
+def test_handler_notification_allows_capture_from_paid(monkeypatch, handler_notification_module):
+    db = DummyDB()
+    payment = SimpleNamespace(
+        order_id="order-1",
+        payment_type=None,
+        transaction_id=None,
+        transaction_status=None,
+        fraud_status=None,
+        payment_response=None,
+    )
+    order = SimpleNamespace(order_id="order-1", status="paid")
+
+    monkeypatch.setattr(handler_notification_module, "MIDTRANS_SERVER_KEY", "server-key")
+    monkeypatch.setattr(
+        handler_notification_module,
+        "fetch_midtrans_transaction_status",
+        lambda order_id: build(data={
+            "order_id": order_id,
+            "transaction_id": "trx-1",
+            "transaction_status": "capture",
+            "status_code": "200",
+            "payment_type": "credit_card",
+            "gross_amount": "10000.00",
+            "signature_key": "valid-signature",
+            "fraud_status": "accept",
+        }),
+    )
+    monkeypatch.setattr(handler_notification_module, "validate_signature_key", lambda **kwargs: True)
+    monkeypatch.setattr(handler_notification_module, "get_payment_by_order_id", lambda order_id, db: payment)
+    monkeypatch.setattr(handler_notification_module, "get_order_by_id", lambda order_id, db: order)
+
+    result = handler_notification_module.handler_notification(
+        {
+            "order_id": "order-1",
+            "transaction_status": "capture",
+            "status_code": "200",
+            "payment_type": "credit_card",
+            "gross_amount": "10000.00",
+            "signature_key": "valid-signature",
+        },
+        db,
+    )
+
+    assert result.error is None
+    assert order.status == "capture"
+
+
+def test_handler_notification_allows_refund_from_completed(monkeypatch, handler_notification_module):
+    db = DummyDB()
+    payment = SimpleNamespace(
+        order_id="order-1",
+        payment_type=None,
+        transaction_id=None,
+        transaction_status=None,
+        fraud_status=None,
+        payment_response=None,
+    )
+    order = SimpleNamespace(order_id="order-1", status="completed")
+
+    monkeypatch.setattr(handler_notification_module, "MIDTRANS_SERVER_KEY", "server-key")
+    monkeypatch.setattr(
+        handler_notification_module,
+        "fetch_midtrans_transaction_status",
+        lambda order_id: build(data={
+            "order_id": order_id,
+            "transaction_id": "trx-1",
+            "transaction_status": "refund",
+            "status_code": "200",
+            "payment_type": "bank_transfer",
+            "gross_amount": "10000.00",
+            "signature_key": "valid-signature",
+            "fraud_status": "accept",
+        }),
+    )
+    monkeypatch.setattr(handler_notification_module, "validate_signature_key", lambda **kwargs: True)
+    monkeypatch.setattr(handler_notification_module, "get_payment_by_order_id", lambda order_id, db: payment)
+    monkeypatch.setattr(handler_notification_module, "get_order_by_id", lambda order_id, db: order)
+
+    result = handler_notification_module.handler_notification(
+        {
+            "order_id": "order-1",
+            "transaction_status": "refund",
+            "status_code": "200",
+            "payment_type": "bank_transfer",
+            "gross_amount": "10000.00",
+            "signature_key": "valid-signature",
+        },
+        db,
+    )
+
+    assert result.error is None
+    assert order.status == "refund"
+
+
+def test_handler_notification_allows_failed_from_paid(monkeypatch, handler_notification_module):
+    db = DummyDB()
+    payment = SimpleNamespace(
+        order_id="order-1",
+        payment_type=None,
+        transaction_id=None,
+        transaction_status=None,
+        fraud_status=None,
+        payment_response=None,
+    )
+    order = SimpleNamespace(order_id="order-1", status="paid")
+
+    monkeypatch.setattr(handler_notification_module, "MIDTRANS_SERVER_KEY", "server-key")
+    monkeypatch.setattr(
+        handler_notification_module,
+        "fetch_midtrans_transaction_status",
+        lambda order_id: build(data={
+            "order_id": order_id,
+            "transaction_id": "trx-1",
+            "transaction_status": "deny",
+            "status_code": "200",
+            "payment_type": "credit_card",
+            "gross_amount": "10000.00",
+            "signature_key": "valid-signature",
+            "fraud_status": "deny",
+        }),
+    )
+    monkeypatch.setattr(handler_notification_module, "validate_signature_key", lambda **kwargs: True)
+    monkeypatch.setattr(handler_notification_module, "get_payment_by_order_id", lambda order_id, db: payment)
+    monkeypatch.setattr(handler_notification_module, "get_order_by_id", lambda order_id, db: order)
+
+    result = handler_notification_module.handler_notification(
+        {
+            "order_id": "order-1",
+            "transaction_status": "deny",
+            "status_code": "200",
+            "payment_type": "credit_card",
+            "gross_amount": "10000.00",
+            "signature_key": "valid-signature",
+        },
+        db,
+    )
+
+    assert result.error is None
+    assert order.status == "failed"
+
+
 def test_handle_notification_delegates_to_public_callback(monkeypatch, handle_notification_module):
     captured = {}
 
