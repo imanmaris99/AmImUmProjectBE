@@ -82,7 +82,7 @@ def my_order(
 
         # Save the result to Redis cache
         cache_data = {
-            'data': [wish.dict() for wish in order_dto]
+            'data': [wish.model_dump() for wish in order_dto]
         }
 
         if redis_client:

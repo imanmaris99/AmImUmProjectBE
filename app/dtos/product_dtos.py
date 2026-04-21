@@ -1,57 +1,66 @@
-from pydantic import BaseModel, Field
-from typing import Optional, List
 from datetime import datetime
+from typing import List, Optional
 
-from app.dtos.production_dtos import InfoProductionProductDto
-from app.dtos.rating_dtos import ProductRatingDto
+from pydantic import BaseModel, Field
+
 from app.dtos.pack_type_dtos import VariantProductDto, VariantAllProductDto
 
+
 class ProductCreateDTO(BaseModel):
-    name: str= Field(default="buyung upik")
+    name: str = Field(default="buyung upik")
     info: Optional[str] = Field(default="1pack isi 11sachet dengan berat ± 5gram")
-    weight: int= Field(default=50)
-    description: Optional[str]= Field(default="some descriptions")
-    instruction: Optional[str]= Field(default="some instructions")
-    price: float= Field(default=8000.0)
-    product_by_id: int= Field(default=3)
+    weight: int = Field(default=50)
+    description: Optional[str] = Field(default="some descriptions")
+    instruction: Optional[str] = Field(default="some instructions")
+    price: float = Field(default=8000.0)
+    product_by_id: int = Field(default=3)
+
 
 class ProductInfoDTO(BaseModel):
     id: str
-    name: str= Field(default="buyung upik")
+    name: str = Field(default="buyung upik")
     info: Optional[str] = Field(default="1pack isi 11sachet dengan berat ± 5gram")
-    weight: int= Field(default=50)
-    description: str= Field(default="some descriptions")
-    instruction: str= Field(default="some instructions")
-    price: float= Field(default=8000.0)
-    product_by_id: int= Field(default=3)
+    weight: int = Field(default=50)
+    description: str = Field(default="some descriptions")
+    instruction: str = Field(default="some instructions")
+    price: float = Field(default=8000.0)
+    product_by_id: int = Field(default=3)
     is_active: bool
     created_at: datetime
     updated_at: datetime
 
+
 class ProductResponseDto(BaseModel):
     status_code: int = Field(default=201)
     message: str = Field(default="Your product has been create")
-    data: ProductInfoDTO  # Atau Anda bisa membuat model terpisah untuk data yang lebih terstruktur
+    data: ProductInfoDTO
+
 
 class AllProductInfoDTO(BaseModel):
     id: Optional[str]
     name: Optional[str] = Field(default="buyung upik")
     price: float = Field(default=8000.0)
-    brand_info: Optional[dict] = None  # Jadikan opsional dengan default None # Jadikan opsional
+    min_variant_price: Optional[float] = None
+    max_variant_price: Optional[float] = None
+    brand_info: Optional[dict] = None
     all_variants: List[VariantAllProductDto]
     created_at: datetime
+
 
 class AllProductInfoResponseDto(BaseModel):
     status_code: int = Field(default=201)
     message: str = Field(default="Your product has been create")
     data: List[AllProductInfoDTO]
 
+
 class ProductListScrollResponseDto(BaseModel):
     data: List[AllProductInfoDTO]
-    has_more: bool  # Indikasi apakah masih ada data lain
+    has_more: bool
+
 
 class ProductIdToUpdateDTO(BaseModel):
     product_id: str = Field(default="287ba5f9-c495-455d-9e38-8ceb3cac61ba")
+
 
 class ProductUpdateDTO(BaseModel):
     name: Optional[str]
@@ -70,6 +79,8 @@ class ProductDetailDTO(BaseModel):
     description_list: List[str]
     instructions_list: List[str]
     price: float
+    min_variant_price: Optional[float] = None
+    max_variant_price: Optional[float] = None
     is_active: bool
     company: str
     avg_rating: Optional[float] = None
@@ -77,20 +88,25 @@ class ProductDetailDTO(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+
 class ProductDetailResponseDto(BaseModel):
     status_code: int = Field(default=200)
     message: str = Field(default="Product details successfully retrieved")
-    data: ProductDetailDTO 
+    data: ProductDetailDTO
+
 
 class ProductInfoByIdProductionDTO(BaseModel):
     production_id: int
 
+
 class DeleteByIdProductDto(BaseModel):
     product_id: str = Field(default="287ba5f9-c495-455d-9e38-8ceb3cac61ba")
 
+
 class InfoDeleteProductDto(BaseModel):
     product_id: str = Field(default="287ba5f9-c495-455d-9e38-8ceb3cac61ba")
-    name: str= Field(default="buyung upik")
+    name: str = Field(default="buyung upik")
+
 
 class DeleteProductResponseDto(BaseModel):
     status_code: int = Field(default=200)

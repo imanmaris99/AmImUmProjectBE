@@ -56,6 +56,8 @@ def check_redis_connection():
 def custom_json_serializer(obj):
     if isinstance(obj, datetime):
         return obj.isoformat()
+    if hasattr(obj, "model_dump"):
+        return obj.model_dump()
     if hasattr(obj, "dict"):
         return obj.dict()
     raise TypeError(f"Type {type(obj)} not serializable")

@@ -78,6 +78,18 @@ class ProductModel(sql_alchemy_lib.Base):
         total_discount = sum(pt.discount for pt in self.pack_type if pt.discount)
         return round(total_discount / len(self.pack_type), 1) if self.pack_type else 0
 
+    @property
+    def min_variant_price(self):
+        if not self.pack_type:
+            return float(self.price or 0)
+        return float(min(variant.base_price for variant in self.pack_type))
+
+    @property
+    def max_variant_price(self):
+        if not self.pack_type:
+            return float(self.price or 0)
+        return float(max(variant.base_price for variant in self.pack_type))
+
     # Properti untuk menghitung rata-rata rating
     @property
     def avg_rating(self):

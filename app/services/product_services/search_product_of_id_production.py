@@ -78,9 +78,11 @@ def search_product_of_id_production(
             AllProductInfoDTO(
                 id=product.id, 
                 name=product.name,
-                price=product.price,
+                price=float(product.price),
+                min_variant_price=product.min_variant_price,
+                max_variant_price=product.max_variant_price,
                 brand_info=product.brand_info,
-                all_variants=product.all_variants or [],                
+                all_variants=product.all_variants or [],
                 created_at=product.created_at
             )
             for product in product_model
