@@ -151,6 +151,30 @@ def test_my_order_returns_empty_list(monkeypatch, my_order_module):
     assert result.data.data == []
 
 
+def test_my_order_handles_missing_shipping_relations(monkeypatch, my_order_module):
+    order = SimpleNamespace(
+        id="order-1",
+        status="pending",
+        total_price=12000,
+        shipment_id="ship-1",
+        delivery_type="delivery",
+        notes=None,
+        customer_name="Aris",
+        created_at="2026-04-21T00:00:00",
+        shipping_cost=0,
+        order_item_lists=[],
+    )
+    db = DummyDB(execute_results=[[order]])
+    monkeypatch.setattr(my_order_module, "redis_client", None)
+
+    result = my_order_module.my_order(db, "user-1")
+
+    assert result.error is None
+    assert result.data.status_code == 200
+    assert len(result.data.data) == 1
+    assert result.data.data[0].shipping_cost == 0
+
+
 def test_detail_order_returns_404_when_missing(monkeypatch, detail_order_module):
     db = DummyDB(execute_results=[None])
     monkeypatch.setattr(detail_order_module, "redis_client", None)

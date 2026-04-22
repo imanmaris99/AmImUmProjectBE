@@ -2,10 +2,12 @@ from decimal import Decimal
 from fastapi import HTTPException, status
 
 from sqlalchemy import select, func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from sqlalchemy.exc import SQLAlchemyError, DataError, IntegrityError
 
 from app.models.order_model import OrderModel
+from app.models.shipment_model import ShipmentModel
+from app.models.order_item_model import OrderItemModel
 from app.dtos import order_dtos
 
 import json
@@ -52,6 +54,13 @@ def my_order(
         # Query untuk mengambil cart berdasarkan user_id dengan pagination
         order_models = db.execute(
             select(OrderModel)
+            .options(
+                selectinload(OrderModel.user),
+                selectinload(OrderModel.shipments).selectinload(ShipmentModel.shipment_address),
+                selectinload(OrderModel.shipments).selectinload(ShipmentModel.courier),
+                selectinload(OrderModel.order_items).selectinload(OrderItemModel.products),
+                selectinload(OrderModel.order_items).selectinload(OrderItemModel.pack_type),
+            )
             .where(OrderModel.customer_id == user_id)
             .offset(skip)
             .limit(limit)
