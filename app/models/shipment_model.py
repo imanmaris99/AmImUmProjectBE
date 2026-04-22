@@ -52,6 +52,8 @@ class ShipmentModel(Base):
     def my_address(self):
         from app.models import ShipmentAddressModel
         address_model: ShipmentAddressModel = self.shipment_address
+        if not address_model:
+            return None
         return MyShipmentAddressInfoDto(
             id=address_model.id,
             name=address_model.name,
@@ -64,6 +66,8 @@ class ShipmentModel(Base):
     def my_courier(self):
         from app.models import CourierModel
         courier_model: CourierModel = self.courier
+        if not courier_model:
+            return None
         return MyCourierInfoDto(
             id=courier_model.id,
             courier_name=courier_model.courier_name,

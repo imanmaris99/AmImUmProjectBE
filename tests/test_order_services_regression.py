@@ -161,6 +161,35 @@ def test_detail_order_returns_404_when_missing(monkeypatch, detail_order_module)
     assert result.error.status_code == 404
 
 
+def test_detail_order_handles_missing_shipping_relations(monkeypatch, detail_order_module):
+    order = SimpleNamespace(
+        id="order-1",
+        status="pending",
+        total_price=12000,
+        delivery_type="delivery",
+        notes=None,
+        customer_name="Aris",
+        created_at="2026-04-21T00:00:00",
+        shipping_cost=0,
+        my_shipping={
+            "id": "ship-1",
+            "my_address": None,
+            "my_courier": None,
+            "created_at": "2026-04-21T00:00:00",
+        },
+        order_item_lists=[],
+    )
+    db = DummyDB(execute_results=[order])
+    monkeypatch.setattr(detail_order_module, "redis_client", None)
+
+    result = detail_order_module.detail_order(db, "user-1", "order-1")
+
+    assert result.error is None
+    assert result.data.status_code == 200
+    assert result.data.data.my_shipping["my_address"] is None
+    assert result.data.data.my_shipping["my_courier"] is None
+
+
 def test_edit_order_switches_to_pickup(monkeypatch, edit_order_module):
     order = SimpleNamespace(
         id="order-1",
