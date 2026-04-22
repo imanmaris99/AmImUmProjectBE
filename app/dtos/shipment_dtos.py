@@ -63,8 +63,8 @@ class ShipmentDetailInfoListDto(BaseModel):
 
 class MyShipmentAddressOrderInfoDto(BaseModel):
     id: str
-    my_address: MyShipmentAddressInfoDto
-    my_courier: MyCourierInfoDto
+    my_address: Optional[MyShipmentAddressInfoDto] = None
+    my_courier: Optional[MyCourierInfoDto] = None
     created_at: datetime
 
 
