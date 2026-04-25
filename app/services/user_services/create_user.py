@@ -53,7 +53,7 @@ def create_user(db: Session, user: user_dtos.UserCreateDto) -> optional.Optional
             logger.warning("Verification email delivery failed for %s: %s", user.email, email_exc.detail)
             email_delivery_warning = (
                 f"Account created but verification email could not be sent automatically to {user.email}. "
-                "Please retry verification email delivery after SMTP is healthy."
+                "Please retry verification email delivery after email provider configuration is healthy."
             )
 
         # Best effort cleanup, tidak boleh menggagalkan register utama
