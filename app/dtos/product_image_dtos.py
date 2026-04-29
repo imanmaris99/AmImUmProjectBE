@@ -19,3 +19,12 @@ class ProductImageResponseDto(BaseModel):
     status_code: int = Field(default=201)
     message: str = Field(default="Product image uploaded")
     data: ProductImageInfoDto
+
+
+class ProductImageOrderDto(BaseModel):
+    image_ids: list[int]
+
+
+class ProductImageActionResponseDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="OK")

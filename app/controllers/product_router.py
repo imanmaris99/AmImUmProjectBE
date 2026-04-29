@@ -889,6 +889,57 @@ async def upload_product_image(
     return result.unwrap()
 
 
+@router.patch(
+    "/{product_id}/images/{image_id}/primary",
+    response_model=product_image_dtos.ProductImageActionResponseDto,
+    dependencies=[Depends(jwt_service.admin_access_required)],
+    summary="Set primary product image"
+)
+def set_primary_product_image(
+    product_id: UUID,
+    image_id: int,
+    db: Session = Depends(get_db)
+):
+    result = product_services.set_primary_product_image(db, str(product_id), image_id)
+    if result.error:
+        raise result.error
+    return result.unwrap()
+
+
+@router.patch(
+    "/{product_id}/images/reorder",
+    response_model=product_image_dtos.ProductImageActionResponseDto,
+    dependencies=[Depends(jwt_service.admin_access_required)],
+    summary="Reorder product images"
+)
+def reorder_product_images(
+    product_id: UUID,
+    payload: product_image_dtos.ProductImageOrderDto,
+    db: Session = Depends(get_db)
+):
+    result = product_services.reorder_product_images(db, str(product_id), payload.image_ids)
+    if result.error:
+        raise result.error
+    return result.unwrap()
+
+
+@router.delete(
+    "/{product_id}/images/{image_id}",
+    response_model=product_image_dtos.ProductImageActionResponseDto,
+    dependencies=[Depends(jwt_service.admin_access_required)],
+    summary="Delete product image"
+)
+def delete_product_image(
+    product_id: UUID,
+    image_id: int,
+    db: Session = Depends(get_db)
+):
+    result = product_services.delete_product_image(db, str(product_id), image_id)
+    if result.error:
+        raise result.error
+    return result.unwrap()
+
+
 @router.put(
     "/{product_id}",
     response_model=product_dtos.ProductResponseDto,

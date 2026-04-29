@@ -11,5 +11,6 @@ from .detail_product import get_product_by_id
 from .update_product import update_product
 from .delete_product import delete_product
 from .upload_product_image import upload_product_image
+from .manage_product_images import set_primary_product_image, delete_product_image, reorder_product_images
 
 from .support_function import handle_db_error
