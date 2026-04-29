@@ -12,6 +12,8 @@ from app.utils.result import build, Result
 
 ALLOWED_MIME = {"image/jpeg", "image/png", "image/webp"}
 MAX_FILE_SIZE = 10 * 1024 * 1024
+TARGET_MAX_OUTPUT_SIZE = 1 * 1024 * 1024
+TARGET_IDEAL_OUTPUT_SIZE = 500 * 1024
 
 
 async def upload_product_image(db: Session, product_id: str, file: UploadFile) -> Result[ProductImageResponseDto, Exception]:
@@ -35,12 +37,55 @@ async def upload_product_image(db: Session, product_id: str, file: UploadFile) -
     height = None
     try:
         img = Image.open(io.BytesIO(raw)).convert("RGB")
-        img.thumbnail((1600, 1600))
-        width, height = img.size
-        img.save(relative_path, format="WEBP", quality=80, optimize=True)
+        max_dimension = 1600
+        img.thumbnail((max_dimension, max_dimension))
+
+        quality_steps = [82, 78, 74, 70, 66, 62, 58, 54, 50]
+        current_image = img
+        final_bytes = None
+
+        while True:
+            for quality in quality_steps:
+                buffer = io.BytesIO()
+                current_image.save(buffer, format="WEBP", quality=quality, optimize=True)
+                size = buffer.tell()
+                if size <= TARGET_IDEAL_OUTPUT_SIZE:
+                    final_bytes = buffer.getvalue()
+                    break
+                if size <= TARGET_MAX_OUTPUT_SIZE:
+                    final_bytes = buffer.getvalue()
+            if final_bytes is not None:
+                break
+
+            w, h = current_image.size
+            if max(w, h) <= 900:
+                # last resort: take the smallest compressed version even if slightly > target
+                buffer = io.BytesIO()
+                current_image.save(buffer, format="WEBP", quality=50, optimize=True)
+                final_bytes = buffer.getvalue()
+                break
+
+            current_image = current_image.resize((int(w * 0.85), int(h * 0.85)))
+
+        with open(relative_path, "wb") as f:
+            f.write(final_bytes)
+
+        width, height = current_image.size
+
     except Exception:
         with open(relative_path, "wb") as f:
             f.write(raw)
+
+    final_size = os.path.getsize(relative_path)
+    if final_size > TARGET_MAX_OUTPUT_SIZE:
+        try:
+            os.remove(relative_path)
+        except OSError:
+            pass
+        return build(error=HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Gagal mengompres gambar ke <= 1MB. Gunakan foto resolusi lebih kecil."
+        ))
 
     host_url = os.getenv("HOST_URL", "http://127.0.0.1:8000").rstrip("/")
     image_url = f"{host_url}/{relative_path}"
