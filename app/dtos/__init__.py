@@ -6,3 +6,4 @@ from . import product_dtos
 from . import rating_dtos
 from . import pack_type_dtos
 from . import error_response_dtos
+from . import product_image_dtos

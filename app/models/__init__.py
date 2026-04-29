@@ -13,3 +13,4 @@ from .courier_model import CourierModel
 from .shipment_model import ShipmentModel
 from .order_model import OrderModel
 from .payment_model import PaymentModel
+from .product_image_model import ProductImageModel

@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Depends, UploadFile, status
 from sqlalchemy.orm import Session
 from typing import List, Annotated
 
-from app.dtos import product_dtos
+from app.dtos import product_dtos, product_image_dtos
 from app.services import product_services
 
 from app.libs.sql_alchemy_lib import get_db
@@ -862,6 +862,30 @@ def get_product_detail(
     if result.error:
         raise result.error
     # Unwrap the result to raise exceptions if they exist, otherwise return the data
+    return result.unwrap()
+
+
+@router.post(
+    "/{product_id}/images",
+    response_model=product_image_dtos.ProductImageResponseDto,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(jwt_service.admin_access_required)],
+    summary="Upload product image (auto-compress local storage)"
+)
+async def upload_product_image(
+    product_id: UUID,
+    file: UploadFile,
+    db: Session = Depends(get_db)
+):
+    result = await product_services.upload_product_image(
+        db=db,
+        product_id=str(product_id),
+        file=file
+    )
+
+    if result.error:
+        raise result.error
+
     return result.unwrap()
 
 

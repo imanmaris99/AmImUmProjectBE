@@ -10,5 +10,6 @@ from .search_product_of_id_production import search_product_of_id_production
 from .detail_product import get_product_by_id
 from .update_product import update_product
 from .delete_product import delete_product
+from .upload_product_image import upload_product_image
 
 from .support_function import handle_db_error
