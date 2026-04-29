@@ -889,6 +889,21 @@ async def upload_product_image(
     return result.unwrap()
 
 
+@router.get(
+    "/{product_id}/images",
+    dependencies=[Depends(jwt_service.admin_access_required)],
+    summary="Get product images"
+)
+def get_product_images(
+    product_id: UUID,
+    db: Session = Depends(get_db)
+):
+    result = product_services.list_product_images(db, str(product_id))
+    if result.error:
+        raise result.error
+    return result.unwrap()
+
+
 @router.patch(
     "/{product_id}/images/{image_id}/primary",
     response_model=product_image_dtos.ProductImageActionResponseDto,
