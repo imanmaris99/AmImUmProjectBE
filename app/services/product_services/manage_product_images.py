@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.models.product_image_model import ProductImageModel
 from app.utils.result import build, Result
+from app.services.product_services.cache_utils import invalidate_product_cache
 
 
 def set_primary_product_image(db: Session, product_id: str, image_id: int) -> Result[dict, Exception]:
@@ -18,6 +19,7 @@ def set_primary_product_image(db: Session, product_id: str, image_id: int) -> Re
     image.is_primary = True
     db.add(image)
     db.commit()
+    invalidate_product_cache(product_id)
     return build(data={"status_code": 200, "message": "Primary image updated"})
 
 
@@ -44,6 +46,7 @@ def delete_product_image(db: Session, product_id: str, image_id: int) -> Result[
             db.add(next_image)
             db.commit()
 
+    invalidate_product_cache(product_id)
     return build(data={"status_code": 200, "message": "Image deleted"})
 
 
@@ -60,4 +63,5 @@ def reorder_product_images(db: Session, product_id: str, image_ids: list[int]) -
         ).update({"sort_order": idx})
 
     db.commit()
+    invalidate_product_cache(product_id)
     return build(data={"status_code": 200, "message": "Image order updated"})

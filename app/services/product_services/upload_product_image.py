@@ -9,6 +9,7 @@ from app.dtos.product_image_dtos import ProductImageInfoDto, ProductImageRespons
 from app.models.product_model import ProductModel
 from app.models.product_image_model import ProductImageModel
 from app.utils.result import build, Result
+from app.services.product_services.cache_utils import invalidate_product_cache
 
 ALLOWED_MIME = {"image/jpeg", "image/png", "image/webp"}
 MAX_FILE_SIZE = 10 * 1024 * 1024
@@ -112,6 +113,7 @@ async def upload_product_image(db: Session, product_id: str, file: UploadFile) -
     db.add(image_model)
     db.commit()
     db.refresh(image_model)
+    invalidate_product_cache(product_id)
 
     return build(data=ProductImageResponseDto(
         status_code=201,

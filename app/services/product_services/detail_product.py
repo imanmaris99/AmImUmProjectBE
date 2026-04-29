@@ -8,6 +8,7 @@ from fastapi import HTTPException, status
 
 import json
 import logging
+import os
 
 from app.models.product_model import ProductModel
 from app.models.product_image_model import ProductImageModel
@@ -77,7 +78,8 @@ def get_product_by_id(
                 "sort_order": img.sort_order,
             } for img in product_images
         ]
-        primary_image = next((img.url for img in product_images if img.is_primary), None)
+        default_image_url = os.getenv("DEFAULT_PRODUCT_IMAGE_URL")
+        primary_image = next((img.url for img in product_images if img.is_primary), None) or default_image_url
 
         # Convert the product to ProductDetailDTO
         product_detail_dto = ProductDetailDTO(
