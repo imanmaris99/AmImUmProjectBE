@@ -43,6 +43,8 @@ class AllProductInfoDTO(BaseModel):
     min_variant_price: Optional[float] = None
     max_variant_price: Optional[float] = None
     brand_info: Optional[dict] = None
+    primary_image_url: Optional[str] = None
+    gallery_images: list[dict] = Field(default_factory=list)
     all_variants: List[VariantAllProductDto]
     created_at: datetime
 
@@ -83,6 +85,8 @@ class ProductDetailDTO(BaseModel):
     max_variant_price: Optional[float] = None
     is_active: bool
     company: str
+    primary_image_url: Optional[str] = None
+    gallery_images: list[dict] = Field(default_factory=list)
     avg_rating: Optional[float] = None
     total_rater: Optional[int] = None
     created_at: datetime

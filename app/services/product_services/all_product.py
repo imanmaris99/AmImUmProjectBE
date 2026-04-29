@@ -8,6 +8,7 @@ import json
 import logging
 
 from app.models.product_model import ProductModel
+from app.models.product_image_model import ProductImageModel
 from app.dtos.product_dtos import AllProductInfoDTO, AllProductInfoResponseDto
 from app.dtos.error_response_dtos import ErrorResponseDto
 
@@ -60,19 +61,33 @@ def all_product(
             ))
 
         # Mapping data ke DTO
-        all_products_dto = [
-            AllProductInfoDTO(
-                id=product.id, 
+        all_products_dto = []
+        for product in product_model:
+            product_images = db.query(ProductImageModel).filter(
+                ProductImageModel.product_id == str(product.id)
+            ).order_by(ProductImageModel.sort_order.asc(), ProductImageModel.id.asc()).all()
+            gallery_images = [
+                {
+                    "id": img.id,
+                    "url": img.url,
+                    "is_primary": img.is_primary,
+                    "sort_order": img.sort_order,
+                } for img in product_images
+            ]
+            primary_image = next((img.url for img in product_images if img.is_primary), None)
+
+            all_products_dto.append(AllProductInfoDTO(
+                id=product.id,
                 name=product.name,
                 price=float(product.price),
                 min_variant_price=product.min_variant_price,
                 max_variant_price=product.max_variant_price,
                 brand_info=product.brand_info,
+                primary_image_url=primary_image,
+                gallery_images=gallery_images,
                 all_variants=product.all_variants or [],
                 created_at=product.created_at
-            )
-            for product in product_model
-        ]
+            ))
 
         response_dto = AllProductInfoResponseDto(
             status_code=status.HTTP_200_OK,

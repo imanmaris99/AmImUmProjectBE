@@ -10,6 +10,7 @@ import json
 import logging
 
 from app.models.product_model import ProductModel
+from app.models.product_image_model import ProductImageModel
 from app.dtos.product_dtos import ProductDetailDTO, ProductDetailResponseDto
 from app.dtos.error_response_dtos import ErrorResponseDto
 
@@ -65,6 +66,19 @@ def get_product_by_id(
                 ).dict()
             ))
 
+        product_images = db.query(ProductImageModel).filter(
+            ProductImageModel.product_id == str(product_model.id)
+        ).order_by(ProductImageModel.sort_order.asc(), ProductImageModel.id.asc()).all()
+        gallery_images = [
+            {
+                "id": img.id,
+                "url": img.url,
+                "is_primary": img.is_primary,
+                "sort_order": img.sort_order,
+            } for img in product_images
+        ]
+        primary_image = next((img.url for img in product_images if img.is_primary), None)
+
         # Convert the product to ProductDetailDTO
         product_detail_dto = ProductDetailDTO(
             id=product_model.id,
@@ -78,6 +92,8 @@ def get_product_by_id(
             max_variant_price=product_model.max_variant_price,
             is_active=product_model.is_active,
             company=product_model.company,
+            primary_image_url=primary_image,
+            gallery_images=gallery_images,
             avg_rating=product_model.avg_rating,
             total_rater=product_model.total_rater,
             created_at=product_model.created_at,
