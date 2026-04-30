@@ -23,6 +23,25 @@ logger = logging.getLogger(__name__)
 CACHE_TTL = 3600
 RESPONSE_MESSAGE = "All List product can accessed successfully"
 
+
+def _normalize_image_url(url: str | None) -> str | None:
+    if not url:
+        return url
+    if "127.0.0.1" not in url and "localhost" not in url:
+        return url
+    host_url = os.getenv("HOST_URL", "").rstrip("/")
+    if not host_url:
+        railway_domain = os.getenv("RAILWAY_PUBLIC_DOMAIN", "").strip()
+        if railway_domain:
+            host_url = f"https://{railway_domain.strip('/')}"
+    if not host_url:
+        return url
+    try:
+        path = url.split("/images/", 1)[1]
+        return f"{host_url}/images/{path}"
+    except Exception:
+        return url
+
 def all_product(
         db: Session, 
         skip: int = 0, 
@@ -77,12 +96,12 @@ def all_product(
                 gallery_images = [
                     {
                         "id": img.id,
-                        "url": img.url,
+                        "url": _normalize_image_url(img.url),
                         "is_primary": img.is_primary,
                         "sort_order": img.sort_order,
                     } for img in product_images
                 ]
-                primary_image = next((img.url for img in product_images if img.is_primary), None) or default_image_url
+                primary_image = _normalize_image_url(next((img.url for img in product_images if img.is_primary), None)) or default_image_url
             except Exception as image_error:
                 logger.warning("Failed to load product images for product %s: %s", product.id, image_error)
 

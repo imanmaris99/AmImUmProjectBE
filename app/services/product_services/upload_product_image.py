@@ -17,6 +17,18 @@ TARGET_MAX_OUTPUT_SIZE = 1 * 1024 * 1024
 TARGET_IDEAL_OUTPUT_SIZE = 500 * 1024
 
 
+def _resolve_host_url() -> str:
+    host_url = os.getenv("HOST_URL", "").rstrip("/")
+    if host_url:
+        return host_url
+
+    railway_domain = os.getenv("RAILWAY_PUBLIC_DOMAIN", "").strip()
+    if railway_domain:
+        return f"https://{railway_domain.strip('/')}"
+
+    return "http://127.0.0.1:8000"
+
+
 async def upload_product_image(db: Session, product_id: str, file: UploadFile) -> Result[ProductImageResponseDto, Exception]:
     product = db.query(ProductModel).filter(ProductModel.id == product_id).first()
     if not product:
@@ -88,7 +100,7 @@ async def upload_product_image(db: Session, product_id: str, file: UploadFile) -
             detail="Gagal mengompres gambar ke <= 1MB. Gunakan foto resolusi lebih kecil."
         ))
 
-    host_url = os.getenv("HOST_URL", "http://127.0.0.1:8000").rstrip("/")
+    host_url = _resolve_host_url()
     image_url = f"{host_url}/{relative_path}"
 
     current_primary = db.query(ProductImageModel).filter(
