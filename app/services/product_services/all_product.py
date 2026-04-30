@@ -64,19 +64,27 @@ def all_product(
         # Mapping data ke DTO
         all_products_dto = []
         for product in product_model:
-            product_images = db.query(ProductImageModel).filter(
-                ProductImageModel.product_id == str(product.id)
-            ).order_by(ProductImageModel.sort_order.asc(), ProductImageModel.id.asc()).all()
-            gallery_images = [
-                {
-                    "id": img.id,
-                    "url": img.url,
-                    "is_primary": img.is_primary,
-                    "sort_order": img.sort_order,
-                } for img in product_images
-            ]
+            product_images = []
+            gallery_images = []
             default_image_url = os.getenv("DEFAULT_PRODUCT_IMAGE_URL")
-            primary_image = next((img.url for img in product_images if img.is_primary), None) or default_image_url
+            primary_image = default_image_url
+
+            try:
+                product_images = db.query(ProductImageModel).filter(
+                    ProductImageModel.product_id == str(product.id)
+                ).order_by(ProductImageModel.sort_order.asc(), ProductImageModel.id.asc()).all()
+
+                gallery_images = [
+                    {
+                        "id": img.id,
+                        "url": img.url,
+                        "is_primary": img.is_primary,
+                        "sort_order": img.sort_order,
+                    } for img in product_images
+                ]
+                primary_image = next((img.url for img in product_images if img.is_primary), None) or default_image_url
+            except Exception as image_error:
+                logger.warning("Failed to load product images for product %s: %s", product.id, image_error)
 
             all_products_dto.append(AllProductInfoDTO(
                 id=product.id,
