@@ -67,21 +67,11 @@ def get_product_by_id(
                 ).dict()
             ))
 
-        product_images = db.query(ProductImageModel).filter(
-            ProductImageModel.product_id == str(product_model.id)
-        ).order_by(ProductImageModel.sort_order.asc(), ProductImageModel.id.asc()).all()
-        gallery_images = [
-            {
-                "id": img.id,
-                "url": img.url,
-                "is_primary": img.is_primary,
-                "sort_order": img.sort_order,
-            } for img in product_images
-        ]
         default_image_url = os.getenv("DEFAULT_PRODUCT_IMAGE_URL")
-        primary_image = next((img.url for img in product_images if img.is_primary), None) or default_image_url
+        primary_image = default_image_url
+        gallery_images = []
 
-        # Convert the product to ProductDetailDTO
+        # Resolve all base fields first (avoid extra DB hits after any image-query failure)
         product_detail_dto = ProductDetailDTO(
             id=product_model.id,
             name=product_model.name,
@@ -101,6 +91,25 @@ def get_product_by_id(
             created_at=product_model.created_at,
             updated_at=product_model.updated_at
         )
+
+        # Best-effort image enrichment (must never break detail endpoint)
+        try:
+            product_images = db.query(ProductImageModel).filter(
+                ProductImageModel.product_id == str(product_model.id)
+            ).order_by(ProductImageModel.sort_order.asc(), ProductImageModel.id.asc()).all()
+            gallery_images = [
+                {
+                    "id": img.id,
+                    "url": img.url,
+                    "is_primary": img.is_primary,
+                    "sort_order": img.sort_order,
+                } for img in product_images
+            ]
+            primary_image = next((img.url for img in product_images if img.is_primary), None) or default_image_url
+            product_detail_dto.gallery_images = gallery_images
+            product_detail_dto.primary_image_url = primary_image
+        except Exception as image_error:
+            logger.warning("Failed to load product images for product %s: %s", product_model.id, image_error)
 
         # Cache the result in Redis
         if redis_client:
