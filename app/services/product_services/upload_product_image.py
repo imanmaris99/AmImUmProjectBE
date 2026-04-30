@@ -7,6 +7,7 @@ import requests
 from PIL import Image
 from fastapi import HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
+from sqlalchemy import delete
 
 from app.dtos.product_image_dtos import ProductImageInfoDto, ProductImageResponseDto
 from app.models.product_model import ProductModel
@@ -20,13 +21,17 @@ TARGET_MAX_OUTPUT_SIZE = 1 * 1024 * 1024
 TARGET_IDEAL_OUTPUT_SIZE = 500 * 1024
 
 
-def _upload_to_cloudinary(image_bytes: bytes, product_id: str, public_id_seed: str) -> tuple[str, int | None, int | None]:
+def _cloudinary_creds() -> tuple[str, str, str]:
     cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME", "").strip()
     api_key = os.getenv("CLOUDINARY_API_KEY", "").strip()
     api_secret = os.getenv("CLOUDINARY_API_SECRET", "").strip()
-
     if not cloud_name or not api_key or not api_secret:
         raise HTTPException(status_code=500, detail="Cloudinary env belum lengkap")
+    return cloud_name, api_key, api_secret
+
+
+def _upload_to_cloudinary(image_bytes: bytes, product_id: str, public_id_seed: str) -> tuple[str, int | None, int | None]:
+    cloud_name, api_key, api_secret = _cloudinary_creds()
 
     timestamp = int(time.time())
     folder = f"amimum/products/{product_id}"
@@ -51,6 +56,47 @@ def _upload_to_cloudinary(image_bytes: bytes, product_id: str, public_id_seed: s
 
     payload = response.json()
     return payload.get("secure_url"), payload.get("width"), payload.get("height")
+
+
+def _extract_public_id_from_cloudinary_url(url: str) -> str | None:
+    # example: https://res.cloudinary.com/<cloud>/image/upload/v123/folder/name.webp
+    if "/image/upload/" not in url:
+        return None
+    try:
+        tail = url.split("/image/upload/", 1)[1]
+        parts = tail.split("/")
+        if parts and parts[0].startswith("v") and parts[0][1:].isdigit():
+            parts = parts[1:]
+        if not parts:
+            return None
+        path = "/".join(parts)
+        if "." in path:
+            path = path.rsplit(".", 1)[0]
+        return path
+    except Exception:
+        return None
+
+
+def _delete_from_cloudinary(url: str) -> None:
+    public_id = _extract_public_id_from_cloudinary_url(url)
+    if not public_id:
+        return
+
+    cloud_name, api_key, api_secret = _cloudinary_creds()
+    timestamp = int(time.time())
+    params_to_sign = f"public_id={public_id}&timestamp={timestamp}{api_secret}"
+    signature = hashlib.sha1(params_to_sign.encode("utf-8")).hexdigest()
+    destroy_url = f"https://api.cloudinary.com/v1_1/{cloud_name}/image/destroy"
+    data = {
+        "public_id": public_id,
+        "timestamp": timestamp,
+        "api_key": api_key,
+        "signature": signature,
+    }
+    try:
+        requests.post(destroy_url, data=data, timeout=20)
+    except Exception:
+        pass
 
 
 async def upload_product_image(db: Session, product_id: str, file: UploadFile) -> Result[ProductImageResponseDto, Exception]:
@@ -119,12 +165,16 @@ async def upload_product_image(db: Session, product_id: str, file: UploadFile) -
     width = uploaded_width or width
     height = uploaded_height or height
 
-    current_primary = db.query(ProductImageModel).filter(
-        ProductImageModel.product_id == product_id,
-        ProductImageModel.is_primary == True
-    ).first()
+    # Replace mode: saat upload dari halaman edit, hapus gambar lama dulu.
+    existing_images = db.query(ProductImageModel).filter(ProductImageModel.product_id == product_id).all()
+    for old_img in existing_images:
+        if old_img.url:
+            _delete_from_cloudinary(old_img.url)
 
-    latest_order = db.query(ProductImageModel).filter(ProductImageModel.product_id == product_id).count()
+    if existing_images:
+        db.execute(delete(ProductImageModel).where(ProductImageModel.product_id == product_id))
+        db.commit()
+
     image_model = ProductImageModel(
         product_id=product_id,
         storage_provider="local",
@@ -134,8 +184,8 @@ async def upload_product_image(db: Session, product_id: str, file: UploadFile) -
         size_bytes=len(final_bytes),
         width=width,
         height=height,
-        is_primary=(current_primary is None),
-        sort_order=latest_order,
+        is_primary=True,
+        sort_order=0,
     )
 
     db.add(image_model)
