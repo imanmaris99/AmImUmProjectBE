@@ -36,13 +36,55 @@ def _cloudinary_creds() -> tuple[str, str, str]:
     return cloud_name, api_key, api_secret
 
 
+def _extract_public_id_from_cloudinary_url(url: str) -> str | None:
+    if "/image/upload/" not in url:
+        return None
+    try:
+        tail = url.split("/image/upload/", 1)[1]
+        parts = tail.split("/")
+        if parts and parts[0].startswith("v") and parts[0][1:].isdigit():
+            parts = parts[1:]
+        if not parts:
+            return None
+        path = "/".join(parts)
+        if "." in path:
+            path = path.rsplit(".", 1)[0]
+        return path
+    except Exception:
+        return None
+
+
+def _delete_from_cloudinary(url: str) -> None:
+    public_id = _extract_public_id_from_cloudinary_url(url)
+    if not public_id:
+        return
+
+    cloud_name, api_key, api_secret = _cloudinary_creds()
+    timestamp = int(time.time())
+    params_to_sign = f"public_id={public_id}&timestamp={timestamp}{api_secret}"
+    signature = hashlib.sha1(params_to_sign.encode("utf-8")).hexdigest()
+
+    destroy_url = f"https://api.cloudinary.com/v1_1/{cloud_name}/image/destroy"
+    data = {
+        "public_id": public_id,
+        "timestamp": timestamp,
+        "api_key": api_key,
+        "signature": signature,
+    }
+    try:
+        requests.post(destroy_url, data=data, timeout=20)
+    except Exception:
+        pass
+
+
 def _upload_to_cloudinary(image_bytes: bytes, production_id: int, public_id_seed: str) -> str:
     cloud_name, api_key, api_secret = _cloudinary_creds()
 
     timestamp = int(time.time())
     folder = f"amimum/productions/{production_id}/logo"
     public_id = public_id_seed
-    params_to_sign = f"folder={folder}&public_id={public_id}&timestamp={timestamp}{api_secret}"
+    transformation = "f_auto,q_auto"
+    params_to_sign = f"folder={folder}&public_id={public_id}&timestamp={timestamp}&transformation={transformation}{api_secret}"
     signature = hashlib.sha1(params_to_sign.encode("utf-8")).hexdigest()
 
     upload_url = f"https://api.cloudinary.com/v1_1/{cloud_name}/image/upload"
@@ -53,6 +95,7 @@ def _upload_to_cloudinary(image_bytes: bytes, production_id: int, public_id_seed
         "folder": folder,
         "public_id": public_id,
         "signature": signature,
+        "transformation": transformation,
         "overwrite": "true",
     }
 
@@ -141,6 +184,7 @@ async def post_logo(
                     detail="Gagal mengompres logo ke <= 1MB. Gunakan logo resolusi lebih kecil."
                 )
 
+            old_logo_url = logo_model.photo_url
             public_url = _upload_to_cloudinary(final_bytes, production_id, f"logo-{uuid.uuid4().hex[:12]}")
 
             if not public_url:
@@ -154,6 +198,8 @@ async def post_logo(
                 )
 
             logo_model.photo_url = public_url
+            if old_logo_url and old_logo_url != public_url:
+                _delete_from_cloudinary(old_logo_url)
 
         db.add(logo_model)
         db.commit()
