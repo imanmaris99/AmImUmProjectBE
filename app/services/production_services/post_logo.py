@@ -1,5 +1,12 @@
+import io
+import os
+import time
+import uuid
+import hashlib
 import logging
 
+import requests
+from PIL import Image
 from fastapi import HTTPException, UploadFile, status
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -7,12 +14,55 @@ from sqlalchemy.orm import Session
 from app.dtos import production_dtos
 from app.dtos.error_response_dtos import ErrorResponseDto
 from app.libs.redis_config import redis_client
-from app.libs.upload_image_to_supabase import upload_image_to_supabase, validate_file
+from app.libs.upload_image_to_supabase import validate_file
 from app.models.production_model import ProductionModel
 from app.services.production_services.support_function import handle_db_error
 from app.utils.result import build, Result
 
 logger = logging.getLogger(__name__)
+
+ALLOWED_MIME = {"image/jpeg", "image/png", "image/webp"}
+MAX_FILE_SIZE = 10 * 1024 * 1024
+TARGET_MAX_OUTPUT_SIZE = 1 * 1024 * 1024
+TARGET_IDEAL_OUTPUT_SIZE = 500 * 1024
+
+
+def _cloudinary_creds() -> tuple[str, str, str]:
+    cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME", "").strip()
+    api_key = os.getenv("CLOUDINARY_API_KEY", "").strip()
+    api_secret = os.getenv("CLOUDINARY_API_SECRET", "").strip()
+    if not cloud_name or not api_key or not api_secret:
+        raise HTTPException(status_code=500, detail="Cloudinary env belum lengkap")
+    return cloud_name, api_key, api_secret
+
+
+def _upload_to_cloudinary(image_bytes: bytes, production_id: int, public_id_seed: str) -> str:
+    cloud_name, api_key, api_secret = _cloudinary_creds()
+
+    timestamp = int(time.time())
+    folder = f"amimum/productions/{production_id}/logo"
+    public_id = public_id_seed
+    params_to_sign = f"folder={folder}&public_id={public_id}&timestamp={timestamp}{api_secret}"
+    signature = hashlib.sha1(params_to_sign.encode("utf-8")).hexdigest()
+
+    upload_url = f"https://api.cloudinary.com/v1_1/{cloud_name}/image/upload"
+    files = {"file": (f"{public_id}.webp", image_bytes, "image/webp")}
+    data = {
+        "api_key": api_key,
+        "timestamp": timestamp,
+        "folder": folder,
+        "public_id": public_id,
+        "signature": signature,
+        "overwrite": "true",
+    }
+
+    response = requests.post(upload_url, files=files, data=data, timeout=30)
+    if response.status_code >= 300:
+        raise HTTPException(status_code=502, detail=f"Cloudinary upload gagal: {response.text}")
+
+    payload = response.json()
+    return payload.get("secure_url")
+
 
 async def post_logo(
         db: Session,
@@ -39,20 +89,61 @@ async def post_logo(
 
         # Langkah 2: Validasi file jika ada
         if file:
-            validate_file(file)  # Panggil fungsi validasi
+            validate_file(file)  # existing validation extension
 
-            logger.debug("Uploading production logo for production_id=%s filename=%s", production_id, file.filename)
+            if file.content_type not in ALLOWED_MIME:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported image format")
 
-            # Upload gambar ke Supabase atau storage lain
-            public_url = await upload_image_to_supabase(
-                file,
-                "AmimumProject-storage",
-                user_id,
-                folder_name="images/company_logo",
-                old_file_url=logo_model.photo_url
-            )
+            raw = await file.read()
+            if len(raw) > MAX_FILE_SIZE:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Image too large")
 
-            if public_url is None:
+            logger.debug("Uploading production logo to Cloudinary production_id=%s filename=%s", production_id, file.filename)
+
+            final_bytes = raw
+            try:
+                img = Image.open(io.BytesIO(raw)).convert("RGB")
+                img.thumbnail((1200, 1200))
+
+                quality_steps = [82, 78, 74, 70, 66, 62, 58, 54, 50]
+                current = img
+                compressed = None
+
+                while True:
+                    for quality in quality_steps:
+                        buffer = io.BytesIO()
+                        current.save(buffer, format="WEBP", quality=quality, optimize=True)
+                        size = buffer.tell()
+                        if size <= TARGET_IDEAL_OUTPUT_SIZE:
+                            compressed = buffer.getvalue()
+                            break
+                        if size <= TARGET_MAX_OUTPUT_SIZE:
+                            compressed = buffer.getvalue()
+                    if compressed is not None:
+                        break
+
+                    w, h = current.size
+                    if max(w, h) <= 700:
+                        buffer = io.BytesIO()
+                        current.save(buffer, format="WEBP", quality=50, optimize=True)
+                        compressed = buffer.getvalue()
+                        break
+
+                    current = current.resize((int(w * 0.85), int(h * 0.85)))
+
+                final_bytes = compressed or raw
+            except Exception:
+                final_bytes = raw
+
+            if len(final_bytes) > TARGET_MAX_OUTPUT_SIZE:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Gagal mengompres logo ke <= 1MB. Gunakan logo resolusi lebih kecil."
+                )
+
+            public_url = _upload_to_cloudinary(final_bytes, production_id, f"logo-{uuid.uuid4().hex[:12]}")
+
+            if not public_url:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=ErrorResponseDto(
@@ -61,8 +152,8 @@ async def post_logo(
                         message="Failed to upload image."
                     ).dict()
                 )
-            # Update photo_url pada user
-            logo_model.photo_url = public_url           
+
+            logo_model.photo_url = public_url
 
         db.add(logo_model)
         db.commit()
