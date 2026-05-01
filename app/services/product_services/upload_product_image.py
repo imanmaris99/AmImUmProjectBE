@@ -17,8 +17,8 @@ from app.services.product_services.cache_utils import invalidate_product_cache
 
 ALLOWED_MIME = {"image/jpeg", "image/png", "image/webp"}
 MAX_FILE_SIZE = 10 * 1024 * 1024
-TARGET_MAX_OUTPUT_SIZE = 1 * 1024 * 1024
-TARGET_IDEAL_OUTPUT_SIZE = 500 * 1024
+TARGET_MAX_OUTPUT_SIZE = 100 * 1024
+TARGET_IDEAL_OUTPUT_SIZE = 50 * 1024
 
 
 def _cloudinary_creds() -> tuple[str, str, str]:
@@ -158,7 +158,7 @@ async def upload_product_image(db: Session, product_id: str, file: UploadFile) -
     if len(final_bytes) > TARGET_MAX_OUTPUT_SIZE:
         return build(error=HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Gagal mengompres gambar ke <= 1MB. Gunakan foto resolusi lebih kecil."
+            detail="Gagal mengompres gambar ke <= 100KB. Gunakan foto resolusi lebih kecil."
         ))
 
     image_url, uploaded_width, uploaded_height = _upload_to_cloudinary(final_bytes, product_id, filename_seed)

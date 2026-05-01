@@ -23,8 +23,8 @@ logger = logging.getLogger(__name__)
 
 ALLOWED_MIME = {"image/jpeg", "image/png", "image/webp"}
 MAX_FILE_SIZE = 10 * 1024 * 1024
-TARGET_MAX_OUTPUT_SIZE = 1 * 1024 * 1024
-TARGET_IDEAL_OUTPUT_SIZE = 500 * 1024
+TARGET_MAX_OUTPUT_SIZE = 100 * 1024
+TARGET_IDEAL_OUTPUT_SIZE = 50 * 1024
 
 
 def _cloudinary_creds() -> tuple[str, str, str]:
@@ -181,7 +181,7 @@ async def post_logo(
             if len(final_bytes) > TARGET_MAX_OUTPUT_SIZE:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Gagal mengompres logo ke <= 1MB. Gunakan logo resolusi lebih kecil."
+                    detail="Gagal mengompres logo ke <= 100KB. Gunakan logo resolusi lebih kecil."
                 )
 
             old_logo_url = logo_model.photo_url
