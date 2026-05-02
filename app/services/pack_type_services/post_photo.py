@@ -1,6 +1,5 @@
 import io
 import logging
-import os
 import uuid
 import time
 import hashlib
@@ -15,6 +14,7 @@ from app.dtos.error_response_dtos import ErrorResponseDto
 from app.dtos.pack_type_dtos import EditPhotoProductDto, EditPhotoProductResponseDto
 from app.libs.upload_image_to_supabase import validate_file
 from app.libs.supabase_client import supabase
+from app.libs.storage_media_utils import cloudinary_creds, delete_media_url
 from app.models.pack_type_model import PackTypeModel
 from app.services.pack_type_services.support_function import handle_db_error
 from app.utils.result import build, Result
@@ -28,52 +28,10 @@ TARGET_IDEAL_OUTPUT_SIZE = 50 * 1024
 
 
 def _cloudinary_creds() -> tuple[str, str, str]:
-    cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME", "").strip()
-    api_key = os.getenv("CLOUDINARY_API_KEY", "").strip()
-    api_secret = os.getenv("CLOUDINARY_API_SECRET", "").strip()
-    if not cloud_name or not api_key or not api_secret:
-        raise HTTPException(status_code=500, detail="Cloudinary env belum lengkap")
-    return cloud_name, api_key, api_secret
-
-
-def _extract_public_id_from_cloudinary_url(url: str) -> str | None:
-    if "/image/upload/" not in url:
-        return None
     try:
-        tail = url.split("/image/upload/", 1)[1]
-        parts = tail.split("/")
-        if parts and parts[0].startswith("v") and parts[0][1:].isdigit():
-            parts = parts[1:]
-        if not parts:
-            return None
-        path = "/".join(parts)
-        if "." in path:
-            path = path.rsplit(".", 1)[0]
-        return path
-    except Exception:
-        return None
-
-
-def _delete_from_cloudinary(url: str) -> None:
-    public_id = _extract_public_id_from_cloudinary_url(url)
-    if not public_id:
-        return
-
-    cloud_name, api_key, api_secret = _cloudinary_creds()
-    timestamp = int(time.time())
-    params_to_sign = f"public_id={public_id}&timestamp={timestamp}{api_secret}"
-    signature = hashlib.sha1(params_to_sign.encode("utf-8")).hexdigest()
-    destroy_url = f"https://api.cloudinary.com/v1_1/{cloud_name}/image/destroy"
-    data = {
-        "public_id": public_id,
-        "timestamp": timestamp,
-        "api_key": api_key,
-        "signature": signature,
-    }
-    try:
-        requests.post(destroy_url, data=data, timeout=20)
-    except Exception:
-        pass
+        return cloudinary_creds()
+    except ValueError as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 def _upload_to_cloudinary(image_bytes: bytes, type_id: int, public_id_seed: str) -> str:
@@ -208,8 +166,8 @@ async def post_photo(
                 )
 
             image_model.img = public_url
-            if old_url and uploaded_provider == "cloudinary":
-                _delete_from_cloudinary(old_url)
+            if old_url:
+                delete_media_url(old_url)
 
         db.add(image_model)
         db.commit()

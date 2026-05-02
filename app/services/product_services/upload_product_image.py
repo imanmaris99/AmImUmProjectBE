@@ -1,5 +1,4 @@
 import io
-import os
 import uuid
 import time
 import hashlib
@@ -15,6 +14,7 @@ from app.models.product_image_model import ProductImageModel
 from app.utils.result import build, Result
 from app.services.product_services.cache_utils import invalidate_product_cache
 from app.libs.supabase_client import supabase
+from app.libs.storage_media_utils import cloudinary_creds, delete_media_url
 
 ALLOWED_MIME = {"image/jpeg", "image/png", "image/webp"}
 MAX_FILE_SIZE = 10 * 1024 * 1024
@@ -23,12 +23,10 @@ TARGET_IDEAL_OUTPUT_SIZE = 50 * 1024
 
 
 def _cloudinary_creds() -> tuple[str, str, str]:
-    cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME", "").strip()
-    api_key = os.getenv("CLOUDINARY_API_KEY", "").strip()
-    api_secret = os.getenv("CLOUDINARY_API_SECRET", "").strip()
-    if not cloud_name or not api_key or not api_secret:
-        raise HTTPException(status_code=500, detail="Cloudinary env belum lengkap")
-    return cloud_name, api_key, api_secret
+    try:
+        return cloudinary_creds()
+    except ValueError as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 def _upload_to_cloudinary(image_bytes: bytes, product_id: str, public_id_seed: str) -> tuple[str, int | None, int | None]:
@@ -57,47 +55,6 @@ def _upload_to_cloudinary(image_bytes: bytes, product_id: str, public_id_seed: s
 
     payload = response.json()
     return payload.get("secure_url"), payload.get("width"), payload.get("height")
-
-
-def _extract_public_id_from_cloudinary_url(url: str) -> str | None:
-    # example: https://res.cloudinary.com/<cloud>/image/upload/v123/folder/name.webp
-    if "/image/upload/" not in url:
-        return None
-    try:
-        tail = url.split("/image/upload/", 1)[1]
-        parts = tail.split("/")
-        if parts and parts[0].startswith("v") and parts[0][1:].isdigit():
-            parts = parts[1:]
-        if not parts:
-            return None
-        path = "/".join(parts)
-        if "." in path:
-            path = path.rsplit(".", 1)[0]
-        return path
-    except Exception:
-        return None
-
-
-def _delete_from_cloudinary(url: str) -> None:
-    public_id = _extract_public_id_from_cloudinary_url(url)
-    if not public_id:
-        return
-
-    cloud_name, api_key, api_secret = _cloudinary_creds()
-    timestamp = int(time.time())
-    params_to_sign = f"public_id={public_id}&timestamp={timestamp}{api_secret}"
-    signature = hashlib.sha1(params_to_sign.encode("utf-8")).hexdigest()
-    destroy_url = f"https://api.cloudinary.com/v1_1/{cloud_name}/image/destroy"
-    data = {
-        "public_id": public_id,
-        "timestamp": timestamp,
-        "api_key": api_key,
-        "signature": signature,
-    }
-    try:
-        requests.post(destroy_url, data=data, timeout=20)
-    except Exception:
-        pass
 
 
 def _upload_to_supabase_bytes(image_bytes: bytes, product_id: str, public_id_seed: str) -> tuple[str | None, None, None]:
@@ -192,7 +149,7 @@ async def upload_product_image(db: Session, product_id: str, file: UploadFile) -
     existing_images = db.query(ProductImageModel).filter(ProductImageModel.product_id == product_id).all()
     for old_img in existing_images:
         if old_img.url:
-            _delete_from_cloudinary(old_img.url)
+            delete_media_url(old_img.url)
 
     if existing_images:
         db.execute(delete(ProductImageModel).where(ProductImageModel.product_id == product_id))
