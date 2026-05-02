@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import delete
 
 from app.dtos.product_image_dtos import ProductImageInfoDto, ProductImageResponseDto
+from app.dtos.error_response_dtos import ErrorResponseDto
 from app.models.product_model import ProductModel
 from app.models.product_image_model import ProductImageModel
 from app.utils.result import build, Result
@@ -22,11 +23,22 @@ TARGET_MAX_OUTPUT_SIZE = 100 * 1024
 TARGET_IDEAL_OUTPUT_SIZE = 50 * 1024
 
 
+def _http_error(status_code: int, error: str, message: str) -> HTTPException:
+    return HTTPException(
+        status_code=status_code,
+        detail=ErrorResponseDto(
+            status_code=status_code,
+            error=error,
+            message=message,
+        ).dict(),
+    )
+
+
 def _cloudinary_creds() -> tuple[str, str, str]:
     try:
         return cloudinary_creds()
     except ValueError as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise _http_error(status.HTTP_500_INTERNAL_SERVER_ERROR, "Internal Server Error", str(e))
 
 
 def _upload_to_cloudinary(image_bytes: bytes, product_id: str, public_id_seed: str) -> tuple[str, int | None, int | None]:
@@ -51,7 +63,7 @@ def _upload_to_cloudinary(image_bytes: bytes, product_id: str, public_id_seed: s
 
     response = requests.post(upload_url, files=files, data=data, timeout=30)
     if response.status_code >= 300:
-        raise HTTPException(status_code=502, detail=f"Cloudinary upload gagal: {response.text}")
+        raise _http_error(status.HTTP_502_BAD_GATEWAY, "Bad Gateway", f"Cloudinary upload gagal: {response.text}")
 
     payload = response.json()
     return payload.get("secure_url"), payload.get("width"), payload.get("height")
@@ -73,14 +85,14 @@ def _upload_to_supabase_bytes(image_bytes: bytes, product_id: str, public_id_see
 async def upload_product_image(db: Session, product_id: str, file: UploadFile) -> Result[ProductImageResponseDto, Exception]:
     product = db.query(ProductModel).filter(ProductModel.id == product_id).first()
     if not product:
-        return build(error=HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found"))
+        return build(error=_http_error(status.HTTP_404_NOT_FOUND, "Not Found", "Product not found"))
 
     if file.content_type not in ALLOWED_MIME:
-        return build(error=HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported image format"))
+        return build(error=_http_error(status.HTTP_400_BAD_REQUEST, "Bad Request", "Unsupported image format"))
 
     raw = await file.read()
     if len(raw) > MAX_FILE_SIZE:
-        return build(error=HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Image too large"))
+        return build(error=_http_error(status.HTTP_400_BAD_REQUEST, "Bad Request", "Image too large"))
 
     filename_seed = str(uuid.uuid4())
     relative_path = f"cloudinary://amimum/products/{product_id}/{filename_seed}.webp"
@@ -127,9 +139,10 @@ async def upload_product_image(db: Session, product_id: str, file: UploadFile) -
         final_bytes = raw
 
     if len(final_bytes) > TARGET_MAX_OUTPUT_SIZE:
-        return build(error=HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Gagal mengompres gambar ke <= 100KB. Gunakan foto resolusi lebih kecil."
+        return build(error=_http_error(
+            status.HTTP_400_BAD_REQUEST,
+            "Bad Request",
+            "Gagal mengompres gambar ke <= 100KB. Gunakan foto resolusi lebih kecil."
         ))
 
     storage_provider = "cloudinary"
@@ -140,7 +153,11 @@ async def upload_product_image(db: Session, product_id: str, file: UploadFile) -
         image_url, uploaded_width, uploaded_height = _upload_to_supabase_bytes(final_bytes, product_id, filename_seed)
 
     if not image_url:
-        return build(error=HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to upload image on all storage providers"))
+        return build(error=_http_error(
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            "Internal Server Error",
+            "Failed to upload image on all storage providers"
+        ))
 
     width = uploaded_width or width
     height = uploaded_height or height
