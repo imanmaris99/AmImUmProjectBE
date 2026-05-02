@@ -99,8 +99,17 @@ async def post_photo(
             if file.content_type not in ALLOWED_MIME:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported image format")
 
+            request_id = uuid.uuid4().hex[:12]
+            started_at = time.time()
+
             raw = await file.read()
             if len(raw) > MAX_FILE_SIZE:
+                logger.warning(
+                    "variant_image_upload_rejected request_id=%s type_id=%s reason=image_too_large input_size=%s",
+                    request_id,
+                    type_id,
+                    len(raw),
+                )
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Image too large")
 
             final_bytes = raw
@@ -148,14 +157,30 @@ async def post_photo(
             old_url = image_model.img
             public_url = None
             uploaded_provider = "cloudinary"
+            fallback_used = False
+            fallback_reason = None
             try:
                 public_url = _upload_to_cloudinary(final_bytes, type_id, f"variant-{uuid.uuid4().hex[:12]}")
-            except Exception:
+            except Exception as e:
                 logger.warning("Cloudinary upload failed for variant %s, fallback to Supabase", type_id)
+                fallback_used = True
+                fallback_reason = str(e)
                 public_url = _upload_to_supabase_bytes(final_bytes, type_id, user_id)
                 uploaded_provider = "supabase"
 
             if not public_url:
+                elapsed_ms = int((time.time() - started_at) * 1000)
+                logger.error(
+                    "variant_image_upload_failed request_id=%s type_id=%s input_size=%s output_size=%s provider=%s fallback_used=%s fallback_reason=%s latency_ms=%s",
+                    request_id,
+                    type_id,
+                    len(raw),
+                    len(final_bytes),
+                    uploaded_provider,
+                    fallback_used,
+                    fallback_reason,
+                    elapsed_ms,
+                )
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=ErrorResponseDto(
@@ -172,6 +197,19 @@ async def post_photo(
         db.add(image_model)
         db.commit()
         db.refresh(image_model)
+
+        if file:
+            elapsed_ms = int((time.time() - started_at) * 1000)
+            logger.info(
+                "variant_image_upload_success request_id=%s type_id=%s input_size=%s output_size=%s provider=%s fallback_used=%s latency_ms=%s",
+                request_id,
+                type_id,
+                len(raw),
+                len(final_bytes),
+                uploaded_provider,
+                fallback_used,
+                elapsed_ms,
+            )
 
         updated_response = EditPhotoProductDto(
             img=image_model.img,

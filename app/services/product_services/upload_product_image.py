@@ -2,6 +2,7 @@ import io
 import uuid
 import time
 import hashlib
+import logging
 import requests
 from PIL import Image
 from fastapi import HTTPException, UploadFile, status
@@ -21,6 +22,8 @@ ALLOWED_MIME = {"image/jpeg", "image/png", "image/webp"}
 MAX_FILE_SIZE = 10 * 1024 * 1024
 TARGET_MAX_OUTPUT_SIZE = 100 * 1024
 TARGET_IDEAL_OUTPUT_SIZE = 50 * 1024
+
+logger = logging.getLogger(__name__)
 
 
 def _http_error(status_code: int, error: str, message: str) -> HTTPException:
@@ -90,8 +93,17 @@ async def upload_product_image(db: Session, product_id: str, file: UploadFile) -
     if file.content_type not in ALLOWED_MIME:
         return build(error=_http_error(status.HTTP_400_BAD_REQUEST, "Bad Request", "Unsupported image format"))
 
+    request_id = uuid.uuid4().hex[:12]
+    started_at = time.time()
+
     raw = await file.read()
     if len(raw) > MAX_FILE_SIZE:
+        logger.warning(
+            "product_image_upload_rejected request_id=%s product_id=%s reason=image_too_large input_size=%s",
+            request_id,
+            product_id,
+            len(raw),
+        )
         return build(error=_http_error(status.HTTP_400_BAD_REQUEST, "Bad Request", "Image too large"))
 
     filename_seed = str(uuid.uuid4())
@@ -139,6 +151,13 @@ async def upload_product_image(db: Session, product_id: str, file: UploadFile) -
         final_bytes = raw
 
     if len(final_bytes) > TARGET_MAX_OUTPUT_SIZE:
+        logger.warning(
+            "product_image_upload_rejected request_id=%s product_id=%s reason=compress_over_limit input_size=%s output_size=%s",
+            request_id,
+            product_id,
+            len(raw),
+            len(final_bytes),
+        )
         return build(error=_http_error(
             status.HTTP_400_BAD_REQUEST,
             "Bad Request",
@@ -146,13 +165,29 @@ async def upload_product_image(db: Session, product_id: str, file: UploadFile) -
         ))
 
     storage_provider = "cloudinary"
+    fallback_used = False
+    fallback_reason = None
     try:
         image_url, uploaded_width, uploaded_height = _upload_to_cloudinary(final_bytes, product_id, filename_seed)
-    except Exception:
+    except Exception as e:
+        fallback_used = True
+        fallback_reason = str(e)
         storage_provider = "supabase"
         image_url, uploaded_width, uploaded_height = _upload_to_supabase_bytes(final_bytes, product_id, filename_seed)
 
     if not image_url:
+        elapsed_ms = int((time.time() - started_at) * 1000)
+        logger.error(
+            "product_image_upload_failed request_id=%s product_id=%s input_size=%s output_size=%s provider=%s fallback_used=%s fallback_reason=%s latency_ms=%s",
+            request_id,
+            product_id,
+            len(raw),
+            len(final_bytes),
+            storage_provider,
+            fallback_used,
+            fallback_reason,
+            elapsed_ms,
+        )
         return build(error=_http_error(
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             "Internal Server Error",
@@ -189,6 +224,20 @@ async def upload_product_image(db: Session, product_id: str, file: UploadFile) -
     db.commit()
     db.refresh(image_model)
     invalidate_product_cache(product_id)
+
+    elapsed_ms = int((time.time() - started_at) * 1000)
+    logger.info(
+        "product_image_upload_success request_id=%s product_id=%s input_size=%s output_size=%s provider=%s fallback_used=%s width=%s height=%s latency_ms=%s",
+        request_id,
+        product_id,
+        len(raw),
+        len(final_bytes),
+        storage_provider,
+        fallback_used,
+        width,
+        height,
+        elapsed_ms,
+    )
 
     return build(data=ProductImageResponseDto(
         status_code=201,
