@@ -14,6 +14,7 @@ from app.models.product_model import ProductModel
 from app.models.product_image_model import ProductImageModel
 from app.utils.result import build, Result
 from app.services.product_services.cache_utils import invalidate_product_cache
+from app.libs.supabase_client import supabase
 
 ALLOWED_MIME = {"image/jpeg", "image/png", "image/webp"}
 MAX_FILE_SIZE = 10 * 1024 * 1024
@@ -99,6 +100,19 @@ def _delete_from_cloudinary(url: str) -> None:
         pass
 
 
+def _upload_to_supabase_bytes(image_bytes: bytes, product_id: str, public_id_seed: str) -> tuple[str | None, None, None]:
+    filename = f"images/product_picture/{product_id}_{public_id_seed}.webp"
+    upload_response = supabase.storage.from_("AmimumProject-storage").upload(
+        filename,
+        image_bytes,
+        {"content-type": "image/webp"}
+    )
+    if isinstance(upload_response, dict) and upload_response.get("error"):
+        return None, None, None
+    public_url = supabase.storage.from_("AmimumProject-storage").get_public_url(filename)
+    return (public_url if isinstance(public_url, str) else None), None, None
+
+
 async def upload_product_image(db: Session, product_id: str, file: UploadFile) -> Result[ProductImageResponseDto, Exception]:
     product = db.query(ProductModel).filter(ProductModel.id == product_id).first()
     if not product:
@@ -161,7 +175,16 @@ async def upload_product_image(db: Session, product_id: str, file: UploadFile) -
             detail="Gagal mengompres gambar ke <= 100KB. Gunakan foto resolusi lebih kecil."
         ))
 
-    image_url, uploaded_width, uploaded_height = _upload_to_cloudinary(final_bytes, product_id, filename_seed)
+    storage_provider = "cloudinary"
+    try:
+        image_url, uploaded_width, uploaded_height = _upload_to_cloudinary(final_bytes, product_id, filename_seed)
+    except Exception:
+        storage_provider = "supabase"
+        image_url, uploaded_width, uploaded_height = _upload_to_supabase_bytes(final_bytes, product_id, filename_seed)
+
+    if not image_url:
+        return build(error=HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to upload image on all storage providers"))
+
     width = uploaded_width or width
     height = uploaded_height or height
 
@@ -177,7 +200,7 @@ async def upload_product_image(db: Session, product_id: str, file: UploadFile) -
 
     image_model = ProductImageModel(
         product_id=product_id,
-        storage_provider="local",
+        storage_provider=storage_provider,
         file_path=relative_path,
         url=image_url,
         mime_type="image/webp",

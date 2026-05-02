@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from app.dtos.error_response_dtos import ErrorResponseDto
 from app.dtos.pack_type_dtos import EditPhotoProductDto, EditPhotoProductResponseDto
 from app.libs.upload_image_to_supabase import validate_file
+from app.libs.supabase_client import supabase
 from app.models.pack_type_model import PackTypeModel
 from app.services.pack_type_services.support_function import handle_db_error
 from app.utils.result import build, Result
@@ -103,6 +104,19 @@ def _upload_to_cloudinary(image_bytes: bytes, type_id: int, public_id_seed: str)
     return payload.get("secure_url")
 
 
+def _upload_to_supabase_bytes(image_bytes: bytes, type_id: int, user_id: str) -> str | None:
+    filename = f"images/product_picture/{user_id}_{int(time.time())}_variant_{type_id}.webp"
+    upload_response = supabase.storage.from_("AmimumProject-storage").upload(
+        filename,
+        image_bytes,
+        {"content-type": "image/webp"}
+    )
+    if isinstance(upload_response, dict) and upload_response.get("error"):
+        return None
+    public_url = supabase.storage.from_("AmimumProject-storage").get_public_url(filename)
+    return public_url if isinstance(public_url, str) else None
+
+
 async def post_photo(
         db: Session,
         type_id: int,
@@ -174,19 +188,27 @@ async def post_photo(
                 )
 
             old_url = image_model.img
-            public_url = _upload_to_cloudinary(final_bytes, type_id, f"variant-{uuid.uuid4().hex[:12]}")
+            public_url = None
+            uploaded_provider = "cloudinary"
+            try:
+                public_url = _upload_to_cloudinary(final_bytes, type_id, f"variant-{uuid.uuid4().hex[:12]}")
+            except Exception:
+                logger.warning("Cloudinary upload failed for variant %s, fallback to Supabase", type_id)
+                public_url = _upload_to_supabase_bytes(final_bytes, type_id, user_id)
+                uploaded_provider = "supabase"
+
             if not public_url:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=ErrorResponseDto(
                         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                         error="Internal Server Error",
-                        message="Failed to upload image."
+                        message="Failed to upload image on all storage providers."
                     ).dict()
                 )
 
             image_model.img = public_url
-            if old_url:
+            if old_url and uploaded_provider == "cloudinary":
                 _delete_from_cloudinary(old_url)
 
         db.add(image_model)
