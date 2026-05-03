@@ -107,6 +107,9 @@ def checkout(
             )
             db.add(order_item)
 
+            # Prevent the same cart rows from being re-checked out on next transaction
+            item.is_active = False
+
         db.commit()
         db.refresh(order)
 
