@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, DataError, IntegrityError
 
-from app.models import OrderModel, OrderItemModel, CartProductModel, ShipmentModel
+from app.models import OrderModel, OrderItemModel, CartProductModel, ShipmentModel, PackTypeModel
 from app.models.order_model import DeliveryTypeEnum
 
 from app.dtos import order_dtos
@@ -62,12 +62,46 @@ def checkout(
         db.flush()
 
         for item in cart_items:
+            variant = db.query(PackTypeModel).filter(PackTypeModel.id == item.variant_id).first()
+            if not variant:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=ErrorResponseDto(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        error="Not Found",
+                        message=f"Variant with ID {item.variant_id} not found"
+                    ).dict()
+                )
+
+            qty = int(item.quantity or 0)
+            current_stock = int(variant.stock or 0)
+            if qty <= 0:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=ErrorResponseDto(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        error="Bad Request",
+                        message=f"Invalid quantity for variant {item.variant_id}"
+                    ).dict()
+                )
+            if current_stock < qty:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=ErrorResponseDto(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        error="Bad Request",
+                        message=f"Insufficient stock for variant {item.variant_id}. Available: {current_stock}, requested: {qty}"
+                    ).dict()
+                )
+
+            variant.stock = current_stock - qty
+
             line_total = float(item.total_price or 0.0)
             order_item = OrderItemModel(
                 order_id=order.id,
                 product_id=item.product_id,
                 variant_id=item.variant_id,
-                quantity=item.quantity,
+                quantity=qty,
                 price_per_item=float(item.product_price or 0.0),
                 total_price=line_total,
             )
