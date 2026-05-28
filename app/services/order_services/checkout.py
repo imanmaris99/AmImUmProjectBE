@@ -69,13 +69,27 @@ def checkout(
         else:
             total_cost = cart_total_items_response + shipping_cost
 
+        compact_tokens = []
+        payment_token = re.search(r'\[PAYMENT:\s*\w+\]', notes_input, re.IGNORECASE)
+        if payment_token:
+            compact_tokens.append(payment_token.group(0).upper())
+        if pos_subtotal is not None:
+            compact_tokens.append(f"[POS_SUBTOTAL: {int(pos_subtotal)}]")
+        if pos_discount is not None:
+            compact_tokens.append(f"[POS_DISCOUNT: {int(pos_discount)}]")
+        if pos_total is not None:
+            compact_tokens.append(f"[POS_TOTAL: {int(pos_total)}]")
+
+        compact_notes = ' | '.join(compact_tokens).strip()
+        safe_notes = (compact_notes or notes_input or '')[:100] or None
+
         order = OrderModel(
             customer_id=user_id,
             total_price=total_cost,
             status="pending",
             shipment_id=shipment.id if shipment else None,
             delivery_type=DeliveryTypeEnum.delivery if shipment else DeliveryTypeEnum.pickup,
-            notes=notes_input or None,
+            notes=safe_notes,
         )
         db.add(order)
         db.flush()
@@ -157,11 +171,23 @@ def checkout(
 
     except (IntegrityError, DataError) as db_error:
         db.rollback()
-        return build(error=handle_db_error(db, db_error))
+        handled = handle_db_error(db, db_error)
+        if isinstance(handled, Exception):
+            return build(error=handled)
+        return build(error=HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=handled
+        ))
 
     except SQLAlchemyError as e:
         db.rollback()
-        return build(error=handle_db_error(db, e))
+        handled = handle_db_error(db, e)
+        if isinstance(handled, Exception):
+            return build(error=handled)
+        return build(error=HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=handled
+        ))
 
     except HTTPException as http_ex:
         db.rollback()
