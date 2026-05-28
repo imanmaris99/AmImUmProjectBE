@@ -1,3 +1,4 @@
+import re
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -16,7 +17,8 @@ from app.libs.redis_config import redis_client
 
 def checkout(
         db: Session, 
-        user_id: str
+        user_id: str,
+        checkout_payload: order_dtos.CheckoutRequestDTO | None = None
     ) -> Result[order_dtos.OrderInfoResponseDto, Exception]:
     """
     Membuat order baru dari item aktif di keranjang.
@@ -48,7 +50,24 @@ def checkout(
         shipping_cost = float(shipment.shipping_cost or 0.0) if shipment else 0.0
         cart_totals = get_cart_total(cart_items)
         cart_total_items_response = float(cart_totals.total_all_active_prices or 0.0)
-        total_cost = cart_total_items_response + shipping_cost
+
+        notes_input = (checkout_payload.notes or '').strip() if checkout_payload else ''
+        subtotal_match = re.search(r'\[POS_SUBTOTAL:\s*(\d+)\]', notes_input, re.IGNORECASE)
+        discount_match = re.search(r'\[POS_DISCOUNT:\s*(\d+)\]', notes_input, re.IGNORECASE)
+        total_match = re.search(r'\[POS_TOTAL:\s*(\d+)\]', notes_input, re.IGNORECASE)
+
+        payload_subtotal = float(checkout_payload.subtotal) if checkout_payload and checkout_payload.subtotal is not None else None
+        payload_discount = float(checkout_payload.discount_total) if checkout_payload and checkout_payload.discount_total is not None else None
+        payload_total = float(checkout_payload.final_total) if checkout_payload and checkout_payload.final_total is not None else None
+
+        pos_subtotal = payload_subtotal if payload_subtotal is not None else (float(subtotal_match.group(1)) if subtotal_match else None)
+        pos_discount = payload_discount if payload_discount is not None else (float(discount_match.group(1)) if discount_match else 0.0)
+        pos_total = payload_total if payload_total is not None else (float(total_match.group(1)) if total_match else None)
+
+        if pos_subtotal is not None and pos_total is not None and 0 <= pos_total <= pos_subtotal:
+            total_cost = pos_total + shipping_cost
+        else:
+            total_cost = cart_total_items_response + shipping_cost
 
         order = OrderModel(
             customer_id=user_id,
@@ -56,7 +75,7 @@ def checkout(
             status="pending",
             shipment_id=shipment.id if shipment else None,
             delivery_type=DeliveryTypeEnum.delivery if shipment else DeliveryTypeEnum.pickup,
-            notes=None,
+            notes=notes_input or None,
         )
         db.add(order)
         db.flush()

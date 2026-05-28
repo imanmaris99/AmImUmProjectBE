@@ -22,6 +22,13 @@ class OrderCreateDTO(BaseModel):
             raise ValueError("Notes wajib diisi untuk pengiriman tipe pickup.")
         return self
     
+class CheckoutRequestDTO(BaseModel):
+    notes: Optional[str] = None
+    payment_method: Optional[str] = None
+    subtotal: Optional[float] = None
+    discount_total: Optional[float] = None
+    final_total: Optional[float] = None
+
 class OrderCreateInfoDTO(BaseModel):
     id: str
     status: str

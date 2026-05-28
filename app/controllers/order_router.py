@@ -182,10 +182,11 @@ router = APIRouter(
     summary="Initiate checkout"
 )
 def initiate_checkout(
+    payload: order_dtos.CheckoutRequestDTO,
     jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],
     db: Session = Depends(get_db)
 ):
-    result = order_services.checkout(db, jwt_token.id)
+    result = order_services.checkout(db, jwt_token.id, payload)
 
     if result.error:
         raise result.error
