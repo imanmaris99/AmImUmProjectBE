@@ -94,8 +94,14 @@ def checkout(
         db.add(order)
         db.flush()
 
+        variant_ids = list({item.variant_id for item in cart_items if item.variant_id is not None})
+        variant_rows = db.execute(
+            select(PackTypeModel).filter(PackTypeModel.id.in_(variant_ids))
+        ).scalars().all() if variant_ids else []
+        variant_map = {int(v.id): v for v in variant_rows}
+
         for item in cart_items:
-            variant = db.query(PackTypeModel).filter(PackTypeModel.id == item.variant_id).first()
+            variant = variant_map.get(int(item.variant_id)) if item.variant_id is not None else None
             if not variant:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
