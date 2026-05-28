@@ -129,6 +129,56 @@ def test_checkout_creates_order_and_items(monkeypatch, checkout_module, fake_car
     assert len(db.added) == 2
 
 
+def test_checkout_uses_pos_final_total_from_payload(monkeypatch, checkout_module, fake_cart_item):
+    shipment = SimpleNamespace(id=None, shipping_cost=0)
+    db = DummyDB(execute_results=[[fake_cart_item]], query_result=shipment)
+
+    monkeypatch.setattr(
+        checkout_module,
+        "get_cart_total",
+        lambda items: SimpleNamespace(total_all_active_prices=9000),
+    )
+    monkeypatch.setattr(checkout_module, "redis_client", None)
+
+    payload = SimpleNamespace(
+        notes="POS Buyer: iman | [PAYMENT: cash] | [POS_SUBTOTAL: 130000] | [POS_DISCOUNT: 9000] | [POS_TOTAL: 121000]",
+        subtotal=130000,
+        discount_total=9000,
+        final_total=121000,
+    )
+
+    result = checkout_module.checkout(db, "user-1", payload)
+
+    assert result.error is None
+    assert result.data["status_code"] == 201
+    assert result.data["data"]["total_price"] == 121000.0
+
+
+def test_checkout_truncates_notes_to_db_limit(monkeypatch, checkout_module, fake_cart_item):
+    shipment = SimpleNamespace(id=None, shipping_cost=0)
+    db = DummyDB(execute_results=[[fake_cart_item]], query_result=shipment)
+
+    monkeypatch.setattr(
+        checkout_module,
+        "get_cart_total",
+        lambda items: SimpleNamespace(total_all_active_prices=9000),
+    )
+    monkeypatch.setattr(checkout_module, "redis_client", None)
+
+    payload = SimpleNamespace(
+        notes="X" * 500,
+        subtotal=10000,
+        discount_total=1000,
+        final_total=9000,
+    )
+
+    result = checkout_module.checkout(db, "user-1", payload)
+
+    assert result.error is None
+    order_obj = next(obj for obj in db.added if obj.__class__.__name__ == "OrderModel")
+    assert order_obj.notes is None or len(order_obj.notes) <= 100
+
+
 def test_checkout_returns_404_style_payload_when_cart_empty(monkeypatch, checkout_module):
     db = DummyDB(execute_results=[[]], query_result=None)
     monkeypatch.setattr(checkout_module, "redis_client", None)
