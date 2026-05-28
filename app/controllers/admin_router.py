@@ -160,6 +160,23 @@ def admin_login(user: user_dtos.UserLoginPayloadDto, db: Session = Depends(get_d
     }
 
 
+@router.post(
+    "/pos/checkout",
+    response_model=order_dtos.OrderInfoResponseDto,
+    status_code=status.HTTP_201_CREATED,
+    summary="Admin POS checkout (single request)",
+)
+def admin_pos_checkout(
+    payload: order_dtos.PosCheckoutRequestDTO,
+    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.admin_access_required)],
+    db: Session = Depends(get_db),
+):
+    result = order_services.pos_checkout(db=db, user_id=jwt_token.id, payload=payload)
+    if result.error:
+        raise result.error
+    return result.unwrap()
+
+
 @router.get(
     "/orders",
     response_model=order_dtos.GetOrderInfoResponseDto,

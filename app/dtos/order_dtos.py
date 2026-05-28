@@ -29,6 +29,22 @@ class CheckoutRequestDTO(BaseModel):
     discount_total: Optional[float] = None
     final_total: Optional[float] = None
 
+class PosCheckoutItemDTO(BaseModel):
+    variant_id: int
+    product_id: Optional[str] = None
+    qty: int = Field(gt=0)
+    unit_price: float = Field(ge=0)
+    discount: float = Field(default=0, ge=0)
+
+class PosCheckoutRequestDTO(BaseModel):
+    cashier_id: Optional[str] = None
+    payment_method: Optional[str] = None
+    notes: Optional[str] = None
+    subtotal: Optional[float] = None
+    discount_total: Optional[float] = None
+    final_total: Optional[float] = None
+    items: List[PosCheckoutItemDTO]
+
 class OrderCreateInfoDTO(BaseModel):
     id: str
     status: str

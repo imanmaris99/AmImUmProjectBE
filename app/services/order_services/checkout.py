@@ -209,3 +209,83 @@ def checkout(
                 message=f"Unexpected error: {str(e)}"
             ).dict()
         ))
+
+
+def pos_checkout(
+        db: Session,
+        user_id: str,
+        payload: order_dtos.PosCheckoutRequestDTO
+    ) -> Result[order_dtos.OrderInfoResponseDto, Exception]:
+    try:
+        if not payload.items:
+            raise HTTPException(status_code=400, detail="POS items required")
+
+        variant_ids = list({item.variant_id for item in payload.items})
+        variants = db.execute(select(PackTypeModel).filter(PackTypeModel.id.in_(variant_ids))).scalars().all()
+        variant_map = {int(v.id): v for v in variants}
+
+        subtotal = float(payload.subtotal) if payload.subtotal is not None else 0.0
+        discount_total = float(payload.discount_total) if payload.discount_total is not None else 0.0
+        computed_subtotal = 0.0
+        computed_discount = 0.0
+
+        order = OrderModel(
+            customer_id=user_id,
+            total_price=0,
+            status="pending",
+            shipment_id=None,
+            delivery_type=DeliveryTypeEnum.pickup,
+            notes=(payload.notes or '')[:100] or None,
+        )
+        db.add(order)
+        db.flush()
+
+        for row in payload.items:
+            variant = variant_map.get(int(row.variant_id))
+            if not variant:
+                raise HTTPException(status_code=404, detail=f"Variant {row.variant_id} not found")
+            qty = int(row.qty)
+            if int(variant.stock or 0) < qty:
+                raise HTTPException(status_code=400, detail=f"Insufficient stock for variant {row.variant_id}")
+
+            variant.stock = int(variant.stock or 0) - qty
+            line_subtotal = float(row.unit_price) * qty
+            line_discount = float(row.discount or 0) * qty
+            line_total = max(line_subtotal - line_discount, 0)
+            computed_subtotal += line_subtotal
+            computed_discount += line_discount
+
+            db.add(OrderItemModel(
+                order_id=order.id,
+                product_id=row.product_id or getattr(variant, 'product_id', None),
+                variant_id=row.variant_id,
+                quantity=qty,
+                price_per_item=float(row.unit_price),
+                total_price=float(line_total),
+            ))
+
+        final_total = float(payload.final_total) if payload.final_total is not None else max((subtotal or computed_subtotal) - (discount_total or computed_discount), 0)
+        order.total_price = final_total
+
+        db.commit()
+        db.refresh(order)
+
+        return build(data={
+            "status_code": 201,
+            "message": "POS checkout success",
+            "data": {
+                "id": str(order.id),
+                "status": str(order.status),
+                "total_price": float(order.total_price or 0.0),
+                "shipment_id": None,
+                "delivery_type": getattr(order.delivery_type, "value", order.delivery_type),
+                "notes": order.notes,
+                "created_at": order.created_at.isoformat() if order.created_at else None,
+            }
+        })
+    except HTTPException as e:
+        db.rollback()
+        return build(error=e)
+    except Exception as e:
+        db.rollback()
+        return build(error=HTTPException(status_code=500, detail=str(e)))
