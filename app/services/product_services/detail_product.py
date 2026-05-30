@@ -62,11 +62,14 @@ def get_product_by_id(
 
         if cached_product:
             product_detail_dto = ProductDetailDTO(**json.loads(cached_product))
-            return build(data=ProductDetailResponseDto(
-                status_code=200,
-                message=RESPONSE_MESSAGE,
-                data=product_detail_dto
-            ))
+            # Guard against stale cache that may contain empty variants despite DB already linked.
+            # If variants_list is empty, force DB refresh below.
+            if product_detail_dto.variants_list:
+                return build(data=ProductDetailResponseDto(
+                    status_code=200,
+                    message=RESPONSE_MESSAGE,
+                    data=product_detail_dto
+                ))
         
         # Query to get product by ID with eager loading for related entities
         product_model = db.execute(
