@@ -52,9 +52,10 @@ def get_product_by_id(
         # Redis key for caching
         redis_key = f"product:{product_id}"
 
-        # Check if product data exists in Redis
+        # Check if product data exists in Redis (opt-in cache for detail endpoint)
+        use_detail_cache = os.getenv("ENABLE_PRODUCT_DETAIL_CACHE", "false").lower() == "true"
         cached_product = None
-        if redis_client:
+        if use_detail_cache and redis_client:
             try:
                 cached_product = redis_client.get(redis_key)
             except Exception as cache_error:
@@ -62,14 +63,11 @@ def get_product_by_id(
 
         if cached_product:
             product_detail_dto = ProductDetailDTO(**json.loads(cached_product))
-            # Guard against stale cache that may contain empty variants despite DB already linked.
-            # If variants_list is empty, force DB refresh below.
-            if product_detail_dto.variants_list:
-                return build(data=ProductDetailResponseDto(
-                    status_code=200,
-                    message=RESPONSE_MESSAGE,
-                    data=product_detail_dto
-                ))
+            return build(data=ProductDetailResponseDto(
+                status_code=200,
+                message=RESPONSE_MESSAGE,
+                data=product_detail_dto
+            ))
         
         # Query to get product by ID with eager loading for related entities
         product_model = db.execute(
@@ -133,8 +131,8 @@ def get_product_by_id(
         except Exception as image_error:
             logger.warning("Failed to load product images for product %s: %s", product_model.id, image_error)
 
-        # Cache the result in Redis
-        if redis_client:
+        # Cache the result in Redis (opt-in)
+        if use_detail_cache and redis_client:
             try:
                 redis_client.setex(redis_key, CACHE_TTL, json.dumps(product_detail_dto.model_dump(), default=custom_json_serializer))
             except Exception as cache_error:
