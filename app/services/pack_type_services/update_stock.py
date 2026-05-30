@@ -9,6 +9,7 @@ from app.dtos.error_response_dtos import ErrorResponseDto
 
 from app.utils.result import build, Result
 from app.utils.error_parser import find_errr_from_args
+from app.services.product_services.cache_utils import invalidate_product_cache
 
 
 def update_stock(
@@ -34,6 +35,7 @@ def update_stock(
 
         db.commit()
         db.refresh(type_model)
+        invalidate_product_cache(type_model.product_id)
 
         response_data = PackTypeUpdatedInfoDto(
             id=type_model.id,

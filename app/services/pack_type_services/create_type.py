@@ -11,6 +11,7 @@ from app.dtos.error_response_dtos import ErrorResponseDto
 from app.services.pack_type_services.support_function import handle_db_error
 
 from app.utils.result import build, Result
+from app.services.product_services.cache_utils import invalidate_product_cache
 
 
 def create_type(
@@ -37,6 +38,7 @@ def create_type(
         db.add(pack_type_instance)
         db.commit()
         db.refresh(pack_type_instance)
+        invalidate_product_cache(pack_type_instance.product_id)
 
         pack_type_response = PackTypeInfoDto(
             id=pack_type_instance.id,

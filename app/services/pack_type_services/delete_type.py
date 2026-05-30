@@ -13,6 +13,7 @@ from app.dtos.error_response_dtos import ErrorResponseDto
 from app.services.pack_type_services.support_function import handle_db_error
 
 from app.utils.result import build, Result
+from app.services.product_services.cache_utils import invalidate_product_cache
 
 
 def delete_type(
@@ -63,9 +64,11 @@ def delete_type(
             type_id=variant.id,
             variant=variant.variant or variant.name
         )
+        product_id = variant.product_id
 
         db.delete(variant)
         db.commit()
+        invalidate_product_cache(product_id)
 
         return build(data=DeletePackTypeResponseDto(
             status_code=200,
