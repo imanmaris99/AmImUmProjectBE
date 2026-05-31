@@ -15,6 +15,7 @@ from app.dtos import production_dtos
 from app.dtos.error_response_dtos import ErrorResponseDto
 from app.libs.redis_config import redis_client
 from app.libs.upload_image_to_supabase import validate_file
+from app.libs.supabase_client import supabase
 from app.models.production_model import ProductionModel
 from app.services.production_services.support_function import handle_db_error
 from app.utils.result import build, Result
@@ -107,6 +108,24 @@ def _upload_to_cloudinary(image_bytes: bytes, production_id: int, public_id_seed
     return payload.get("secure_url")
 
 
+def _upload_to_supabase_bytes(image_bytes: bytes, production_id: int, public_id_seed: str) -> str | None:
+    path = f"amimum/productions/{production_id}/logo/{public_id_seed}.webp"
+    upload_response = supabase.storage.from_("AmimumProject-storage").upload(
+        path,
+        image_bytes,
+        {"content-type": "image/webp", "upsert": "true"}
+    )
+    if isinstance(upload_response, dict) and upload_response.get("error"):
+        return None
+
+    public_url_response = supabase.storage.from_("AmimumProject-storage").get_public_url(path)
+    if isinstance(public_url_response, str):
+        return public_url_response
+    if isinstance(public_url_response, dict):
+        return public_url_response.get("publicUrl") or public_url_response.get("public_url")
+    return None
+
+
 async def post_logo(
         db: Session,
         production_id: int, 
@@ -185,7 +204,14 @@ async def post_logo(
                 )
 
             old_logo_url = logo_model.photo_url
-            public_url = _upload_to_cloudinary(final_bytes, production_id, f"logo-{uuid.uuid4().hex[:12]}")
+            filename_seed = f"logo-{uuid.uuid4().hex[:12]}"
+            public_url = None
+
+            try:
+                public_url = _upload_to_cloudinary(final_bytes, production_id, filename_seed)
+            except Exception as cloudinary_error:
+                logger.warning("Cloudinary upload failed for production %s, fallback to Supabase: %s", production_id, cloudinary_error)
+                public_url = _upload_to_supabase_bytes(final_bytes, production_id, filename_seed)
 
             if not public_url:
                 raise HTTPException(
@@ -193,7 +219,7 @@ async def post_logo(
                     detail=ErrorResponseDto(
                         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                         error="Internal Server Error",
-                        message="Failed to upload image."
+                        message="Failed to upload image on all storage providers."
                     ).dict()
                 )
 
