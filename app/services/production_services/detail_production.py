@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import select, cast, String
+from sqlalchemy import select, cast, String, func
 from sqlalchemy.orm import Session, selectinload
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -9,6 +9,8 @@ import json
 import logging
 
 from app.models.production_model import ProductionModel
+from app.models.product_model import ProductModel
+from app.models.pack_type_model import PackTypeModel
 from app.dtos import production_dtos
 from app.dtos.error_response_dtos import ErrorResponseDto
 
@@ -61,6 +63,21 @@ def detail_production(
                 ).dict()
             ))
 
+        # Compute product counters from live relational data to avoid stale totals
+        live_total_product = db.execute(
+            select(func.count(ProductModel.id)).where(ProductModel.product_by_id == production_id)
+        ).scalar() or 0
+
+        live_total_product_with_promo = db.execute(
+            select(func.count(func.distinct(ProductModel.id)))
+            .select_from(ProductModel)
+            .join(PackTypeModel, PackTypeModel.product_id == ProductModel.id)
+            .where(
+                ProductModel.product_by_id == production_id,
+                func.coalesce(PackTypeModel.discount, 0) > 0
+            )
+        ).scalar() or 0
+
         # Convert the product to ProductDetailDTO
         production_detail_dto = production_dtos.DetailProductionDto(
             id=production_model.id,
@@ -68,8 +85,8 @@ def detail_production(
             photo_url=production_model.photo_url,
             description_list=production_model.description_list or [],
             category=production_model.category,
-            total_product=production_model.total_product,
-            total_product_with_promo=production_model.total_product_with_promo,
+            total_product=int(live_total_product),
+            total_product_with_promo=int(live_total_product_with_promo),
             created_at=production_model.created_at
         )
 
