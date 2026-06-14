@@ -251,35 +251,26 @@ def read_productions(
     },
     summary="Fetch a paginated list of products"
 )
+
 def get_productions(
-    skip: int = 0,               # Posisi awal data untuk pagination
-    limit: int = 8,              # Jumlah data yang akan ditampilkan per halaman
+    skip: int = 0,               
+    limit: int = 8,              
     db: Session = Depends(get_db)
 ):
-    """
-    # Menampilkan List Brand dengan Pagination #
-
-    Endpoint ini memungkinkan pengguna untuk Mengambil daftar item produksi dengan menggunakan paginasi.
-
-    **Parameter:**
-    - **skip** (int, opsional): Jumlah item yang dilewati sebelum memulai pengambilan data. Default adalah 0.
-    - **limit** (int, opsional): Jumlah maksimum item yang akan dikembalikan dalam respons. Default adalah 6.
-    
-    **Return:**
-    - **200 OK**: Daftar item produksi beserta metadata paginasi (remaining records, `has_more`).
-    - **404 Not Found**: Jika tidak ada item produksi yang ditemukan.
-    - **409 Conflict**: Jika terjadi kesalahan pada database.
-    - **500 Internal Server Error**: Jika terjadi kesalahan yang tidak terduga.
-
-    """
     result = production_services.get_infinite_scrolling(
         db, skip=skip, limit=limit
     )
 
-    if result.error:
+    # PERBAIKAN: Jika service langsung mengembalikan HTTPException mentah
+    if isinstance(result, HTTPException):
+        raise result
+
+    # Amankan pengecekan properti .error bawaan wrapper Anda
+    if hasattr(result, 'error') and result.error:
         raise result.error  
     
-    return result.unwrap()
+    # Jika result mengembalikan HTTPException, dia tidak akan bisa memanggil .unwrap()
+    return result.unwrap() if hasattr(result, 'unwrap') else result
 
 @router.get(
     "/loader/categories/{categories_id}",
