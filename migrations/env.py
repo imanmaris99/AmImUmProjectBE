@@ -20,6 +20,8 @@ load_dotenv()
 ##################################################################################
 """
 from app.models.user_model import UserModel
+from app.models.stock_movement_model import StockMovementModel
+from app.models.inventory_threshold_model import InventoryThresholdModel
 """
 ##################################################################################
 #########Import all Your model Here so Alembic will know the model is exists######

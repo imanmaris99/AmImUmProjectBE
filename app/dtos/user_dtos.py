@@ -84,6 +84,14 @@ class ResetPasswordResponseDto(BaseModel):
 
 class ForgotPasswordDto(BaseModel):
     email: EmailStr = Field(..., description="Email address of the user")
+
+class ResendVerificationRequestDto(BaseModel):
+    email: EmailStr = Field(..., description="Email address of the user")
+
+class ResendVerificationResponseDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="Verification email has been resent.")
+    data: ResendVerificationRequestDto
     
 class ForgotPasswordResponseDto(BaseModel):
     status_code: int = Field(default=200)

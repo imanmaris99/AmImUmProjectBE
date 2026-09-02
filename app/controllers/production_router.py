@@ -14,6 +14,11 @@ router = APIRouter(
     tags=["Brand Production"]
 )
 
+legacy_router = APIRouter(
+    prefix="/production",
+    tags=["Brand Production"],
+)
+
 @router.post(
         "/create", 
         response_model=production_dtos.ProductionCreateResponseDto,
@@ -447,6 +452,32 @@ def read_promo(
         raise result.error
     
     return result.unwrap()
+
+
+@legacy_router.get(
+        "/all",
+        response_model=production_dtos.AllListProductionResponseDto,
+        status_code=status.HTTP_200_OK,
+        summary="Legacy alias for GET /brand/all"
+    )
+def read_productions_legacy(
+    db: Session = Depends(get_db)
+):
+    """Backward-compatible alias for older frontend clients using `/production/all`."""
+    return read_productions(db=db)
+
+
+@legacy_router.get(
+        "/promo",
+        response_model=production_dtos.AllProductionPromoResponseDto,
+        status_code=status.HTTP_200_OK,
+        summary="Legacy alias for GET /brand/promo"
+    )
+def read_promo_legacy(
+    db: Session = Depends(get_db)
+):
+    """Backward-compatible alias for older frontend clients using `/production/promo`."""
+    return read_promo(db=db)
 
 
 @router.get(

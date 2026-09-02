@@ -67,6 +67,9 @@ class MyShipmentAddressOrderInfoDto(BaseModel):
     my_courier: Optional[MyCourierInfoDto] = None
     created_at: datetime
 
+    def __getitem__(self, key: str):
+        return getattr(self, key)
+
 
 class AllShipmentListResponseDto(BaseModel):
     status_code: int = Field(default=200)
