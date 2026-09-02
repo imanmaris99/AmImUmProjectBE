@@ -1,3 +1,4 @@
+import os
 from typing import Annotated
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
@@ -13,6 +14,11 @@ router = APIRouter(
     prefix="/user",
     tags=["User/ Customer"]
 )
+
+CUSTOMER_RESET_PASSWORD_URL = os.getenv(
+    "CUSTOMER_RESET_PASSWORD_URL",
+    "https://amimumherbalproject.vercel.app/reset-password",
+).rstrip("/")
 
 ## == USER - REGISTER == ##
 @router.post(
@@ -394,7 +400,11 @@ def forgot_password(
 
     """
     # Implementasi send_reset_password_request yang mengirim email dengan token
-    result = user_services.send_reset_password_request(db, payload)  # Pass the DTO directly
+    result = user_services.send_reset_password_request(
+        db,
+        payload,
+        reset_base_url=CUSTOMER_RESET_PASSWORD_URL,
+    )  # Pass the customer reset page, not the internal dashboard
         
     if result.error:
         raise result.error
