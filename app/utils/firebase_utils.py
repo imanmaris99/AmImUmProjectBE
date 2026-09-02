@@ -241,9 +241,16 @@ def _send_email_via_smtp(to_email: str, subject: str, body: str, html: bool = Fa
 
 
 def send_email(to_email: str, subject: str, body: str, html: bool = False):
-    """Mengirim email melalui provider yang dikonfigurasi."""
-    email_provider = os.getenv("EMAIL_PROVIDER", "smtp").strip().lower()
-    if email_provider == "brevo_api":
+    """Mengirim email melalui provider yang dikonfigurasi.
+
+    Prefer Brevo API when an API key is configured. This keeps production email
+    working even if EMAIL_PROVIDER is missing from the runtime environment, while
+    still allowing an explicit EMAIL_PROVIDER=smtp override for SMTP-only setups.
+    """
+    email_provider = os.getenv("EMAIL_PROVIDER", "").strip().lower()
+    has_brevo_api_key = bool(os.getenv("BREVO_API_KEY"))
+
+    if email_provider == "brevo_api" or (has_brevo_api_key and email_provider != "smtp"):
         return _send_email_via_brevo_api(to_email, subject, body, html=html)
     return _send_email_via_smtp(to_email, subject, body, html=html)
 
