@@ -137,6 +137,24 @@ def verify_email(
 
     return result.unwrap()  # Mengembalikan data dari service
 
+
+@router.post(
+    "/resend-verification",
+    response_model=user_dtos.ResendVerificationResponseDto,
+    status_code=status.HTTP_200_OK,
+    summary="Resend user email verification"
+)
+def resend_verification_email(
+    resend_request: user_dtos.ResendVerificationRequestDto,
+    db: Session = Depends(get_db)
+):
+    result = user_services.resend_verification_email(db, resend_request)
+
+    if result.error:
+        raise result.error
+
+    return result.unwrap()
+
 ## == USER - LOGIN == ##
 @router.post(
     "/login",

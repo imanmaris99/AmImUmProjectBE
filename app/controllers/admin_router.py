@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
@@ -6,9 +7,9 @@ from sqlalchemy.orm import Session
 from app.libs.sql_alchemy_lib import get_db
 from app.libs.jwt_lib import jwt_service, jwt_dto
 
-from app.services import user_services, order_services, payment_services
+from app.services import user_services, order_services, payment_services, inventory_services
 from app.services.admin_dashboard_summary import get_admin_dashboard_summary
-from app.dtos import user_dtos, order_dtos, payment_dtos, admin_dashboard_dtos
+from app.dtos import user_dtos, order_dtos, payment_dtos, admin_dashboard_dtos, inventory_dtos
 
 
 router = APIRouter(
@@ -172,6 +173,78 @@ def admin_pos_checkout(
     db: Session = Depends(get_db),
 ):
     result = order_services.pos_checkout(db=db, user_id=jwt_token.id, payload=payload)
+    if result.error:
+        raise result.error
+    return result.unwrap()
+
+
+@router.get(
+    "/inventory/movements",
+    response_model=inventory_dtos.StockMovementListResponseDto,
+    status_code=status.HTTP_200_OK,
+    summary="Admin get inventory stock movements",
+)
+def admin_get_stock_movements(
+    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.admin_access_required)],
+    from_date: datetime | None = Query(default=None, alias="from"),
+    to_date: datetime | None = Query(default=None, alias="to"),
+    variant_id: int | None = Query(default=None),
+    product_id: str | None = Query(default=None),
+    movement_type: str | None = Query(default=None),
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=50, ge=1, le=500),
+    db: Session = Depends(get_db),
+):
+    result = inventory_services.list_stock_movements(
+        db=db,
+        from_date=from_date,
+        to_date=to_date,
+        variant_id=variant_id,
+        product_id=product_id,
+        movement_type=movement_type,
+        page=page,
+        limit=limit,
+    )
+    if result.error:
+        raise result.error
+    return result.unwrap()
+
+
+@router.post(
+    "/inventory/adjust",
+    response_model=inventory_dtos.StockAdjustmentResponseDto,
+    status_code=status.HTTP_200_OK,
+    summary="Admin adjust inventory stock",
+)
+def admin_adjust_stock(
+    payload: inventory_dtos.StockAdjustmentRequestDto,
+    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.admin_access_required)],
+    db: Session = Depends(get_db),
+):
+    result = inventory_services.adjust_stock(db=db, payload=payload, actor_id=jwt_token.id)
+    if result.error:
+        raise result.error
+    return result.unwrap()
+
+
+@router.put(
+    "/inventory/threshold/{variant_id}",
+    response_model=inventory_dtos.InventoryThresholdResponseDto,
+    status_code=status.HTTP_200_OK,
+    summary="Admin set inventory low-stock threshold",
+)
+def admin_set_inventory_threshold(
+    variant_id: int,
+    payload: inventory_dtos.InventoryThresholdRequestDto,
+    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.admin_access_required)],
+    db: Session = Depends(get_db),
+):
+    result = inventory_services.set_variant_threshold(
+        db=db,
+        variant_id=variant_id,
+        payload=payload,
+        actor_id=jwt_token.id,
+    )
     if result.error:
         raise result.error
     return result.unwrap()

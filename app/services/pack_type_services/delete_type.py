@@ -64,11 +64,12 @@ def delete_type(
             type_id=variant.id,
             variant=variant.variant or variant.name
         )
-        product_id = variant.product_id
+        product_id = getattr(variant, "product_id", None)
 
         db.delete(variant)
         db.commit()
-        invalidate_product_cache(product_id)
+        if product_id:
+            invalidate_product_cache(product_id)
 
         return build(data=DeletePackTypeResponseDto(
             status_code=200,
