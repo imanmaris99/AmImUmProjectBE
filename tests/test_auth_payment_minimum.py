@@ -524,28 +524,54 @@ def test_handler_notification_allows_failed_from_paid(monkeypatch, handler_notif
     assert order.status == "failed"
 
 
-def test_handle_notification_delegates_to_public_callback(monkeypatch, handle_notification_module):
-    captured = {}
+def test_handle_notification_syncs_midtrans_status_for_order_owner(monkeypatch, handle_notification_module):
+    db = DummyDB()
+    payment = SimpleNamespace(
+        order_id="order-1",
+        transaction_id="trx-old",
+        payment_type=None,
+        transaction_status=None,
+        fraud_status=None,
+        payment_response=None,
+    )
+    order = SimpleNamespace(id="order-1", customer_id="user-1", status="pending")
 
-    def fake_handler(notification_data, db):
-        captured["notification_data"] = notification_data
-        return build(data={
-            "status_code": 200,
-            "message": "ok",
-            "data": {
-                "order_id": "order-1",
-                "transaction_status": TransactionStatusEnum.settlement,
-                "fraud_status": FraudStatusEnum.accept,
-            },
-        })
-
-    monkeypatch.setattr(handle_notification_module, "handler_notification", fake_handler)
+    monkeypatch.setattr(handle_notification_module, "get_payment_by_order_id", lambda order_id, db: payment)
+    monkeypatch.setattr(handle_notification_module, "get_order_by_id", lambda order_id, db: order)
+    monkeypatch.setattr(handle_notification_module, "fetch_midtrans_transaction_status", lambda order_id: build(data={
+        "order_id": order_id,
+        "transaction_id": "trx-1",
+        "transaction_status": "settlement",
+        "payment_type": "credit_card",
+        "gross_amount": "11900.00",
+        "fraud_status": "accept",
+    }))
 
     result = handle_notification_module.handle_notification(
         SimpleNamespace(order_id="order-1"),
-        DummyDB(),
+        db,
         user_id="user-1",
     )
 
     assert result.error is None
-    assert captured["notification_data"] == {"order_id": "order-1"}
+    assert payment.transaction_id == "trx-1"
+    assert payment.transaction_status == TransactionStatusEnum.settlement
+    assert order.status == "paid"
+    assert db.committed is True
+
+
+def test_handle_notification_rejects_sync_for_non_owner(monkeypatch, handle_notification_module):
+    payment = SimpleNamespace(order_id="order-1")
+    order = SimpleNamespace(id="order-1", customer_id="owner-1", status="pending")
+
+    monkeypatch.setattr(handle_notification_module, "get_payment_by_order_id", lambda order_id, db: payment)
+    monkeypatch.setattr(handle_notification_module, "get_order_by_id", lambda order_id, db: order)
+
+    result = handle_notification_module.handle_notification(
+        SimpleNamespace(order_id="order-1"),
+        DummyDB(),
+        user_id="other-user",
+    )
+
+    assert isinstance(result.error, HTTPException)
+    assert result.error.status_code == 403
