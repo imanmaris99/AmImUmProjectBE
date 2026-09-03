@@ -32,11 +32,19 @@ def create_shipment(
         
         courier_id = courier_response.data.data.id
 
-        # 3. Membuat Shipment
+        # 3. Membuat Shipment aktif untuk user ini.
+        # Checkout membaca shipment aktif berdasarkan customer_id, jadi pastikan
+        # shipment baru terikat ke user dan shipment lama dinonaktifkan.
+        db.query(ShipmentModel).filter(
+            ShipmentModel.customer_id == user_id,
+            ShipmentModel.is_active == True
+        ).update({ShipmentModel.is_active: False}, synchronize_session=False)
+
         shipment = ShipmentModel(
             code_tracking="in process",
             courier_id=courier_id,
             address_id=address_id,
+            customer_id=user_id,
             is_active=True
         )
 
