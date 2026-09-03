@@ -2,6 +2,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.dtos.payment_dtos import InfoTransactionIdDto, PaymentNotificationResponseDto, PaymentNotificationSchemaDto
+from app.libs.redis_config import redis_client
 from app.services.payment_services.handler_notification import (
     apply_order_status_transition,
     fetch_midtrans_transaction_status,
@@ -56,6 +57,11 @@ def handle_notification(
     next_order_status = map_payment_status_to_order_status(transaction_status)
     order.status = apply_order_status_transition(order.status, next_order_status)
     db.commit()
+
+    if redis_client:
+        for pattern in (f"order:{user_id}:*", f"orders:{user_id}:*"):
+            for key in redis_client.scan_iter(pattern):
+                redis_client.delete(key)
 
     return build(data=PaymentNotificationResponseDto(
         status_code=200,

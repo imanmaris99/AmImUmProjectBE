@@ -536,8 +536,18 @@ def test_handle_notification_syncs_midtrans_status_for_order_owner(monkeypatch, 
     )
     order = SimpleNamespace(id="order-1", customer_id="user-1", status="pending")
 
+    deleted_keys = []
+
+    class FakeRedis:
+        def scan_iter(self, pattern):
+            return [f"{pattern}:cached"]
+
+        def delete(self, key):
+            deleted_keys.append(key)
+
     monkeypatch.setattr(handle_notification_module, "get_payment_by_order_id", lambda order_id, db: payment)
     monkeypatch.setattr(handle_notification_module, "get_order_by_id", lambda order_id, db: order)
+    monkeypatch.setattr(handle_notification_module, "redis_client", FakeRedis())
     monkeypatch.setattr(handle_notification_module, "fetch_midtrans_transaction_status", lambda order_id: build(data={
         "order_id": order_id,
         "transaction_id": "trx-1",
@@ -558,6 +568,8 @@ def test_handle_notification_syncs_midtrans_status_for_order_owner(monkeypatch, 
     assert payment.transaction_status == TransactionStatusEnum.settlement
     assert order.status == "paid"
     assert db.committed is True
+    assert "order:user-1:*:cached" in deleted_keys
+    assert "orders:user-1:*:cached" in deleted_keys
 
 
 def test_handle_notification_rejects_sync_for_non_owner(monkeypatch, handle_notification_module):
