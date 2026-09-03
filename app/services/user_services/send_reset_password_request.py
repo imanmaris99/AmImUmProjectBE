@@ -52,14 +52,14 @@ def send_reset_password_request(
         # Generate kode verifikasi reset password
         verification_code = generate_verification_code()
         user.verification_code = verification_code
-        db.commit()
 
         reset_link = (
             f"{reset_base_url}?email={payload.email}&code={verification_code}"
         )
 
-        # Kirim email reset password
+        # Kirim email reset password. Commit kode hanya setelah email berhasil dikirim.
         send_email_reset_password(payload.email, verification_code, reset_link)
+        db.commit()
 
         return optional.build(data=user_dtos.ForgotPasswordResponseDto(
             status_code=status.HTTP_200_OK,
@@ -68,6 +68,7 @@ def send_reset_password_request(
         ))
 
     except auth.UserNotFoundError:
+        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={
@@ -76,12 +77,16 @@ def send_reset_password_request(
                 "message": "User not found in Firebase."
             }
         )
-    except Exception as e:
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception:
+        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={
                 "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
                 "error": "Internal Server Error",
-                "message": f"Unexpected error occurred: {str(e)}"
+                "message": "Layanan reset password sementara belum tersedia. Silakan coba beberapa saat lagi."
             }
         )

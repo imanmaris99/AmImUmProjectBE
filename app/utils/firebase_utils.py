@@ -166,21 +166,23 @@ def _send_email_via_brevo_api(to_email: str, subject: str, body: str, html: bool
         )
     except requests.HTTPError as exc:
         error_detail = exc.response.text if exc.response is not None else str(exc)
+        logger.warning("Brevo API rejected email delivery request: %s", error_detail)
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=ErrorResponseDto(
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 error="Bad Gateway",
-                message=f"Brevo API rejected email delivery request: {error_detail}"
+                message="Layanan email sementara belum tersedia. Silakan coba beberapa saat lagi."
             ).dict()
         )
     except requests.RequestException as exc:
+        logger.warning("Brevo API request failed: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=ErrorResponseDto(
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 error="Bad Gateway",
-                message=f"Brevo API request failed: {str(exc)}"
+                message="Layanan email sementara belum tersedia. Silakan coba beberapa saat lagi."
             ).dict()
         )
 
@@ -619,12 +621,16 @@ def send_email_reset_password(to_email: str, verification_code: str, reset_link:
         # Mengirim email dengan format HTML
         send_email(to_email, subject, body, html=True)
 
-    except Exception as e:
+    except HTTPException:
+        raise
+
+    except Exception:
+        logger.exception("Unexpected error while sending reset password email to %s", to_email)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Gagal mengirim email reset password ke {to_email}: {str(e)}"
+                message="Layanan email sementara belum tersedia. Silakan coba beberapa saat lagi."
             ).dict()
         )
