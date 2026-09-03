@@ -72,7 +72,11 @@ def create_transaction(
             return build(
                 error=HTTPException(
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                    detail="Konfigurasi Midtrans belum tersedia."
+                    detail=ErrorResponseDto(
+                        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                        error="Service Unavailable",
+                        message="Layanan pembayaran online sementara belum tersedia. Silakan pilih metode COD/bayar di toko atau coba beberapa saat lagi."
+                    ).dict()
                 )
             )
 
@@ -81,19 +85,29 @@ def create_transaction(
             transaction_response = snap.create_transaction(transaction_payload)
         
         except Exception as e:
+            logger.warning("Midtrans create transaction failed for order %s: %s", order.id, e)
             return build(
                 error=HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"Kesalahan saat membuat transaksi: {str(e)}",
+                    status_code=status.HTTP_502_BAD_GATEWAY,
+                    detail=ErrorResponseDto(
+                        status_code=status.HTTP_502_BAD_GATEWAY,
+                        error="Bad Gateway",
+                        message="Layanan pembayaran online sementara belum tersedia. Silakan pilih metode COD/bayar di toko atau coba beberapa saat lagi."
+                    ).dict(),
                 )
             )
 
         # Validasi respons Midtrans
         if not validate_midtrans_response(transaction_response):
+            logger.warning("Midtrans response missing required fields for order %s: %s", order.id, transaction_response)
             return build(
                 error=HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="Respons dari Midtrans tidak lengkap."
+                    status_code=status.HTTP_502_BAD_GATEWAY,
+                    detail=ErrorResponseDto(
+                        status_code=status.HTTP_502_BAD_GATEWAY,
+                        error="Bad Gateway",
+                        message="Layanan pembayaran online sementara belum tersedia. Silakan pilih metode COD/bayar di toko atau coba beberapa saat lagi."
+                    ).dict()
                 )
             )
 
