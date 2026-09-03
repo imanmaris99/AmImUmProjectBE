@@ -12,6 +12,7 @@ import logging
 import os
 
 import requests
+from urllib.parse import urlencode
 
 from dotenv import load_dotenv
 import json
@@ -441,10 +442,13 @@ def send_verification_email(firebase_user, firstname, verification_code):
         if not email:
             raise ValueError("Email address is empty.")
 
-        # # Menghasilkan tautan verifikasi berdasarkan UID
-        # verification_link = auth.generate_email_verification_link(email)
-        # Buat tautan verifikasi yang berisi kode verifikasi dan email user
-        verification_link = f"https://amimumprojectbe-production.up.railway.app/user/verify-email?code={verification_code}&email={email}"
+        # Buat tautan verifikasi customer yang membuka halaman frontend,
+        # agar email dan kode bisa otomatis terisi di form verifikasi.
+        verify_base_url = os.getenv(
+            "CUSTOMER_VERIFY_ACCOUNT_URL",
+            "https://amimumherbalproject.vercel.app/verify-account",
+        ).rstrip("/")
+        verification_link = f"{verify_base_url}?{urlencode({'code': verification_code, 'email': email})}"
 
 
         # Kirim email verifikasi menggunakan tautan yang dihasilkan
