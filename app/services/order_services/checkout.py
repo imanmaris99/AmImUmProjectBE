@@ -102,10 +102,13 @@ def checkout(
         compact_notes = ' | '.join(compact_tokens).strip()
         safe_notes = (compact_notes or notes_input or '')[:100] or None
 
+        payment_method = (getattr(checkout_payload, "payment_method", None) or "").lower() if checkout_payload else ""
+        order_status = "processing" if payment_method in {"cod", "pay_at_store", "cash"} else "pending"
+
         order = OrderModel(
             customer_id=user_id,
             total_price=total_cost,
-            status="pending",
+            status=order_status,
             shipment_id=shipment.id if shipment else None,
             delivery_type=DeliveryTypeEnum.delivery if shipment else DeliveryTypeEnum.pickup,
             notes=safe_notes,
