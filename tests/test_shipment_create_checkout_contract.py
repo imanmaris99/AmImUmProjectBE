@@ -68,7 +68,10 @@ def test_create_shipment_sets_customer_and_deactivates_previous(monkeypatch):
         ),
     )
 
-    request_data = SimpleNamespace(address=object(), courier=object())
+    request_data = SimpleNamespace(
+        address=SimpleNamespace(city_id=501),
+        courier=object(),
+    )
 
     result = module.create_shipment(request_data, "user-1", db)
 
@@ -81,3 +84,38 @@ def test_create_shipment_sets_customer_and_deactivates_previous(monkeypatch):
     assert shipment.address_id == 11
     assert shipment.courier_id == 22
     assert shipment.is_active is True
+
+
+def test_create_shipment_rejects_address_without_city_id(monkeypatch):
+    import importlib
+    from fastapi import HTTPException
+
+    module = importlib.import_module("app.services.shipment_services.create_shipment")
+    db = DummyDB()
+
+    monkeypatch.setattr(
+        module,
+        "create_shipment_address",
+        lambda request_address, user_id, db: SimpleNamespace(
+            error=None,
+            data=SimpleNamespace(data=SimpleNamespace(id=11, city_id=None)),
+        ),
+    )
+    monkeypatch.setattr(
+        module,
+        "process_shipping_cost",
+        lambda request_courier, user_id, db: SimpleNamespace(
+            error=None,
+            data=SimpleNamespace(data=SimpleNamespace(id=22)),
+        ),
+    )
+
+    request_data = SimpleNamespace(address=object(), courier=object())
+
+    result = module.create_shipment(request_data, "user-1", db)
+
+    assert isinstance(result.error, HTTPException)
+    assert result.error.status_code == 400
+    assert "city_id" in result.error.detail["message"]
+    assert db.added == []
+    assert db.committed == 0

@@ -16,6 +16,24 @@ from app.utils.result import build, Result
 from app.libs.redis_config import redis_client
 
 
+def _has_valid_city_id(city_id) -> bool:
+    try:
+        return int(city_id or 0) > 0
+    except (TypeError, ValueError):
+        return False
+
+
+def _invalid_shipment_city_error() -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail=ErrorResponseDto(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            error="Bad Request",
+            message="Active shipment address city_id must be selected from RajaOngkir before checkout."
+        ).dict()
+    )
+
+
 def _fetch_variants_for_update(db: Session, variant_ids: list[int]):
     if not variant_ids:
         return [], True
@@ -66,7 +84,13 @@ def checkout(
             ShipmentModel.is_active == True
         ).first()
 
-        shipping_cost = float(shipment.shipping_cost or 0.0) if shipment else 0.0
+        active_delivery_shipment = shipment if getattr(shipment, "id", None) else None
+        if active_delivery_shipment:
+            shipment_address = getattr(active_delivery_shipment, "shipment_address", None)
+            if not _has_valid_city_id(getattr(shipment_address, "city_id", None)):
+                raise _invalid_shipment_city_error()
+
+        shipping_cost = float(active_delivery_shipment.shipping_cost or 0.0) if active_delivery_shipment else 0.0
         cart_totals = get_cart_total(cart_items)
         cart_total_items_response = float(cart_totals.total_all_active_prices or 0.0)
 
@@ -109,8 +133,8 @@ def checkout(
             customer_id=user_id,
             total_price=total_cost,
             status=order_status,
-            shipment_id=shipment.id if shipment else None,
-            delivery_type=DeliveryTypeEnum.delivery if shipment else DeliveryTypeEnum.pickup,
+            shipment_id=active_delivery_shipment.id if active_delivery_shipment else None,
+            delivery_type=DeliveryTypeEnum.delivery if active_delivery_shipment else DeliveryTypeEnum.pickup,
             notes=safe_notes,
         )
         db.add(order)

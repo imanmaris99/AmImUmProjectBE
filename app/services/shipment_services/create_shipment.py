@@ -12,12 +12,34 @@ from app.services.shipment_address_services import create_shipment_address
 
 from app.utils.result import build, Result
 
+
+def _has_valid_city_id(city_id) -> bool:
+    try:
+        return int(city_id or 0) > 0
+    except (TypeError, ValueError):
+        return False
+
+
+def _invalid_city_id_error() -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail=ErrorResponseDto(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            error="Bad Request",
+            message="Shipment address city_id must be selected from RajaOngkir before checkout."
+        ).dict()
+    )
+
+
 def create_shipment(
     request_data: shipment_dtos.ShipmentCreateDto, 
     user_id: str, 
     db: Session
 ) -> Result[shipment_dtos.ShipmentResponseDto, Exception]:
     try:
+        if not _has_valid_city_id(getattr(request_data.address, "city_id", None)):
+            return build(error=_invalid_city_id_error())
+
         # 1. Membuat Shipment Address
         address_response = create_shipment_address(request_data.address, user_id, db)
         if address_response.error:

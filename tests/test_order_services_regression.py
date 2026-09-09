@@ -110,7 +110,11 @@ def fake_cart_item():
 
 
 def test_checkout_creates_order_and_items(monkeypatch, checkout_module, fake_cart_item):
-    shipment = SimpleNamespace(id="ship-1", shipping_cost=2000)
+    shipment = SimpleNamespace(
+        id="ship-1",
+        shipping_cost=2000,
+        shipment_address=SimpleNamespace(city_id=501),
+    )
     db = DummyDB(execute_results=[[fake_cart_item]], query_result=shipment)
 
     monkeypatch.setattr(
@@ -156,7 +160,11 @@ def test_checkout_uses_pos_final_total_from_payload(monkeypatch, checkout_module
 
 
 def test_checkout_cod_order_starts_processing(monkeypatch, checkout_module, fake_cart_item):
-    shipment = SimpleNamespace(id="ship-1", shipping_cost=2000)
+    shipment = SimpleNamespace(
+        id="ship-1",
+        shipping_cost=2000,
+        shipment_address=SimpleNamespace(city_id=501),
+    )
     db = DummyDB(execute_results=[[fake_cart_item]], query_result=shipment)
 
     monkeypatch.setattr(
@@ -180,6 +188,29 @@ def test_checkout_cod_order_starts_processing(monkeypatch, checkout_module, fake
     assert result.data["data"]["status"] == "processing"
     order_obj = next(obj for obj in db.added if obj.__class__.__name__ == "OrderModel")
     assert order_obj.status == "processing"
+
+
+def test_checkout_rejects_active_delivery_shipment_without_city_id(monkeypatch, checkout_module, fake_cart_item):
+    shipment = SimpleNamespace(
+        id="ship-1",
+        shipping_cost=2000,
+        shipment_address=SimpleNamespace(city_id=None),
+    )
+    db = DummyDB(execute_results=[[fake_cart_item]], query_result=shipment)
+
+    monkeypatch.setattr(
+        checkout_module,
+        "get_cart_total",
+        lambda items: SimpleNamespace(total_all_active_prices=9000),
+    )
+    monkeypatch.setattr(checkout_module, "redis_client", None)
+
+    result = checkout_module.checkout(db, "user-1")
+
+    assert isinstance(result.error, HTTPException)
+    assert result.error.status_code == 400
+    assert "city_id" in result.error.detail["message"]
+    assert db.committed == 0
 
 
 def test_checkout_truncates_notes_to_db_limit(monkeypatch, checkout_module, fake_cart_item):
