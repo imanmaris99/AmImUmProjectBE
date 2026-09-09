@@ -151,7 +151,15 @@ def test_handler_notification_updates_payment_and_order(monkeypatch, handler_not
         fraud_status=None,
         payment_response=None,
     )
-    order = SimpleNamespace(order_id="order-1", status="pending")
+    order = SimpleNamespace(order_id="order-1", status="pending", customer_id="user-1")
+    deleted_keys = []
+
+    class DummyRedis:
+        def scan_iter(self, pattern):
+            return [f"matched:{pattern}"]
+
+        def delete(self, key):
+            deleted_keys.append(key)
 
     monkeypatch.setattr(handler_notification_module, "MIDTRANS_SERVER_KEY", "server-key")
     monkeypatch.setattr(
@@ -183,6 +191,7 @@ def test_handler_notification_updates_payment_and_order(monkeypatch, handler_not
         "get_order_by_id",
         lambda order_id, db: order,
     )
+    monkeypatch.setattr(handler_notification_module, "redis_client", DummyRedis())
 
     result = handler_notification_module.handler_notification(
         {
@@ -203,6 +212,8 @@ def test_handler_notification_updates_payment_and_order(monkeypatch, handler_not
     assert payment.fraud_status == FraudStatusEnum.accept
     assert order.status == "paid"
     assert db.committed is True
+    assert "matched:orders:user-1:*" in deleted_keys
+    assert "matched:order:user-1:order-1" in deleted_keys
 
 
 def test_handler_notification_returns_404_when_payment_missing(monkeypatch, handler_notification_module):

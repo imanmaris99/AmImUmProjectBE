@@ -18,6 +18,7 @@ from app.libs.midtrans_config import MIDTRANS_IS_PRODUCTION, MIDTRANS_SERVER_KEY
 from app.models.enums import FraudStatusEnum, TransactionStatusEnum
 from app.models.order_model import OrderModel
 from app.models.payment_model import PaymentModel
+from app.libs.redis_config import redis_client
 from app.utils.result import Result, build
 
 logger = logging.getLogger(__name__)
@@ -131,6 +132,8 @@ def handler_notification(notification_data: dict, db: Session) -> Result[dict, E
         # Commit perubahan ke database
         db.commit()
 
+        invalidate_order_caches(getattr(order, "customer_id", None), order_id)
+
         # Return response sukses
         return build(data=PaymentNotificationResponseDto(
             status_code=200,
@@ -181,6 +184,18 @@ def validate_signature_key(order_id: str, status_code: str, gross_amount: str, s
     key = f"{order_id}{status_code}{gross_amount}{server_key}"
     generated_key = hashlib.sha512(key.encode()).hexdigest()
     return generated_key == signature_key
+
+
+def invalidate_order_caches(customer_id: str | None, order_id: str) -> None:
+    if not redis_client or not customer_id:
+        return
+
+    for pattern in (f"orders:{customer_id}:*", f"order:{customer_id}:{order_id}"):
+        try:
+            for key in redis_client.scan_iter(pattern):
+                redis_client.delete(key)
+        except Exception as cache_error:
+            logger.warning("Failed to invalidate payment order cache for pattern %s: %s", pattern, cache_error)
 
 
 def resolve_transaction_status(status_value: str) -> TransactionStatusEnum:
