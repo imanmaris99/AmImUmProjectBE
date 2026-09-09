@@ -133,6 +133,38 @@ def test_checkout_creates_order_and_items(monkeypatch, checkout_module, fake_car
     assert len(db.added) == 2
 
 
+def test_checkout_invalidates_cart_and_order_caches(monkeypatch, checkout_module, fake_cart_item):
+    shipment = SimpleNamespace(
+        id="ship-1",
+        shipping_cost=2000,
+        shipment_address=SimpleNamespace(city_id=501),
+    )
+    db = DummyDB(execute_results=[[fake_cart_item]], query_result=shipment)
+    deleted_keys = []
+
+    class DummyRedis:
+        def scan_iter(self, pattern):
+            return [f"matched:{pattern}"]
+
+        def delete(self, key):
+            deleted_keys.append(key)
+
+    monkeypatch.setattr(
+        checkout_module,
+        "get_cart_total",
+        lambda items: SimpleNamespace(total_all_active_prices=9000),
+    )
+    monkeypatch.setattr(checkout_module, "redis_client", DummyRedis())
+
+    result = checkout_module.checkout(db, "user-1")
+
+    assert result.error is None
+    assert "matched:orders:user-1:*" in deleted_keys
+    assert "matched:order:user-1:*" in deleted_keys
+    assert "matched:cart:user-1:*" in deleted_keys
+    assert "matched:carts:user-1" in deleted_keys
+
+
 def test_checkout_uses_pos_final_total_from_payload(monkeypatch, checkout_module, fake_cart_item):
     shipment = SimpleNamespace(id=None, shipping_cost=0)
     db = DummyDB(execute_results=[[fake_cart_item]], query_result=shipment)

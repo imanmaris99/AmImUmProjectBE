@@ -199,7 +199,9 @@ def checkout(
         if redis_client:
             redis_keys = [
                 f"orders:{user_id}:*",
-                f"order:{user_id}:*"
+                f"order:{user_id}:*",
+                f"cart:{user_id}:*",
+                f"carts:{user_id}",
             ]
             for pattern in redis_keys:
                 for key in redis_client.scan_iter(pattern):

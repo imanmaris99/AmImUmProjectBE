@@ -36,7 +36,10 @@ def get_total_records(db: Session, user_id: str):
     return db.execute(
         select(func.count())
         .select_from(CartProductModel)
-        .where(CartProductModel.customer_id == user_id)
+        .where(
+            CartProductModel.customer_id == user_id,
+            CartProductModel.is_active == True,
+        )
     ).scalar()
 
 # Utility Function for Handling Database Errors
