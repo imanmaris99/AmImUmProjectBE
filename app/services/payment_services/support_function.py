@@ -1,7 +1,19 @@
 import logging
+import os
+from urllib.parse import quote
+
 from app.models.order_model import OrderModel
 
 logger = logging.getLogger("midtrans")
+
+CUSTOMER_APP_URL = os.getenv(
+    "CUSTOMER_APP_URL",
+    "https://amimumherbalproject.vercel.app",
+).rstrip("/")
+
+
+def build_customer_transaction_url(order_id: str) -> str:
+    return f"{CUSTOMER_APP_URL}/transaction/{quote(str(order_id), safe='')}"
 
 def generate_midtrans_payload(order: OrderModel) -> dict:
     """
@@ -19,7 +31,10 @@ def generate_midtrans_payload(order: OrderModel) -> dict:
             "first_name": order.customer_name,
             "email": order.customer_email,
             "phone": order.customer_phone,
-        }
+        },
+        "callbacks": {
+            "finish": build_customer_transaction_url(str(order.id)),
+        },
     }
 
 
