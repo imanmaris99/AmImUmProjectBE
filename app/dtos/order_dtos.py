@@ -70,6 +70,7 @@ class OrderInfoResponseDto(BaseModel):
 
 class AdminOrderStatusUpdateDto(BaseModel):
     status: str
+    code_tracking: Optional[str] = None
 
 class GetOrderInfoDto(BaseModel):
     id: str

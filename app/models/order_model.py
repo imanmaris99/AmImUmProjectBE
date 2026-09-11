@@ -102,6 +102,7 @@ class OrderModel(Base):
             id=address_model.id,
             my_courier=address_model.my_courier,
             my_address=address_model.my_address,
+            code_tracking=address_model.code_tracking,
             created_at=address_model.created_at
         ).model_dump() if address_model else None
 

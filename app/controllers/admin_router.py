@@ -322,6 +322,7 @@ def admin_update_order_status(
         db=db,
         order_id=order_id,
         new_status=payload.status,
+        code_tracking=payload.code_tracking,
     )
 
     if result.error:

@@ -65,6 +65,7 @@ class MyShipmentAddressOrderInfoDto(BaseModel):
     id: str
     my_address: Optional[MyShipmentAddressInfoDto] = None
     my_courier: Optional[MyCourierInfoDto] = None
+    code_tracking: Optional[str] = None
     created_at: datetime
 
     def __getitem__(self, key: str):

@@ -4,11 +4,13 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, DataError, IntegrityError
 
 from app.models.order_model import OrderModel
+from app.models.shipment_model import ShipmentModel
 from app.dtos import order_dtos
 from app.dtos.error_response_dtos import ErrorResponseDto
 from app.services.admin_filter_utils import validate_allowed_filter
 from app.services.cart_services.support_function import handle_db_error
 from app.utils.result import build, Result
+from app.libs.redis_config import redis_client
 
 
 ADMIN_ORDER_LIST_MESSAGE = "Admin order list accessed successfully"
@@ -156,6 +158,7 @@ def update_order_status_admin(
     db: Session,
     order_id: str,
     new_status: str,
+    code_tracking: str | None = None,
 ) -> Result[order_dtos.OrderInfoResponseDto, Exception]:
     try:
         normalized_status = (new_status or "").strip().lower()
@@ -183,9 +186,46 @@ def update_order_status_admin(
                 ).dict()
             )
 
+        normalized_code_tracking = (code_tracking or "").strip()
+        if normalized_code_tracking:
+            if not order.shipment_id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=ErrorResponseDto(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        error="Bad Request",
+                        message="Tracking code can only be added to delivery orders with shipment data."
+                    ).dict()
+                )
+
+            shipment = db.execute(
+                select(ShipmentModel).where(ShipmentModel.id == order.shipment_id)
+            ).scalars().first()
+
+            if not shipment:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=ErrorResponseDto(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        error="Not Found",
+                        message=f"Shipment with ID {order.shipment_id} not found."
+                    ).dict()
+                )
+
+            shipment.code_tracking = normalized_code_tracking[:50]
+
         order.status = normalized_status
         db.commit()
         db.refresh(order)
+
+        if redis_client and order.customer_id:
+            try:
+                for pattern in (f"orders:{order.customer_id}:*", f"order:{order.customer_id}:{order.id}"):
+                    for key in redis_client.scan_iter(pattern):
+                        redis_client.delete(key)
+            except Exception:
+                # Cache cleanup is best-effort; never block a valid admin fulfillment update.
+                pass
 
         return build(data=order_dtos.OrderInfoResponseDto(
             status_code=status.HTTP_200_OK,
