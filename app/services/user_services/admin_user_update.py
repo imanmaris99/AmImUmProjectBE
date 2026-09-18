@@ -76,6 +76,6 @@ def update_user_profile_admin(db: Session, user_id: str, payload: user_dtos.Admi
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Database error occurred while updating user profile. {str(e)}"
+                message="Profil pengguna belum bisa diperbarui. Silakan coba beberapa saat lagi."
             ).dict()
         ))

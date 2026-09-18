@@ -14,7 +14,7 @@ from app.utils.result import build, Result
 
 # Fungsi untuk Mengupdate Status Aktif Item
 def update_activate(
-        db: Session, 
+        db: Session,
         update_request: shipment_dtos.ShipmentIdToUpdateDto,
         activate_update: shipment_dtos.UpdateActivateDto,
         user_id: str
@@ -25,8 +25,8 @@ def update_activate(
             .where(
                 ShipmentModel.id == update_request.shipment_id,
                 ShipmentModel.customer_id == user_id
-            )  
-        ).scalars().first()             
+            )
+        ).scalars().first()
 
         if not activate_model:
             return build(error= HTTPException(
@@ -42,7 +42,7 @@ def update_activate(
         for attr, value in activate_update.model_dump().items():
             setattr(activate_model, attr, value)
 
-        # Simpan perubahan ke dalam database   
+        # Simpan perubahan ke dalam database
         db.commit()
         db.refresh(activate_model)
 
@@ -63,9 +63,9 @@ def update_activate(
         return handle_db_error(db, e)
 
     except HTTPException as http_ex:
-        db.rollback()  
+        db.rollback()
         return build(error=http_ex)
-    
+
     except Exception as e:
         db.rollback()
         return build(error= HTTPException(
@@ -73,6 +73,6 @@ def update_activate(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

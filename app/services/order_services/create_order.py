@@ -17,8 +17,8 @@ from app.libs.redis_config import redis_client
 
 
 def create_order(
-        db: Session, 
-        order_dto: order_dtos.OrderCreateDTO, 
+        db: Session,
+        order_dto: order_dtos.OrderCreateDTO,
         user_id: str
     ) -> Result[OrderModel, Exception]:
     """
@@ -33,10 +33,10 @@ def create_order(
                 CartProductModel.is_active == True  # Filter hanya item aktif
             )
         ).scalars().all()
-        
+
         if not cart_items:
             raise HTTPException(
-                status_code=400, 
+                status_code=400,
                 detail=ErrorResponseDto(
                     status_code=status.HTTP_404_NOT_FOUND,
                     error="Not Found",
@@ -67,7 +67,7 @@ def create_order(
 
             if not shipment:
                 raise HTTPException(
-                    status_code=400, 
+                    status_code=400,
                     detail="Pengiriman tidak valid atau tidak aktif."
                 )
 
@@ -120,7 +120,7 @@ def create_order(
 
         # Invalidasi cache dengan pendekatan yang lebih efisien
         redis_keys = [
-            f"orders:{user_id}:*", 
+            f"orders:{user_id}:*",
             f"order:{user_id}:*"
         ]
         for pattern in redis_keys:
@@ -146,7 +146,7 @@ def create_order(
 
     except SQLAlchemyError as e:
         raise handle_db_error(db, e)
-    
+
     except HTTPException as http_ex:
         db.rollback()  # Rollback jika terjadi HTTPException
         return build(error=http_ex)
@@ -158,6 +158,6 @@ def create_order(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Unexpected error: {str(e)}"
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

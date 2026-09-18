@@ -17,7 +17,7 @@ def get_cart_total(cart_items) -> cart_dtos.CartProductTotalDto:
     all_promo_active_prices = sum(Decimal(item.total_promo or 0) for item in active_items)
     all_item_active_prices = sum(Decimal(item.total_price_no_discount or 0) for item in active_items)
     total_all_active_prices = all_item_active_prices - all_promo_active_prices
-    
+
     return cart_dtos.CartProductTotalDto(
         all_promo_active_prices=all_promo_active_prices,
         all_item_active_prices=all_item_active_prices,
@@ -50,6 +50,6 @@ def handle_db_error(db: Session, error: SQLAlchemyError) -> Result:
         detail=ErrorResponseDto(
             status_code=status.HTTP_409_CONFLICT,
             error="Conflict",
-            message=f"Database error: {str(error)}"
+            message="Data belum bisa diproses. Silakan coba beberapa saat lagi."
         ).dict()
     ))

@@ -13,8 +13,8 @@ from app.utils.error_parser import is_valid_password
 
 
 async def change_password(
-    user_id: str, 
-    payload: user_dtos.ChangePasswordDto, 
+    user_id: str,
+    payload: user_dtos.ChangePasswordDto,
     db: Session
     ):
     try:
@@ -47,7 +47,7 @@ async def change_password(
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail=ErrorResponseDto(
-                    status_code=status.HTTP_401_UNAUTHORIZED, 
+                    status_code=status.HTTP_401_UNAUTHORIZED,
                     error="UnAuthorized",
                     message="Old password is incorrect"
                 ).dict()
@@ -70,10 +70,10 @@ async def change_password(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_409_CONFLICT,
                 error="Conflict",
-                message=f"Database conflict: {str(e)}"
+                message="Data belum bisa disimpan karena konflik data. Silakan periksa kembali input."
             ).dict()
         ))
-    
+
     except HTTPException as e:
         # Menangani error yang dilempar oleh Firebase atau proses lainnya
         return optional.build(error=e)
@@ -84,6 +84,6 @@ async def change_password(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An unexpected error occurred: {str(e)}"
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

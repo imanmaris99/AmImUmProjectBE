@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.models.pack_type_model import PackTypeModel
-from app.dtos.pack_type_dtos import TypeIdToUpdateDto, PackTypeEditInfoDto, PackTypeUpdatedInfoDto, PackTypeEditInfoResponseDto 
+from app.dtos.pack_type_dtos import TypeIdToUpdateDto, PackTypeEditInfoDto, PackTypeUpdatedInfoDto, PackTypeEditInfoResponseDto
 from app.dtos.error_response_dtos import ErrorResponseDto
 
 from app.utils.result import build, Result
@@ -13,7 +13,7 @@ from app.services.product_services.cache_utils import invalidate_product_cache
 
 
 def update_stock(
-        db: Session, 
+        db: Session,
         type_id_update: TypeIdToUpdateDto,
         type_update: PackTypeEditInfoDto
         ) -> Result[PackTypeModel, Exception]:
@@ -65,20 +65,20 @@ def update_stock(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_409_CONFLICT,
                 error="Conflict",
-                message=f"Database conflict: {find_errr_from_args('pack_types', str(e.args))}"
+                message="Data belum bisa disimpan karena konflik data. Silakan periksa kembali input."
             ).model_dump()
         ))
-    
+
     except HTTPException as http_ex:
-        db.rollback()  
+        db.rollback()
         return build(error=http_ex)
-    
+
     except Exception as e:
         return build(error= HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).model_dump()
         ))

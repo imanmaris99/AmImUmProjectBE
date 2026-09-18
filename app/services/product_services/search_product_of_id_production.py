@@ -15,10 +15,10 @@ from app.services.product_services.support_function import handle_db_error
 from app.utils.result import build, Result
 
 def search_product_of_id_production(
-        db: Session, 
-        production_id: int,  
+        db: Session,
+        production_id: int,
         product_name: str,
-        skip: int = 0, 
+        skip: int = 0,
         limit: int = 10
     ) -> Result[AllProductInfoResponseDto, Exception]:  # Mengembalikan List DTO
     try:
@@ -41,7 +41,7 @@ def search_product_of_id_production(
             .where(
                 ProductModel.product_by_id == production_id,
                 ProductModel.name.ilike(search_query)
-            )  
+            )
             .offset(skip)
             .limit(limit)
         ).scalars().all()
@@ -76,7 +76,7 @@ def search_product_of_id_production(
         # Konversi produk ke DTO
         all_products_dto = [
             AllProductInfoDTO(
-                id=product.id, 
+                id=product.id,
                 name=product.name,
                 price=float(product.price),
                 min_variant_price=product.min_variant_price,
@@ -89,7 +89,7 @@ def search_product_of_id_production(
         ]
 
         # return build(data=all_products_dto)
-    
+
         return build(data=AllProductInfoResponseDto(
             status_code=status.HTTP_200_OK,
             message=f"All List of product by production ID '{production_id}' with name containing '{product_name}' can accessed successfully",
@@ -99,17 +99,17 @@ def search_product_of_id_production(
 
     except SQLAlchemyError as e:
         return handle_db_error(db, e)
-    
+
     except HTTPException as http_ex:
-        db.rollback()  
+        db.rollback()
         return build(error=http_ex)
-    
+
     except Exception as e:
         return build(error= HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

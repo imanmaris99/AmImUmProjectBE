@@ -23,8 +23,8 @@ CACHE_TTL = 3600
 RESPONSE_MESSAGE = "All List of Articles accessed successfully"
 
 def get_articles(
-        db: Session, 
-        skip: int = 0, 
+        db: Session,
+        skip: int = 0,
         limit: int = 10
     ) -> Result[article_dtos.AllArticleResponseDto, Exception]:
     cache_key = f"articles:{skip}:{limit}"
@@ -37,7 +37,7 @@ def get_articles(
                 cached_article = redis_client.get(cache_key)
             except Exception as cache_error:
                 logger.warning("Failed to read article cache for key %s: %s", cache_key, cache_error)
-        
+
         if cached_article:
             cached_article_data = json.loads(cached_article)
             if all(isinstance(addr, dict) and addr.get('id') is not None for addr in cached_article_data):
@@ -87,7 +87,7 @@ def get_articles(
         if redis_client:
             try:
                 redis_client.setex(cache_key, CACHE_TTL, json.dumps(
-                    [dto.dict() for dto in article_dto], 
+                    [dto.dict() for dto in article_dto],
                     default=custom_json_serializer
                 ))
             except Exception as cache_error:
@@ -98,7 +98,7 @@ def get_articles(
             message=RESPONSE_MESSAGE,
             data=article_dto
         ))
-    
+
     except SQLAlchemyError as e:
         db.rollback()
         return build(error= HTTPException(
@@ -106,16 +106,16 @@ def get_articles(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_409_CONFLICT,
                 error="Conflict",
-                message=f"Database conflict: {find_errr_from_args('articles', str(e.args))}"
+                message="Data belum bisa disimpan karena konflik data. Silakan periksa kembali input."
             ).dict()
         ))
-    
+
     except Exception as e:
         return build(error= HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

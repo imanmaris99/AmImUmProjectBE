@@ -24,9 +24,9 @@ CACHE_TTL = 300
 RESPONSE_MESSAGE = "All products in cart accessed successfully"
 
 def my_cart(
-        db: Session, 
-        user_id: str,  
-        skip: int = 0, 
+        db: Session,
+        user_id: str,
+        skip: int = 0,
         limit: int = 100
     ) -> Result[cart_dtos.AllCartResponseCreateDto, Exception]:
     try:
@@ -50,7 +50,7 @@ def my_cart(
                 total_prices=cart_data['total_prices'],
                 data=cart_data['data']
             ))
-        
+
         # Query untuk mengambil cart berdasarkan user_id dengan pagination
         cart_items = db.execute(
             select(CartProductModel)
@@ -105,7 +105,7 @@ def my_cart(
             data=cart_dto,
             total_prices=cart_total_items_response
         ))
-    
+
     except (IntegrityError, DataError) as db_error:
         db.rollback()
         error_type = "Conflict" if isinstance(db_error, IntegrityError) else "Unprocessable Entity"
@@ -115,17 +115,17 @@ def my_cart(
             detail=ErrorResponseDto(
                 status_code=status_code,
                 error=error_type,
-                message=f"Database error: {str(db_error)}"
+                message="Data belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))
-    
+
     except SQLAlchemyError as e:
         return build(error=handle_db_error(db, e))
-    
+
     except HTTPException as http_ex:
         db.rollback()  # Rollback jika terjadi HTTPException
         return build(error=http_ex)
-    
+
     except Exception as e:
         db.rollback()
         return build(error=HTTPException(
@@ -133,6 +133,6 @@ def my_cart(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Unexpected error: {str(e)}"
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

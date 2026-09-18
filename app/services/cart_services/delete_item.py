@@ -15,7 +15,7 @@ from app.libs.redis_config import redis_client
 
 # Fungsi untuk Mengupdate Kuantitas Item
 def delete_item(
-        db: Session, 
+        db: Session,
         cart: cart_dtos.UpdateByIdCartDto,
         user_id: str
         ) -> Result[None, Exception]:
@@ -39,7 +39,7 @@ def delete_item(
                 variant_product=cart_model.variant_product
             )
 
-        # Simpan perubahan ke dalam database   
+        # Simpan perubahan ke dalam database
         db.delete(cart_model)
         db.commit()
 
@@ -59,9 +59,9 @@ def delete_item(
         return handle_db_error(db, e)
 
     except HTTPException as http_ex:
-        db.rollback()  
+        db.rollback()
         return build(error=http_ex)
-    
+
     except Exception as e:
         db.rollback()
         return build(error= HTTPException(
@@ -69,7 +69,7 @@ def delete_item(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))
 

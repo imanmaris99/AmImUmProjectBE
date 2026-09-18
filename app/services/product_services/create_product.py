@@ -13,7 +13,7 @@ from app.utils.result import build, Result
 from app.libs.redis_config import redis_client
 
 def create_product(
-        db: Session, 
+        db: Session,
         create_product: ProductCreateDTO,
 ) -> Result[ProductModel, Exception]:
     try:
@@ -43,7 +43,7 @@ def create_product(
 
         # Invalidasi cache dengan pendekatan yang lebih efisien
         redis_keys = [
-            f"products:*", 
+            f"products:*",
             f"product:*",
             f"discounts:*",
             f"promotions:*"
@@ -60,11 +60,11 @@ def create_product(
 
     except SQLAlchemyError as e:
         return handle_db_error(db, e)
-    
+
     except HTTPException as http_ex:
         db.rollback()  # Rollback jika terjadi error dari Firebase
         return build(error=http_ex)
-    
+
     except Exception as e:
         db.rollback()
         return build(error= HTTPException(
@@ -72,6 +72,6 @@ def create_product(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

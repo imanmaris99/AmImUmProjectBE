@@ -26,8 +26,8 @@ CACHE_TTL = 3600
 RESPONSE_MESSAGE = "Order details accessed successfully"
 
 def detail_order(
-        db: Session, 
-        user_id: str,  
+        db: Session,
+        user_id: str,
         order_id: str
     ) -> Result[order_dtos.GetOrderDetailResponseDto, Exception]:
     try:
@@ -48,7 +48,7 @@ def detail_order(
                 message=RESPONSE_MESSAGE,
                 data=order_detail_dto
             ))
-        
+
         # Query untuk mengambil order berdasarkan user_id dan order_id
         order = db.execute(
             select(OrderModel)
@@ -102,17 +102,17 @@ def detail_order(
             message=RESPONSE_MESSAGE,
             data=order_detail_dto,
         ))
-    
+
     except (IntegrityError, DataError) as db_error:
         return build(error=handle_db_error(db, db_error))
-    
+
     except SQLAlchemyError as e:
         return build(error=handle_db_error(db, e))
 
     except HTTPException as http_ex:
         db.rollback()
         return build(error=http_ex)
-    
+
     except Exception as e:
         db.rollback()
         return build(error=HTTPException(
@@ -120,7 +120,7 @@ def detail_order(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Unexpected error: {str(e)}"
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))
 

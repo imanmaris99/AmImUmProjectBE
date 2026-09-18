@@ -15,7 +15,7 @@ from app.utils.error_parser import find_errr_from_args
 from app.utils.result import build, Result
 
 def update_shipment_address(
-        db: Session, 
+        db: Session,
         update_request: shipment_address_dtos.ShipmentAddressIdToUpdateDto,
         address_data: shipment_address_dtos.ShipmentAddressCreateDto,
         user_id: str
@@ -26,9 +26,9 @@ def update_shipment_address(
             .where(
                 ShipmentAddressModel.id == update_request.address_id,
                 ShipmentAddressModel.customer_id == user_id
-            )  
+            )
         ).scalars().first()
-        
+
         if not address_model:
             return build(error= HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -38,11 +38,11 @@ def update_shipment_address(
                     message=f"Data of Address with ID {update_request.address_id} in User ID {user_id} Not Found"
                 ).dict()
             ))
-        
+
         for attr, value in address_data.model_dump().items():
             setattr(address_model, attr, value)
 
-        # Simpan perubahan ke dalam database   
+        # Simpan perubahan ke dalam database
         db.commit()
         db.refresh(address_model)
 
@@ -62,7 +62,7 @@ def update_shipment_address(
                 created_at=address_model.created_at
             )
         ))
-    
+
     except SQLAlchemyError:
         db.rollback()
         return build(error= HTTPException(
@@ -70,14 +70,14 @@ def update_shipment_address(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_409_CONFLICT,
                 error="Conflict",
-                message=f"Database conflict: {find_errr_from_args("productions", str(e.args))}"
+                message="Data belum bisa disimpan karena konflik data. Silakan periksa kembali input."
             ).dict()
         ))
-    
+
     except HTTPException as http_ex:
-        db.rollback()  
+        db.rollback()
         return build(error=http_ex)
-    
+
     except Exception as e:
         db.rollback()
         return build(error= HTTPException(
@@ -85,6 +85,6 @@ def update_shipment_address(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

@@ -15,7 +15,7 @@ from app.libs.redis_config import custom_json_serializer, redis_client  # Redis 
 
 
 def post_wishlist(
-    db: Session, 
+    db: Session,
     # product_id: uuid.UUID,
     wish:wishlist_dtos.WishlistCreateOfIdProductDto,
     user_id: str
@@ -60,7 +60,7 @@ def post_wishlist(
         for pattern in patterns_to_invalidate:
             for key in redis_client.scan_iter(pattern):
                 redis_client.delete(key)
-        
+
         return build(data=wishlist_dtos.WishlistResponseCreateDto(
             status_code=201,
             message="Your wishlist for the product has been saved",
@@ -74,7 +74,7 @@ def post_wishlist(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occured : {str(e)}"
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))
 
@@ -89,6 +89,6 @@ def post_wishlist(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Unexpected error: {str(e)}"           
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

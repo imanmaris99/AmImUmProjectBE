@@ -32,8 +32,8 @@ def _invalid_city_id_error() -> HTTPException:
 
 
 def create_shipment(
-    request_data: shipment_dtos.ShipmentCreateDto, 
-    user_id: str, 
+    request_data: shipment_dtos.ShipmentCreateDto,
+    user_id: str,
     db: Session
 ) -> Result[shipment_dtos.ShipmentResponseDto, Exception]:
     try:
@@ -44,14 +44,14 @@ def create_shipment(
         address_response = create_shipment_address(request_data.address, user_id, db)
         if address_response.error:
             return build(error=address_response.error)
-        
+
         address_id = address_response.data.data.id
 
         # 2. Membuat Courier
         courier_response = process_shipping_cost(request_data.courier, user_id, db)
         if courier_response.error:
             return build(error=courier_response.error)
-        
+
         courier_id = courier_response.data.data.id
 
         # 3. Membuat Shipment aktif untuk user ini.
@@ -92,7 +92,7 @@ def create_shipment(
 
     except SQLAlchemyError as e:
         return handle_db_error(db, e)
-    
+
     except HTTPException as http_ex:
         db.rollback()  # Rollback jika terjadi error dari Firebase
         return build(error=http_ex)
@@ -104,6 +104,6 @@ def create_shipment(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Unexpected error: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

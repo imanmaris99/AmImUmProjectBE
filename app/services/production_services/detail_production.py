@@ -25,7 +25,7 @@ CACHE_TTL = 300
 RESPONSE_MESSAGE = "Production detail retrieved successfully"
 
 def detail_production(
-        db: Session, 
+        db: Session,
         production_id: int,
     ) -> Result[ProductionModel, Exception]:
     try:
@@ -46,7 +46,7 @@ def detail_production(
                 message=RESPONSE_MESSAGE,
                 data=production_detail_dto
             ))
-        
+
         production_model = db.execute(
             select(ProductionModel)
             .filter(ProductionModel.id == production_id)
@@ -105,18 +105,18 @@ def detail_production(
 
     except SQLAlchemyError as e:
         return build(error=handle_db_error(db, e))
-    
+
     except HTTPException as http_ex:
-        db.rollback()  
+        db.rollback()
         return build(error=http_ex)
-        
+
     except Exception as e:
         return build(error= HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))
 

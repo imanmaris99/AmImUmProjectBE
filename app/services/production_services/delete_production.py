@@ -13,7 +13,7 @@ from app.utils.error_parser import find_errr_from_args
 from app.libs.redis_config import redis_client
 
 def delete_production(
-        db: Session, 
+        db: Session,
         deleted_data: production_dtos.ProductionIdToUpdateDto
         ) -> Result[None, Exception]:
     try:
@@ -27,7 +27,7 @@ def delete_production(
                     message=f"Production with ID {deleted_data.production_id} not found"
                 ).dict()
             ))
-        
+
         # Simpan informasi pengguna sebelum dihapus
         company_delete_info = production_dtos.InfoDeleteProductionDto(
             id= company.id,
@@ -53,7 +53,7 @@ def delete_production(
             message="Info about company some product has been deleted",
             data=company_delete_info
         ))
-    
+
     except SQLAlchemyError as e:
         db.rollback()
         return build(error=HTTPException(
@@ -61,21 +61,21 @@ def delete_production(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_409_CONFLICT,
                 error="Conflict",
-                message=f"Database conflict: {find_errr_from_args('productions', str(e.args))}"
+                message="Data belum bisa disimpan karena konflik data. Silakan periksa kembali input."
             ).dict()
         ))
-    
+
     except HTTPException as http_ex:
-        db.rollback()  
+        db.rollback()
         return build(error=http_ex)
-    
+
     except Exception as e:
         return build(error= HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))
 

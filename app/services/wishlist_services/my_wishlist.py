@@ -23,9 +23,9 @@ CACHE_TTL = 300
 RESPONSE_MESSAGE = "Wishlist accessed successfully"
 
 def my_wishlist(
-        db: Session, 
-        user_id: str,  
-        skip: int = 0, 
+        db: Session,
+        user_id: str,
+        skip: int = 0,
         limit: int = 100
     ) -> Result[wishlist_dtos.AllWishlistResponseCreateDto, Exception]:
     try:
@@ -111,7 +111,7 @@ def my_wishlist(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_409_CONFLICT,
                 error="Conflict",
-                message=f"Database integrity error: {str(ie)}"
+                message="Data belum bisa diproses karena konflik data. Silakan coba beberapa saat lagi."
             ).dict()
         ))
 
@@ -122,26 +122,26 @@ def my_wishlist(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 error="Unprocessable Entity",
-                message=f"Data error: {str(de)}"
+                message="Data belum valid. Silakan periksa kembali input."
             ).dict()
         ))
 
     except SQLAlchemyError as e:
         return build(error=handle_db_error(db, e))
-    
+
     except HTTPException as http_ex:
         return build(error=http_ex)
-    
+
     except (ValueError, TypeError) as te:
         return build(error=HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=ErrorResponseDto(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 error="Unprocessable Entity",
-                message=f"Invalid input: {str(te)}"
+                message="Input belum valid. Silakan periksa kembali data yang dikirim."
             ).dict()
         ))
-    
+
     except Exception as e:
         db.rollback()
         return build(error= HTTPException(
@@ -149,6 +149,6 @@ def my_wishlist(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

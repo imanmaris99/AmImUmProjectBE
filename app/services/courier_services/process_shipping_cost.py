@@ -12,7 +12,7 @@ from app.utils.result import build, Result
 
 # Fungsi untuk memproses ongkos kirim dan menyimpannya ke database
 def process_shipping_cost(
-        request_data: courier_dtos.CourierCreateDto, 
+        request_data: courier_dtos.CourierCreateDto,
         user_id:str,
         db: Session
         ) -> Result[courier_dtos.CourierResponseDto, Exception]:
@@ -63,7 +63,7 @@ def process_shipping_cost(
 
     except SQLAlchemyError as e:
         return handle_db_error(db, e)
-    
+
     except HTTPException as http_ex:
         db.rollback()  # Rollback jika terjadi error dari Firebase
         return build(error=http_ex)
@@ -75,6 +75,6 @@ def process_shipping_cost(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Unexpected error: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

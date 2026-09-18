@@ -12,8 +12,8 @@ from app.libs.redis_config import redis_client
 
 def user_edit(
         user_id: str,
-        user: user_dtos.UserEditProfileDto, 
-        db: Session 
+        user: user_dtos.UserEditProfileDto,
+        db: Session
     ):
     try:
         user_model: Type[UserModel] = db.query(UserModel).filter(UserModel.id == user_id).first()
@@ -23,7 +23,7 @@ def user_edit(
 
             db.commit()
             db.refresh(user_model)
-            
+
             # Invalidate the cached wishlist for this user
             keys_to_invalidate = redis_client.scan_iter(f"user:{user_id}:*")
             for key in keys_to_invalidate:
@@ -35,22 +35,22 @@ def user_edit(
             message="Your profile has been successfully updated",
             data=user
         ))
-        
+
         else:
             return optional.build(error=HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, 
+                status_code=status.HTTP_404_NOT_FOUND,
                 error="Not Found",
                 message="User not found"
                 )
             )
-        
+
     except SQLAlchemyError:
         return optional.build(error= HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=ErrorResponseDto(
                 status_code=status.HTTP_409_CONFLICT,
                 error="Conflict",
-                message=f"Database conflict: {str(e)}"
+                message="Data belum bisa disimpan karena konflik data. Silakan periksa kembali input."
             ).dict()
         ))
 
@@ -64,7 +64,6 @@ def user_edit(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))
-    

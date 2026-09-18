@@ -19,8 +19,8 @@ CACHE_TTL = 3600  # Cache TTL dalam detik (1 jam)
 RESPONSE_MESSAGE = "All List of tag Categories accessed successfully"
 
 def get_all_categories(
-        db: Session, 
-        skip: int = 0, 
+        db: Session,
+        skip: int = 0,
         limit: int = 10
     ) -> Result[AllCategoryInfoResponseDto, Exception]:
     cache_key = f"categories:{skip}:{limit}"
@@ -44,7 +44,7 @@ def get_all_categories(
                 message=RESPONSE_MESSAGE,
                 data=categories_data
             ))
-                
+
         categories = db.execute(
             select(TagCategoryModel)
             .offset(skip)
@@ -72,7 +72,7 @@ def get_all_categories(
         if redis_client:
             try:
                 redis_client.setex(cache_key, CACHE_TTL, json.dumps(
-                    [dto.dict() for dto in categories_data], 
+                    [dto.dict() for dto in categories_data],
                     default=custom_json_serializer
                 ))
             except Exception as cache_error:
@@ -88,7 +88,7 @@ def get_all_categories(
     except HTTPException as e:
         # Menangani error yang dilempar oleh Firebase atau proses lainnya
         return build(error=e)
-    
+
     except Exception as e:
         db.rollback()
         return build(error= HTTPException(
@@ -96,7 +96,7 @@ def get_all_categories(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))
 

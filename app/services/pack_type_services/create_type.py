@@ -15,7 +15,7 @@ from app.services.product_services.cache_utils import invalidate_product_cache
 
 
 def create_type(
-        db: Session, 
+        db: Session,
         pack_types: PackTypeCreateDto,
         admin_id: str
 ) -> Result[PackTypeModel, Exception]:
@@ -63,14 +63,14 @@ def create_type(
             message="Your pack and variant type product has been created",
             data=pack_type_response
         ))
-    
+
     except SQLAlchemyError as e:
         return handle_db_error(db, e)
-    
+
     except HTTPException as http_ex:
-        db.rollback()  
+        db.rollback()
         return build(error=http_ex)
-    
+
     except Exception as e:
         db.rollback()
         return build(error= HTTPException(
@@ -78,6 +78,6 @@ def create_type(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).model_dump()
         ))

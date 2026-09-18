@@ -8,7 +8,7 @@ from firebase_admin import auth as firebase_auth
 from firebase_admin.exceptions import FirebaseError
 
 from app.models.user_model import UserModel
-from app.dtos.user_dtos import UserCreateResponseDto 
+from app.dtos.user_dtos import UserCreateResponseDto
 from app.dtos.error_response_dtos import ErrorResponseDto
 from app.utils import optional
 
@@ -96,7 +96,7 @@ def login_with_google(db: Session, id_token: str):
         )
 
         return optional.build(data=user_response)
-    
+
     # Tangkap error SQLAlchemy untuk string yang terlalu panjang
     except DataError as e:
         db.rollback()
@@ -115,10 +115,10 @@ def login_with_google(db: Session, id_token: str):
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message="Database error occurred: " + str(e)            
+                message="Login Google belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         )
-    
+
     except FirebaseError as e:
         db.rollback()
         return optional.build(error=HTTPException(
@@ -126,7 +126,7 @@ def login_with_google(db: Session, id_token: str):
             detail=ErrorResponseDto(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 error="Unauthorized",
-                message="Invalid token or Google login failed: " + str(e)
+                message="Login Google belum bisa diverifikasi. Silakan coba lagi."
             ).dict()
         ))
 
@@ -137,6 +137,6 @@ def login_with_google(db: Session, id_token: str):
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message="An unexpected error occurred :" + str(e)
+                message="Login Google belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

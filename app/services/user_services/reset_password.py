@@ -62,7 +62,7 @@ def reset_password(payload: ResetPasswordDto, db: Session):
         db.commit()
 
         return {"message": "Password has been reset successfully."}
-    
+
     except Exception as e:
         db.rollback()  # Rollback jika ada error
         raise HTTPException(
@@ -70,7 +70,7 @@ def reset_password(payload: ResetPasswordDto, db: Session):
             detail={
                 "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
                 "error": "Internal Server Error",
-                "message": f"Failed to reset password: {str(e)}"
+                "message": "Reset password belum bisa diproses. Silakan coba beberapa saat lagi."
             }
         )
 

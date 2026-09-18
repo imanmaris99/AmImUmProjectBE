@@ -14,7 +14,7 @@ from app.utils.result import build, Result
 from app.libs.redis_config import redis_client
 
 def update_activate_all_items(
-        db: Session, 
+        db: Session,
         activate_update: cart_dtos.UpdateActivateItemDto,
         user_id: str
     ) -> Result[cart_dtos.CartInfoUpdateAllActivateResponseDto, Exception]:
@@ -56,12 +56,12 @@ def update_activate_all_items(
         db.rollback()
         return build(error=HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Database error: {str(e)}"
+            detail="Keranjang belum bisa diperbarui. Silakan coba beberapa saat lagi."
         ))
 
     except Exception as e:
         db.rollback()
         return build(error=HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An unexpected error occurred: {str(e)}"
+            detail="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
         ))

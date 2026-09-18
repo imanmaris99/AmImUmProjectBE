@@ -20,7 +20,7 @@ from app.libs.redis_config import redis_client
 logger = logging.getLogger(__name__)
 
 def update_article(
-        db: Session, 
+        db: Session,
         article_id_update: ArticleIdToUpdateDto,
         article_update: ArticleDataUpdateDTO
         ) -> Result[ArticleInfoUpdateResponseDto, Exception]:
@@ -41,7 +41,7 @@ def update_article(
         for attr, value in article_update.model_dump().items():
             setattr(article, attr, value)
 
-        # Simpan perubahan ke dalam database   
+        # Simpan perubahan ke dalam database
         db.commit()
         db.refresh(article)
 
@@ -57,7 +57,7 @@ def update_article(
                 description=article.description
             )
         ))
-    
+
     except SQLAlchemyError as e:
         db.rollback()
         return build(error= HTTPException(
@@ -65,17 +65,17 @@ def update_article(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_409_CONFLICT,
                 error="Conflict",
-                message=f"Database conflict: {find_errr_from_args('articles', str(e.args))}"
+                message="Data belum bisa disimpan karena konflik data. Silakan periksa kembali input."
             ).dict()
         ))
-    
+
     except Exception as e:
         return build(error= HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))
 

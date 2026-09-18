@@ -22,8 +22,8 @@ CACHE_TTL = 300
 RESPONSE_MESSAGE = "All list of brands can accessed successfully"
 
 def get_all_productions(
-        db: Session, 
-        skip: int = 0, 
+        db: Session,
+        skip: int = 0,
         limit: int = 100
     ) -> Result[production_dtos.AllListProductionResponseDto, Exception]:
     cache_key = f"productions:{skip}:{limit}"
@@ -112,6 +112,6 @@ def get_all_productions(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

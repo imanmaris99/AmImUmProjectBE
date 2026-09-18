@@ -13,7 +13,7 @@ from app.utils.result import build, Result
 
 
 def delete_shipment(
-        db: Session, 
+        db: Session,
         request_delete: shipment_dtos.ShipmentIdToUpdateDto,
         user_id: str
         ) -> Result[None, Exception]:
@@ -23,7 +23,7 @@ def delete_shipment(
             .where(
                 ShipmentModel.id == request_delete.shipment_id,
                 ShipmentModel.customer_id == user_id
-            )  
+            )
         ).scalars().first()
 
         if not shipment_model:
@@ -35,7 +35,7 @@ def delete_shipment(
                     message=f"Shipment data with shipment ID : {request_delete.shipment_id} not found"
                 ).dict()
             ))
-        
+
         # Simpan informasi pengguna sebelum dihapus
         shipment_delete_info = shipment_dtos.DeleteShipmentInfoDto(
             id=shipment_model.id,
@@ -52,7 +52,7 @@ def delete_shipment(
             message=f"Your one data of Shipment with ID {request_delete.shipment_id} has been deleted",
             data=shipment_delete_info
         ))
-    
+
     except SQLAlchemyError:
         db.rollback()
         return build(error= HTTPException(
@@ -60,14 +60,14 @@ def delete_shipment(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_409_CONFLICT,
                 error="Conflict",
-                message=f"Database conflict: {find_errr_from_args("productions", str(e.args))}"
+                message="Data belum bisa disimpan karena konflik data. Silakan periksa kembali input."
             ).dict()
         ))
-    
+
     except HTTPException as http_ex:
-        db.rollback()  
+        db.rollback()
         return build(error=http_ex)
-    
+
     except Exception as e:
         db.rollback()
         return build(error= HTTPException(
@@ -75,6 +75,6 @@ def delete_shipment(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

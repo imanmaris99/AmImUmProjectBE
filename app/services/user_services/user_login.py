@@ -89,7 +89,7 @@ def user_login(db: Session, user: user_dtos.UserLoginPayloadDto) -> optional.Opt
             detail=ErrorResponseDto(
                 status_code=status.HTTP_409_CONFLICT,
                 error="Conflict",
-                message=f"Database conflict: {str(e)}"
+                message="Data belum bisa disimpan karena konflik data. Silakan periksa kembali input."
             ).model_dump()
         ))
 

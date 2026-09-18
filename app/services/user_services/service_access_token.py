@@ -25,7 +25,7 @@ def service_access_token(user_id: str):
             "access_token": access_token,
             "token_type": "bearer"
         }
-    
+
     except Exception as e:
         # Menangani error dalam proses pembuatan token
         raise HTTPException(
@@ -33,7 +33,7 @@ def service_access_token(user_id: str):
             detail={
                 "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
                 "error": "Internal Server Error",
-                "message": f"Failed to create access token: {str(e)}"
+                "message": "Sesi login belum bisa dibuat. Silakan coba beberapa saat lagi."
             }
         )
 

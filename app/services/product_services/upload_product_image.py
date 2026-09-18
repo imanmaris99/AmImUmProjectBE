@@ -41,7 +41,7 @@ def _cloudinary_creds() -> tuple[str, str, str]:
     try:
         return cloudinary_creds()
     except ValueError as e:
-        raise _http_error(status.HTTP_500_INTERNAL_SERVER_ERROR, "Internal Server Error", str(e))
+        raise _http_error(status.HTTP_500_INTERNAL_SERVER_ERROR, "Internal Server Error", "Konfigurasi upload gambar belum tersedia. Silakan hubungi admin.")
 
 
 def _upload_to_cloudinary(image_bytes: bytes, product_id: str, public_id_seed: str) -> tuple[str, int | None, int | None]:
@@ -66,7 +66,7 @@ def _upload_to_cloudinary(image_bytes: bytes, product_id: str, public_id_seed: s
 
     response = requests.post(upload_url, files=files, data=data, timeout=30)
     if response.status_code >= 300:
-        raise _http_error(status.HTTP_502_BAD_GATEWAY, "Bad Gateway", f"Cloudinary upload gagal: {response.text}")
+        raise _http_error(status.HTTP_502_BAD_GATEWAY, "Bad Gateway", "Upload gambar belum bisa diproses. Silakan coba beberapa saat lagi.")
 
     payload = response.json()
     return payload.get("secure_url"), payload.get("width"), payload.get("height")

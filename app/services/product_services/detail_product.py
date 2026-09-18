@@ -45,7 +45,7 @@ def _normalize_image_url(url: str | None) -> str | None:
         return url
 
 def get_product_by_id(
-        db: Session, 
+        db: Session,
         product_id: uuid.UUID
     ) -> Result[ProductDetailResponseDto, Exception]:
     try:
@@ -68,7 +68,7 @@ def get_product_by_id(
                 message=RESPONSE_MESSAGE,
                 data=product_detail_dto
             ))
-        
+
         # Query to get product by ID with eager loading for related entities
         product_model = db.execute(
             select(ProductModel)
@@ -147,10 +147,10 @@ def get_product_by_id(
 
     except SQLAlchemyError as e:
         return build(error=handle_db_error(db, e))
-    
+
     except HTTPException as http_ex:
         return build(error=http_ex)
-    
+
     except Exception as e:
         db.rollback()
         return build(error= HTTPException(
@@ -158,6 +158,6 @@ def get_product_by_id(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

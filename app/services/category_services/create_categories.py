@@ -11,7 +11,7 @@ from app.utils import optional
 from app.utils.result import build, Result
 
 def create_categories(
-        db: Session, 
+        db: Session,
         tag_category: category_dtos.CategoryCreateDto
         ) -> Result[TagCategoryModel, Exception]:
     try:
@@ -30,13 +30,13 @@ def create_categories(
 
         # Invalidate Redis cache
         delete_cache_by_pattern("categories:*")
-        
+
         return optional.build(data=category_dtos.CategoryCreateResponseDto(
             status_code=201,
             message="Create tag categories has been successfully updated",
             data=categories_response
         ))
-    
+
     except SQLAlchemyError:
         db.rollback()
         return build(error= HTTPException(
@@ -44,10 +44,10 @@ def create_categories(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Database Error: Failed to create categories. {str(e)}"
+                message="Kategori belum bisa dibuat. Silakan coba beberapa saat lagi."
             ).dict()
         ))
-    
+
     except Exception as e:
         db.rollback()
         return build(error= HTTPException(
@@ -55,7 +55,7 @@ def create_categories(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))
-    
+

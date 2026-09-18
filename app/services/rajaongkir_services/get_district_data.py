@@ -21,7 +21,7 @@ def validate_response(response: dict):
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message="Invalid response from RajaOngkir API"
+                message="Layanan lokasi/ongkir belum bisa mengembalikan data yang valid. Silakan coba beberapa saat lagi."
             ).dict()
         )
 
@@ -110,6 +110,6 @@ def get_district_data(city_id: int) -> optional.Optional[List[DistrictDto], HTTP
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Unexpected error occurred: {str(e)}"
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

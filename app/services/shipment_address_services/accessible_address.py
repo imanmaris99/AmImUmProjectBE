@@ -23,7 +23,7 @@ CACHE_TTL = 3600
 RESPONSE_MESSAGE = "Origin address accessed successfully"
 
 def get_target_user_role(
-        db: Session, 
+        db: Session,
         target_user_id: str
     ) -> str:
     """
@@ -35,7 +35,7 @@ def get_target_user_role(
     ).scalar_one_or_none()
 
 def get_shipment_address(
-        db: Session, 
+        db: Session,
         customer_id: str
     ) -> ShipmentAddressModel:
     """
@@ -60,8 +60,8 @@ def handle_not_found_error(message: str):
     )
 
 def accessible_address(
-    db: Session, 
-    user_id: str,  
+    db: Session,
+    user_id: str,
     target_user_id: str
 ) -> Result[shipment_address_dtos.ShipmentAddressResponseDto, Exception]:
     try:
@@ -82,7 +82,7 @@ def accessible_address(
                 message=RESPONSE_MESSAGE,
                 data=address_dto
             ))
-        
+
         if target_user_id == OWNER_SHOP_ID:
             address_model = get_shipment_address(db, target_user_id)
         else:
@@ -139,7 +139,7 @@ def accessible_address(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_409_CONFLICT,
                 error="Conflict",
-                message=f"Database integrity error: {str(ie)}"
+                message="Data belum bisa diproses karena konflik data. Silakan coba beberapa saat lagi."
             ).dict()
         ))
 
@@ -150,7 +150,7 @@ def accessible_address(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 error="Unprocessable Entity",
-                message=f"Data error: {str(de)}"
+                message="Data belum valid. Silakan periksa kembali input."
             ).dict()
         ))
 
@@ -166,7 +166,7 @@ def accessible_address(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 error="Unprocessable Entity",
-                message=f"Invalid input: {str(te)}"
+                message="Input belum valid. Silakan periksa kembali data yang dikirim."
             ).dict()
         ))
 
@@ -177,6 +177,6 @@ def accessible_address(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

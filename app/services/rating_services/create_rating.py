@@ -15,7 +15,7 @@ from app.services.rating_services.support_function import handle_db_error
 from app.utils.result import build, Result
 
 def create_rating(
-        db: Session, 
+        db: Session,
         # product_id: uuid.UUID,
         rate: RatingCreateOfIdProductDto,
         create_rate: RatingCreateDto,
@@ -72,6 +72,6 @@ def create_rating(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Unexpected error: {str(e)}"           
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

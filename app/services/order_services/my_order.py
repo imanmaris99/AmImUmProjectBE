@@ -26,9 +26,9 @@ CACHE_TTL = 3600
 RESPONSE_MESSAGE = "All orders accessed successfully"
 
 def my_order(
-        db: Session, 
-        user_id: str,  
-        skip: int = 0, 
+        db: Session,
+        user_id: str,
+        skip: int = 0,
         limit: int = 100
     ) -> Result[order_dtos.GetOrderInfoResponseDto, Exception]:
     try:
@@ -50,7 +50,7 @@ def my_order(
                 message=RESPONSE_MESSAGE,
                 data=order_data['data']
             ))
-        
+
         # Query untuk mengambil cart berdasarkan user_id dengan pagination
         order_models = db.execute(
             select(OrderModel)
@@ -106,17 +106,17 @@ def my_order(
             message=RESPONSE_MESSAGE,
             data=order_dto,
         ))
-    
+
     except (IntegrityError, DataError) as db_error:
         return build(error=handle_db_error(db, db_error))
 
     except SQLAlchemyError as e:
         return build(error=handle_db_error(db, e))
-    
+
     except HTTPException as http_ex:
         db.rollback()  # Rollback jika terjadi HTTPException
         return build(error=http_ex)
-    
+
     except Exception as e:
         db.rollback()
         return build(error=HTTPException(
@@ -124,6 +124,6 @@ def my_order(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Unexpected error: {str(e)}"
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

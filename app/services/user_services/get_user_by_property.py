@@ -11,7 +11,7 @@ from app.utils import optional
 
 
 def get_user_by_property(
-    db: Session, 
+    db: Session,
     filter_property: Callable[[Type[UserModel]], BinaryExpression[bool]]
 ) -> optional.Optional[Type[UserModel], HTTPException]:
     try:
@@ -39,7 +39,7 @@ def get_user_by_property(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Database error occurred while fetching user. {str(e)}"
+                message="Data pengguna belum bisa dimuat. Silakan coba beberapa saat lagi."
             ).dict()
         ))
 

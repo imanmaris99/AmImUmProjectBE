@@ -74,7 +74,7 @@ def list_all_users(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Database error occurred while fetching users. {str(e)}"
+                message="Data pengguna belum bisa dimuat. Silakan coba beberapa saat lagi."
             ).dict()
         ))
 
@@ -124,7 +124,7 @@ def get_user_detail_admin(db: Session, user_id: str):
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Database error occurred while fetching user detail. {str(e)}"
+                message="Detail pengguna belum bisa dimuat. Silakan coba beberapa saat lagi."
             ).dict()
         ))
 
@@ -177,6 +177,6 @@ def update_user_active_status_admin(db: Session, user_id: str, is_active: bool):
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Database error occurred while updating user status. {str(e)}"
+                message="Status pengguna belum bisa diperbarui. Silakan coba beberapa saat lagi."
             ).dict()
         ))

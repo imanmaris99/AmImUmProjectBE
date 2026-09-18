@@ -52,19 +52,19 @@ def all_types(
         ]
 
         # return build(data=types_dto)
-    
+
         return build(data=AllVariantsProductInfoResponseDto(
             status_code=status.HTTP_200_OK,
             message="All List variants from all products accessed successfully",
             data=types_dto
         ))
-    
+
     except SQLAlchemyError as e:
         return build(error=handle_db_error(db, e))
-    
+
     except HTTPException as http_ex:
         return build(error=http_ex)
-    
+
     except Exception as e:
         db.rollback()
         return build(error= HTTPException(
@@ -72,6 +72,6 @@ def all_types(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

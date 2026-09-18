@@ -13,7 +13,7 @@ from app.utils.result import build, Result
 
 
 def delete_address(
-        db: Session, 
+        db: Session,
         request_delete: shipment_address_dtos.DeleteAddressDto,
         user_id: str
         ) -> Result[None, Exception]:
@@ -23,7 +23,7 @@ def delete_address(
             .where(
                 ShipmentAddressModel.id == request_delete.address_id,
                 ShipmentAddressModel.customer_id == user_id
-            )  
+            )
         ).scalars().first()
 
         if not address_model:
@@ -35,7 +35,7 @@ def delete_address(
                     message=f"Shipment address data with ID : {request_delete.address_id} not found"
                 ).dict()
             ))
-        
+
         # Simpan informasi pengguna sebelum dihapus
         address_delete_info = shipment_address_dtos.DeleteAddressInfoDto(
             address_id=address_model.id,
@@ -52,7 +52,7 @@ def delete_address(
             message=f"Your data of Shipment address with ID {request_delete.address_id} has been deleted",
             data=address_delete_info
         ))
-    
+
     except SQLAlchemyError:
         db.rollback()
         return build(error= HTTPException(
@@ -60,14 +60,14 @@ def delete_address(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_409_CONFLICT,
                 error="Conflict",
-                message=f"Database conflict: {find_errr_from_args("productions", str(e.args))}"
+                message="Data belum bisa disimpan karena konflik data. Silakan periksa kembali input."
             ).dict()
         ))
-    
+
     except HTTPException as http_ex:
-        db.rollback()  
+        db.rollback()
         return build(error=http_ex)
-    
+
     except Exception as e:
         db.rollback()
         return build(error= HTTPException(
@@ -75,6 +75,6 @@ def delete_address(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

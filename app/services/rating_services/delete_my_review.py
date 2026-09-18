@@ -16,7 +16,7 @@ from app.utils.error_parser import find_errr_from_args
 from app.utils.result import build, Result
 
 def delete_my_review(
-        db: Session, 
+        db: Session,
         review_id_delete: rating_dtos.DeleteReviewDto,
         user_id: str
         ) -> Result[None, Exception]:
@@ -26,9 +26,9 @@ def delete_my_review(
             .where(
                 RatingModel.id == review_id_delete.rating_id,
                 RatingModel.user_id == user_id
-            )  
+            )
         ).scalars().first()
-        
+
         if not rate_model:
             return build(error= HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -38,7 +38,7 @@ def delete_my_review(
                     message=f"Review and rating from this product ID {review_id_delete.rating_id} Not Found"
                 ).dict()
             ))
-        
+
         review_delete_info = rating_dtos.InfoDeleteReviewDto(
             rating_id= rate_model.id,
             rate=rate_model.rate,
@@ -46,7 +46,7 @@ def delete_my_review(
             product_name=rate_model.product_name
         )
 
-        # Simpan perubahan ke dalam database   
+        # Simpan perubahan ke dalam database
         db.delete(rate_model)
         db.commit()
 
@@ -55,7 +55,7 @@ def delete_my_review(
             message=f"Review and rating from this product ID {review_id_delete.rating_id} has been success to deleted",
             data=review_delete_info
         ))
-    
+
     except SQLAlchemyError:
         db.rollback()
         return build(error= HTTPException(
@@ -63,14 +63,14 @@ def delete_my_review(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_409_CONFLICT,
                 error="Conflict",
-                message=f"Database conflict: {find_errr_from_args("productions", str(e.args))}"
+                message="Data belum bisa disimpan karena konflik data. Silakan periksa kembali input."
             ).dict()
         ))
-    
+
     except HTTPException as http_ex:
-        db.rollback()  
+        db.rollback()
         return build(error=http_ex)
-    
+
     except Exception as e:
         db.rollback()
         return build(error= HTTPException(
@@ -78,6 +78,6 @@ def delete_my_review(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

@@ -17,7 +17,7 @@ from app.services.product_services.cache_utils import invalidate_product_cache
 
 
 def delete_type(
-        db: Session, 
+        db: Session,
         variant_data: DeletePackTypeDto,
         ) -> Result[None, Exception]:
     try:
@@ -76,20 +76,20 @@ def delete_type(
             message="Your pack and variant type product has been deleted",
             data=variant_delete_info
         ))
-    
+
     except SQLAlchemyError as e:
         return handle_db_error(db, e)
-    
+
     except HTTPException as http_ex:
-        db.rollback()  
+        db.rollback()
         return build(error=http_ex)
-    
+
     except Exception as e:
         return build(error=HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).model_dump()
         ))

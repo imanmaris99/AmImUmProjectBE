@@ -81,7 +81,7 @@ def edit_order(
 
         # Invalidasi cache dengan pendekatan yang lebih efisien
         redis_keys = [
-            f"orders:{user_id}:*", 
+            f"orders:{user_id}:*",
             f"order:{user_id}:*"
         ]
         if redis_client:
@@ -122,7 +122,7 @@ def edit_order(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Unexpected error: {str(e)}"
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))
 

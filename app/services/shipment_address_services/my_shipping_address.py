@@ -22,9 +22,9 @@ CACHE_TTL = 3600
 RESPONSE_MESSAGE = "Shipping address list accessed successfully"
 
 def my_shipping_address(
-        db: Session, 
-        user_id: str,  
-        skip: int = 0, 
+        db: Session,
+        user_id: str,
+        skip: int = 0,
         limit: int = 100
     ) -> Result[shipment_address_dtos.AllAddressListResponseDto, Exception]:
     try:
@@ -85,7 +85,7 @@ def my_shipping_address(
         if redis_client:
             try:
                 redis_client.setex(redis_key, CACHE_TTL, json.dumps(
-                    [dto.dict() for dto in address_dto], 
+                    [dto.dict() for dto in address_dto],
                     default=custom_json_serializer
                 ))
             except Exception as cache_error:
@@ -104,7 +104,7 @@ def my_shipping_address(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_409_CONFLICT,
                 error="Conflict",
-                message=f"Database integrity error: {str(ie)}"
+                message="Data belum bisa diproses karena konflik data. Silakan coba beberapa saat lagi."
             ).dict()
         ))
 
@@ -114,7 +114,7 @@ def my_shipping_address(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 error="Unprocessable Entity",
-                message=f"Data error: {str(de)}"
+                message="Data belum valid. Silakan periksa kembali input."
             ).dict()
         ))
 
@@ -130,7 +130,7 @@ def my_shipping_address(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 error="Unprocessable Entity",
-                message=f"Invalid input: {str(te)}"
+                message="Input belum valid. Silakan periksa kembali data yang dikirim."
             ).dict()
         ))
 
@@ -140,6 +140,6 @@ def my_shipping_address(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

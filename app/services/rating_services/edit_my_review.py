@@ -15,7 +15,7 @@ from app.utils.error_parser import find_errr_from_args
 from app.utils.result import build, Result
 
 def edit_my_review(
-        db: Session, 
+        db: Session,
         review_id_update: rating_dtos.ReviewIdToUpdateDto,
         review_update: rating_dtos.ReviewDataUpdateDTO,
         user_id: str
@@ -26,9 +26,9 @@ def edit_my_review(
             .where(
                 RatingModel.id == review_id_update.rating_id,
                 RatingModel.user_id == user_id
-            )  
+            )
         ).scalars().first()
-        
+
         if not rate_model:
             return build(error= HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -38,11 +38,11 @@ def edit_my_review(
                     message=f"Review and rating from this product ID {review_id_update.rating_id} Not Found"
                 ).dict()
             ))
-        
+
         for attr, value in review_update.model_dump().items():
             setattr(rate_model, attr, value)
 
-        # Simpan perubahan ke dalam database   
+        # Simpan perubahan ke dalam database
         db.commit()
         db.refresh(rate_model)
 
@@ -54,7 +54,7 @@ def edit_my_review(
                 review=rate_model.review
             )
         ))
-    
+
     except SQLAlchemyError:
         db.rollback()
         return build(error= HTTPException(
@@ -62,14 +62,14 @@ def edit_my_review(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_409_CONFLICT,
                 error="Conflict",
-                message=f"Database conflict: {find_errr_from_args("productions", str(e.args))}"
+                message="Data belum bisa disimpan karena konflik data. Silakan periksa kembali input."
             ).dict()
         ))
-    
+
     except HTTPException as http_ex:
-        db.rollback()  
+        db.rollback()
         return build(error=http_ex)
-    
+
     except Exception as e:
         db.rollback()
         return build(error= HTTPException(
@@ -77,6 +77,6 @@ def edit_my_review(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

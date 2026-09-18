@@ -15,7 +15,7 @@ from app.libs.redis_config import redis_client
 
 # Fungsi untuk Mengupdate Status Aktif Item
 def update_activate_item(
-        db: Session, 
+        db: Session,
         cart: cart_dtos.UpdateByIdCartDto,
         activate_update: cart_dtos.UpdateActivateItemDto,
         user_id: str
@@ -59,9 +59,9 @@ def update_activate_item(
         return handle_db_error(db, e)
 
     except HTTPException as http_ex:
-        db.rollback()  
+        db.rollback()
         return build(error=http_ex)
-    
+
     except Exception as e:
         db.rollback()
         return build(error= HTTPException(
@@ -69,6 +69,6 @@ def update_activate_item(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

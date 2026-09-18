@@ -53,7 +53,7 @@ def _fetch_variants_for_update(db: Session, variant_ids: list[int]):
 
 
 def checkout(
-        db: Session, 
+        db: Session,
         user_id: str,
         checkout_payload: order_dtos.CheckoutRequestDTO | None = None
     ) -> Result[order_dtos.OrderInfoResponseDto, Exception]:

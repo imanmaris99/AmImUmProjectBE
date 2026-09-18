@@ -20,7 +20,7 @@ def validate_shipping_cost_response(response: dict):
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message="Invalid response from RajaOngkir API"
+                message="Layanan lokasi/ongkir belum bisa mengembalikan data yang valid. Silakan coba beberapa saat lagi."
             ).dict()
         )
 
@@ -31,7 +31,7 @@ def validate_shipping_cost_response(response: dict):
             detail=ErrorResponseDto(
                 status_code=meta.get("code", status.HTTP_500_INTERNAL_SERVER_ERROR),
                 error="API Error",
-                message=meta.get("message", "Unknown error occurred.")
+                message="Layanan ongkir belum bisa menghitung biaya pengiriman. Silakan coba beberapa saat lagi."
             ).dict()
         )
 
@@ -42,7 +42,7 @@ def validate_shipping_cost_response(response: dict):
             detail=ErrorResponseDto(
                 status_code=status.HTTP_404_NOT_FOUND,
                 error="Not Found",
-                message="No shipping cost data found."
+                message="Belum ada data ongkir yang tersedia untuk alamat tujuan ini."
             ).dict()
         )
 
@@ -56,7 +56,7 @@ def parse_shipping_cost_details(details: list) -> list[ShippingCostDetailDto]:
             detail=ErrorResponseDto(
                 status_code=status.HTTP_404_NOT_FOUND,
                 error="Not Found",
-                message="No shipping cost details data found."
+                message="Detail ongkir belum tersedia untuk pilihan kurir ini."
             ).dict()
         )
 
@@ -93,7 +93,7 @@ def get_shipping_cost(request_data: ShippingCostRequest) -> optional.Optional[Sh
         if cached_data:
             # Jika data ditemukan, kembalikan dari cache
             return optional.build(data=ShippingCostDto.parse_raw(cached_data))
-        
+
         # Kirim permintaan POST ke API RajaOngkir
         response = send_post_request(
             Config.RAJAONGKIR_API_HOST,
@@ -128,6 +128,6 @@ def get_shipping_cost(request_data: ShippingCostRequest) -> optional.Optional[Sh
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Unexpected error occurred: {str(e)}"
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

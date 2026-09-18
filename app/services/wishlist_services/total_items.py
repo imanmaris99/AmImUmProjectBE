@@ -18,12 +18,12 @@ from app.libs.redis_config import custom_json_serializer, redis_client
 
 logger = logging.getLogger(__name__)
 
-CACHE_TTL = 3600 
+CACHE_TTL = 3600
 RESPONSE_MESSAGE = "Wishlist total items retrieved successfully"
 
 
 def total_items(
-        db: Session, 
+        db: Session,
         user_id: str
     ) -> Result[wishlist_dtos.AllItemNotificationDto, Exception]:
     try:
@@ -80,15 +80,15 @@ def total_items(
             message=RESPONSE_MESSAGE,
             data=quantity_items
         ))
-    
+
 
     except SQLAlchemyError as e:
         return build(error=handle_db_error(db, e))
-    
+
     except HTTPException as http_ex:
         db.rollback()  # Rollback jika terjadi HTTPException
         return build(error=http_ex)
-    
+
     except Exception as e:
         db.rollback()
         return build(error=HTTPException(
@@ -96,6 +96,6 @@ def total_items(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Unexpected error: {str(e)}"
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

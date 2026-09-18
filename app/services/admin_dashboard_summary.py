@@ -103,6 +103,6 @@ def get_admin_dashboard_summary(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Database error occurred while fetching dashboard summary. {str(e)}"
+                message="Ringkasan dashboard belum bisa dimuat. Silakan coba beberapa saat lagi."
             ).dict()
         ))

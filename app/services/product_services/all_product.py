@@ -43,12 +43,12 @@ def _normalize_image_url(url: str | None) -> str | None:
         return url
 
 def all_product(
-        db: Session, 
-        skip: int = 0, 
+        db: Session,
+        skip: int = 0,
         limit: int = 100
     ) -> Result[AllProductInfoResponseDto, Exception]:
     cache_key = f"products:{skip}:{limit}"
-    
+
     try:
         # Cek data di Redis cache
         cached_data = None
@@ -66,10 +66,10 @@ def all_product(
         product_model = (
             db.execute(
                 select(ProductModel)
-                .options(selectinload(ProductModel.pack_type)) 
+                .options(selectinload(ProductModel.pack_type))
                 .offset(skip)
                 .limit(limit)
-            ).scalars()  
+            ).scalars()
             .all()
         )
 
@@ -129,15 +129,15 @@ def all_product(
                 redis_client.setex(cache_key, CACHE_TTL, json.dumps(response_dto.model_dump(), default=custom_json_serializer))
             except Exception as cache_error:
                 logger.warning("Failed to write product cache for key %s: %s", cache_key, cache_error)
-        
+
         return build(data=response_dto)
 
     except SQLAlchemyError as e:
         return build(error=handle_db_error(db, e))
-    
+
     except HTTPException as http_ex:
         return build(error=http_ex)
-    
+
     except Exception as e:
         db.rollback()
         return build(error=HTTPException(
@@ -145,6 +145,6 @@ def all_product(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

@@ -23,7 +23,7 @@ def validate_province_response(response: dict):
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message="Invalid response from RajaOngkir API"
+                message="Layanan lokasi/ongkir belum bisa mengembalikan data yang valid. Silakan coba beberapa saat lagi."
             ).dict()
         )
 
@@ -88,19 +88,19 @@ def parse_province_data(provinces: List[dict]) -> List[ProvinceDto]:
 #     url = "/starter/province"
 
 #     response = send_get_request(Config.RAJAONGKIR_API_HOST, url, headers)
-    
+
 #     try:
 #         provinces = validate_province_response(response)
 #         province_dtos = parse_province_data(provinces)
 
 #         # return optional.build(data=province_dtos)
-    
+
 #         return optional.build(data=AllProvincesResponseCreateDto(
 #             status_code=status.HTTP_200_OK,
 #             message=f"All List of Provinces accessed successfully",
 #             data=province_dtos
 #         ))
-        
+
 #     except HTTPException as e:
 #         return optional.build(error=e)
 
@@ -113,12 +113,12 @@ def get_province_data() -> optional.Optional[List[ProvinceDto], HTTPException]:
             # Parse data dari Redis
             province_dtos = [ProvinceDto(**province) for province in json.loads(cached_data)]
             return optional.build(data=province_dtos)
-        
+
         headers = {'key': Config.RAJAONGKIR_API_KEY}
         url = f"{Config.RAJAONGKIR_API_BASE_PATH}/destination/province"
 
         response = send_get_request(Config.RAJAONGKIR_API_HOST, url, headers)
-    
+
     # try:
         provinces = validate_province_response(response)
         province_dtos = parse_province_data(provinces)
@@ -131,13 +131,13 @@ def get_province_data() -> optional.Optional[List[ProvinceDto], HTTPException]:
         )
 
         return optional.build(data=province_dtos)
-    
+
         # return optional.build(data=AllProvincesResponseCreateDto(
         #     status_code=status.HTTP_200_OK,
         #     message=f"All List of Provinces accessed successfully",
         #     data=province_dtos
         # ))
-        
+
     except HTTPException as e:
         return optional.build(error=e)
 
@@ -148,6 +148,6 @@ def get_province_data() -> optional.Optional[List[ProvinceDto], HTTPException]:
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Unexpected error occurred: {str(e)}"
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

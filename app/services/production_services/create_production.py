@@ -12,18 +12,18 @@ from app.services.production_services.support_function import handle_db_error
 
 from app.utils.result import build, Result
 from app.libs.redis_config import redis_client
-    
+
 def create_production(
-        db: Session, 
+        db: Session,
         product_by: production_dtos.ProductionCreateDto,
         admin_id:str
         ) -> Result[ProductionModel, Exception]:
     try:
-        
+
         # Buat model artikel baru dengan data dari DTO
         production = ProductionModel(
-            **product_by.model_dump(), 
-            fk_admin_id=admin_id) 
+            **product_by.model_dump(),
+            fk_admin_id=admin_id)
 
         db.add(production)
         db.commit()
@@ -51,15 +51,15 @@ def create_production(
             message="Create information about manufactured company has been success",
             data=production_data
         ))
-    
+
     except SQLAlchemyError as e:
         return build(error=handle_db_error(db, e))
-    
+
     except HTTPException as http_ex:
         db.rollback()  # Rollback jika terjadi error dari Firebase
         # Langsung kembalikan error dari Firebase tanpa membuat response baru
         return build(error=http_ex)
-    
+
     except Exception as e:
         db.rollback()
         return build(error= HTTPException(
@@ -67,7 +67,7 @@ def create_production(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))
 

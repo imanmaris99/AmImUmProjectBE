@@ -18,9 +18,9 @@ CACHE_TTL = 300  # Waktu cache dalam detik
 
 
 def get_infinite_scrolling_by_category(
-    db: Session, 
-    categories_id: int, 
-    skip: int = 0, 
+    db: Session,
+    categories_id: int,
+    skip: int = 0,
     limit: int = 8
 ) -> Result[Dict[str, Any], Exception]:
     cache_key = f"all_brand_by_categories:{categories_id}:{skip}:{limit}"
@@ -30,7 +30,7 @@ def get_infinite_scrolling_by_category(
         cached_data = redis_client.get(cache_key)
         if cached_data:
             return build(data=json.loads(cached_data))
-        
+
         # Ambil data produk dengan query
         product_bies = (
             db.execute(
@@ -51,14 +51,14 @@ def get_infinite_scrolling_by_category(
                     message="No information about productions found."
                 ).dict()
             )
-        
+
         # Hitung total records tanpa memuat data relasi
         total_records = db.execute(
             select(func.count())
             .select_from(ProductionModel)
             .where(ProductionModel.herbal_category_id == categories_id)
         ).scalar()
-        
+
         # Hitung sisa data
         displayed_records = skip + len(product_bies)
         remaining_records = max(total_records - displayed_records, 0)
@@ -95,7 +95,7 @@ def get_infinite_scrolling_by_category(
     except HTTPException as http_ex:
         db.rollback()
         raise http_ex  # HTTPException dilempar langsung agar diproses oleh FastAPI
-    
+
     except Exception as e:
         db.rollback()
         return build(error=HTTPException(
@@ -103,6 +103,6 @@ def get_infinite_scrolling_by_category(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

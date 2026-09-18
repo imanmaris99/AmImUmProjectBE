@@ -13,7 +13,7 @@ from app.utils.error_parser import find_errr_from_args
 from app.libs.redis_config import redis_client
 
 def update_product(
-        db: Session, 
+        db: Session,
         product_id_update: ProductIdToUpdateDTO,
         product_update: ProductUpdateDTO
         ) -> Result[ProductModel, Exception]:
@@ -23,9 +23,9 @@ def update_product(
             select(ProductModel)
             .where(
                 ProductModel.id == product_id_update.product_id
-            )  
+            )
         ).scalars().first()
-        
+
         if not product_model:
             return build(error= HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -35,12 +35,12 @@ def update_product(
                     message=f"Info about product with ID {product_id_update.product_id} not found"
                 ).dict()
             ))
-        
+
         # Update atribut product jika ada
         for attr, value in product_update.model_dump().items():
             setattr(product_model, attr, value)
 
-        # Simpan perubahan ke dalam database   
+        # Simpan perubahan ke dalam database
         db.commit()
         db.refresh(product_model)
 
@@ -52,7 +52,7 @@ def update_product(
                 weight=product_model.weight,
                 description=product_model.description,
                 instruction=product_model.instruction,
-                price=product_model.price, 
+                price=product_model.price,
                 is_active=product_model.is_active,
                 created_at=product_model.created_at,
                 updated_at=product_model.updated_at
@@ -60,7 +60,7 @@ def update_product(
 
         # Invalidasi cache dengan pendekatan yang lebih efisien
         redis_keys = [
-            f"products:*", 
+            f"products:*",
             f"product:*",
             f"discounts:*",
             f"promotions:*"
@@ -75,7 +75,7 @@ def update_product(
             message="Your information of product has been updated",
             data=update_response
         ))
-    
+
     except SQLAlchemyError as e:
         db.rollback()
         return build(error=HTTPException(
@@ -83,21 +83,21 @@ def update_product(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_409_CONFLICT,
                 error="Conflict",
-                message=f"Database conflict: {find_errr_from_args('products', str(e.args))}"
+                message="Data belum bisa disimpan karena konflik data. Silakan periksa kembali input."
             ).dict()
         ))
-    
+
     except HTTPException as http_ex:
-        db.rollback()  
+        db.rollback()
         return build(error=http_ex)
-    
+
     except Exception as e:
         return build(error= HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))
-    
+

@@ -17,7 +17,7 @@ from app.utils.result import build, Result
 from app.libs.redis_config import redis_client
 
 def post_item(
-        db: Session, 
+        db: Session,
         cart: cart_dtos.CartCreateOfIdProductDto,
         user_id:str
 ) -> Result[CartProductModel, Exception]:
@@ -27,9 +27,9 @@ def post_item(
             select(ProductModel)
             .where(
                 ProductModel.id == cart.product_id
-            )  
+            )
         ).scalars().first()
-        
+
         if not product:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -39,15 +39,15 @@ def post_item(
                     message=f"Information about product with ID {cart.product_id} not found."
                 ).model_dump()
             )
-        
+
         # Mencari model PackType (variant produk) berdasarkan ID
         variant = db.execute(
             select(PackTypeModel)
             .where(
                 PackTypeModel.id == cart.variant_id
-            )  
+            )
         ).scalars().first()
-        
+
         if not variant:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -118,6 +118,6 @@ def post_item(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Unexpected error: {str(e)}"
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).model_dump()
         ))

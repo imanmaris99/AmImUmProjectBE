@@ -117,7 +117,7 @@ def create_user(db: Session, user: user_dtos.UserCreateDto) -> optional.Optional
             detail=ErrorResponseDto(
                 status_code=status.HTTP_409_CONFLICT,
                 error="Conflict",
-                message=f"Database conflict: {str(e)}"
+                message="Data belum bisa disimpan karena konflik data. Silakan periksa kembali input."
             ).dict()
         ))
 
@@ -131,9 +131,9 @@ def create_user(db: Session, user: user_dtos.UserCreateDto) -> optional.Optional
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Unexpected error: {str(e)}"
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))
 
-   
+
 

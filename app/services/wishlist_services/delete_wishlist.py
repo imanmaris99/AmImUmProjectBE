@@ -14,7 +14,7 @@ from app.libs.redis_config import custom_json_serializer, redis_client  # Redis 
 
 
 def delete_wishlist(
-        db: Session, 
+        db: Session,
         wishlist_data: wishlist_dtos.DeleteByIdWishlistDto,
         user_id: str
         ) -> Result[None, Exception]:
@@ -24,7 +24,7 @@ def delete_wishlist(
             .where(
                 WishlistModel.id == wishlist_data.wishlist_id,
                 WishlistModel.customer_id == user_id
-            )  
+            )
         ).scalars().first()
 
         if not wishlist_model:
@@ -36,7 +36,7 @@ def delete_wishlist(
                     message=f"Products wishlist from ID : {wishlist_data.wishlist_id} not found"
                 ).dict()
             ))
-        
+
         # Simpan informasi pengguna sebelum dihapus
         wishlist_delete_info = wishlist_dtos.InfoDeleteWishlistDto(
             wishlist_id= wishlist_model.id,
@@ -55,13 +55,13 @@ def delete_wishlist(
         for pattern in patterns_to_invalidate:
             for key in redis_client.scan_iter(pattern):
                 redis_client.delete(key)
-        
+
         return build(data=wishlist_dtos.DeleteWishlistResponseDto(
             status_code=status.HTTP_200_OK,
             message=f"Your product wishlist with ID {wishlist_data.wishlist_id} has been deleted",
             data=wishlist_delete_info
         ))
-    
+
     except SQLAlchemyError as e:
         db.rollback()
         return build(error= HTTPException(
@@ -69,14 +69,14 @@ def delete_wishlist(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_409_CONFLICT,
                 error="Conflict",
-                message=f"Database conflict: {find_errr_from_args("productions", str(e.args))}"
+                message="Data belum bisa disimpan karena konflik data. Silakan periksa kembali input."
             ).dict()
         ))
-    
+
     except HTTPException as http_ex:
-        db.rollback()  
+        db.rollback()
         return build(error=http_ex)
-    
+
     except Exception as e:
         db.rollback()
         return build(error= HTTPException(
@@ -84,6 +84,6 @@ def delete_wishlist(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

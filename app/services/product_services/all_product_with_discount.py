@@ -8,7 +8,7 @@ from typing import List, Type
 import json
 
 from app.models.product_model import ProductModel
-from app.models.pack_type_model import PackTypeModel  
+from app.models.pack_type_model import PackTypeModel
 from app.dtos.product_dtos import AllProductInfoDTO, AllProductInfoResponseDto
 from app.dtos.error_response_dtos import ErrorResponseDto
 
@@ -20,8 +20,8 @@ from app.libs.redis_config import custom_json_serializer, redis_client
 CACHE_TTL = 3600
 
 def all_product_with_discount(
-        db: Session, 
-        skip: int = 0, 
+        db: Session,
+        skip: int = 0,
         limit: int = 100
     ) -> Result[AllProductInfoResponseDto, Exception]:
     cache_key = f"promotions:{skip}:{limit}"
@@ -33,7 +33,7 @@ def all_product_with_discount(
             # Parse JSON dari Redis dan kirim sebagai response
             cached_response = json.loads(cached_data)
             return build(data=cached_response)
-        
+
         # Subquery untuk mendapatkan produk yang memiliki pack type dengan diskon
         subquery = (
             select(PackTypeModel.product_id)
@@ -46,7 +46,7 @@ def all_product_with_discount(
             db.execute(
                 select(ProductModel)
                 .options(selectinload(ProductModel.pack_type))  # Eager loading untuk pack_type
-                .where(ProductModel.is_active.is_(True), 
+                .where(ProductModel.is_active.is_(True),
                         ProductModel.id.in_(subquery))  # Menggunakan in_() dengan subquery
                 .offset(skip)
                 .limit(limit)
@@ -66,7 +66,7 @@ def all_product_with_discount(
         # Konversi produk menjadi DTO
         all_products_dto = [
             AllProductInfoDTO(
-                id=product.id, 
+                id=product.id,
                 name=product.name,
                 price=float(product.price),
                 min_variant_price=product.min_variant_price,
@@ -79,13 +79,13 @@ def all_product_with_discount(
         ]
 
         # return build(data=all_products_dto)
-    
+
         # return build(data=AllProductInfoResponseDto(
         #     status_code=status.HTTP_200_OK,
         #     message="All List of product with discount can accessed successfully",
         #     data=all_products_dto
         # ))
-    
+
         response_dto = AllProductInfoResponseDto(
             status_code=status.HTTP_200_OK,
             message="All List product can accessed successfully",
@@ -94,24 +94,24 @@ def all_product_with_discount(
 
         # Simpan data ke Redis (dengan TTL 300 detik)
         redis_client.setex(cache_key, CACHE_TTL, json.dumps(response_dto.model_dump(), default=custom_json_serializer))
-        
+
         return build(data=response_dto)
 
 
     except SQLAlchemyError as e:
         return handle_db_error(db, e)
-    
+
     except HTTPException as http_ex:
         db.rollback()  # Rollback jika terjadi error dari Firebase
         # Langsung kembalikan error dari Firebase tanpa membuat response baru
         return build(error=http_ex)
-    
+
     except Exception as e:
         return build(error= HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

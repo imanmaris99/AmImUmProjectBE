@@ -83,7 +83,7 @@ def create_transaction(
         # Buat transaksi di Midtrans
         try:
             transaction_response = snap.create_transaction(transaction_payload)
-        
+
         except Exception as e:
             logger.warning("Midtrans create transaction failed for order %s: %s", order.id, e)
             return build(
@@ -192,7 +192,7 @@ def create_transaction(
     except HTTPException as http_ex:
         db.rollback()  # Rollback jika terjadi HTTPException
         return build(error=http_ex)
-    
+
     except Exception as e:
         db.rollback()
         return build(
@@ -201,7 +201,7 @@ def create_transaction(
                 detail=ErrorResponseDto(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     error="Internal Server Error",
-                    message=f"Unexpected error: {str(e)}",
+                    message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi.",
                 ).dict(),
             )
         )

@@ -24,7 +24,7 @@ CACHE_TTL = 300
 RESPONSE_MESSAGE = "User profile retrieved successfully."
 
 def get_user_profile(
-        db: Session, 
+        db: Session,
         user_id: str
     ) -> optional.Optional[Type[UserModel], HTTPException]:
     try:
@@ -45,12 +45,12 @@ def get_user_profile(
                 message=RESPONSE_MESSAGE,
                 data=user_response
             ))
-        
+
         # user_model: Type[UserModel] = db.query(UserModel) \
         #     .filter(UserModel.id == user_id).first()
-        
+
         user_model: Type[UserModel] = db.execute(
-           select(UserModel) 
+           select(UserModel)
            .filter(UserModel.id == user_id)
         ).scalars().first()
 
@@ -99,10 +99,10 @@ def get_user_profile(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_409_CONFLICT,
                 error="Conflict",
-                message=f"Database conflict: {str(e)}"
+                message="Data belum bisa disimpan karena konflik data. Silakan periksa kembali input."
             ).dict()
         ))
-    
+
     except HTTPException as e:
         # Menangani error yang dilempar oleh Firebase atau proses lainnya
         return optional.build(error=e)
@@ -113,7 +113,7 @@ def get_user_profile(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))
 

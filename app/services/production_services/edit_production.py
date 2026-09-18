@@ -13,9 +13,9 @@ from app.utils.result import build, Result
 from app.utils.error_parser import find_errr_from_args
 from app.libs.redis_config import redis_client
 
-    
+
 def edit_production(
-        db: Session, 
+        db: Session,
         company_id: production_dtos.ProductionIdToUpdateDto,
         production_update: production_dtos.ProductionInfoUpdateDTO
         ) -> Result[ProductionModel, Exception]:
@@ -30,12 +30,12 @@ def edit_production(
                     message=f"Production with ID {company_id.production_id} not found"
                 ).dict()
             ))
-        
+
         # Update atribut bisnis
         for attr, value in production_update.model_dump().items():
             setattr(production, attr, value)
 
-        # Simpan perubahan ke dalam database   
+        # Simpan perubahan ke dalam database
         db.commit()
         db.refresh(production)
 
@@ -58,7 +58,7 @@ def edit_production(
                 description=production.description
             )
         ))
-    
+
     except SQLAlchemyError as e:
         db.rollback()
         return build(error=HTTPException(
@@ -66,20 +66,20 @@ def edit_production(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_409_CONFLICT,
                 error="Conflict",
-                message=f"Database conflict: {find_errr_from_args('productions', str(e.args))}"
+                message="Data belum bisa disimpan karena konflik data. Silakan periksa kembali input."
             ).dict()
         ))
-    
+
     except HTTPException as http_ex:
-        db.rollback()  
+        db.rollback()
         return build(error=http_ex)
-    
+
     except Exception as e:
         return build(error= HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

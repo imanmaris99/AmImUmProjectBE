@@ -16,9 +16,9 @@ from app.utils.result import build, Result
 
 
 def search_product(
-        db: Session, 
+        db: Session,
         product_name: str,
-        skip: int = 0, 
+        skip: int = 0,
         limit: int = 10
     ) -> Result[AllProductInfoResponseDto, Exception]:
     try:
@@ -52,7 +52,7 @@ def search_product(
         # Konversi produk menjadi DTO, cek `all_variants` agar tidak menyebabkan error jika None
         all_products_dto = [
             AllProductInfoDTO(
-                id=product.id, 
+                id=product.id,
                 name=product.name,
                 price=float(product.price),
                 min_variant_price=product.min_variant_price,
@@ -65,7 +65,7 @@ def search_product(
         ]
 
         # return build(data=all_products_dto)
-    
+
         return build(data=AllProductInfoResponseDto(
             status_code=status.HTTP_200_OK,
             message=f"All List product search name containing '{product_name}' can accessed successfully",
@@ -74,17 +74,17 @@ def search_product(
 
     except SQLAlchemyError as e:
         return handle_db_error(db, e)
-    
+
     except HTTPException as http_ex:
-        db.rollback()  
+        db.rollback()
         return build(error=http_ex)
-    
+
     except Exception as e:
         return build(error= HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

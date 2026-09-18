@@ -31,7 +31,7 @@ def _cloudinary_creds() -> tuple[str, str, str]:
     try:
         return cloudinary_creds()
     except ValueError as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Upload gambar belum bisa diproses. Silakan coba beberapa saat lagi.")
 
 
 def _upload_to_cloudinary(image_bytes: bytes, type_id: int, public_id_seed: str) -> str:
@@ -56,7 +56,7 @@ def _upload_to_cloudinary(image_bytes: bytes, type_id: int, public_id_seed: str)
 
     response = requests.post(upload_url, files=files, data=data, timeout=30)
     if response.status_code >= 300:
-        raise HTTPException(status_code=502, detail=f"Cloudinary upload gagal: {response.text}")
+        raise HTTPException(status_code=502, detail="Upload gambar belum bisa diproses. Silakan coba beberapa saat lagi.")
 
     payload = response.json()
     return payload.get("secure_url")
@@ -235,6 +235,6 @@ async def post_photo(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

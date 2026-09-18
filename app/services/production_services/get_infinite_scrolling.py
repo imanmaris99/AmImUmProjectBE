@@ -17,11 +17,11 @@ from app.utils.result import build, Result
 from app.libs.redis_config import custom_json_serializer, redis_client
 
 
-CACHE_TTL = 300  
+CACHE_TTL = 300
 
 def get_infinite_scrolling(
-        db: Session, 
-        skip: int = 0, 
+        db: Session,
+        skip: int = 0,
         limit: int = 8
     ) -> Result[Dict[str, Any], Exception]:
     cache_key = f"productions:{skip}:{limit}"
@@ -33,7 +33,7 @@ def get_infinite_scrolling(
             # Parse JSON dari Redis dan kirim sebagai response
             cached_response = json.loads(cached_data)
             return build(data=cached_response)
-        
+
         # Ambil data produk dengan lazy loading, ambil kolom yang relevan saja
         product_bies = (
             db.execute(
@@ -88,11 +88,11 @@ def get_infinite_scrolling(
 
     except SQLAlchemyError as e:
         return handle_db_error(db, e)
-    
+
     except HTTPException as http_ex:
         db.rollback()  # Rollback jika terjadi error dari Firebase
         return build(error=http_ex)
-    
+
     except Exception as e:
         db.rollback()
         return build(error= HTTPException(
@@ -100,7 +100,7 @@ def get_infinite_scrolling(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))
 

@@ -14,14 +14,14 @@ from app.utils import optional
 from app.utils.result import build, Result
 
 from app.libs.redis_config import redis_client
-    
+
 def create_article(
         db: Session, articles: ArticleCreateDTO
         ) -> Result[ArticleModel, Exception]:
     try:
         # Mengatur display_id secara otomatis
         display_id = ArticleModel.set_display_id(db)
-        
+
         # Buat model artikel baru dengan data dari DTO
         article = ArticleModel(**articles.model_dump(), display_id=display_id)  # Gunakan display_id yang dihitung
         db.add(article)
@@ -45,7 +45,7 @@ def create_article(
             message="Successfully created new article",
             data=article_new_dto
         ))
-        
+
     except SQLAlchemyError:
         db.rollback()
         return build(error= HTTPException(
@@ -53,10 +53,10 @@ def create_article(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Database Error: Failed to create article. {str(e)}"
+                message="Artikel belum bisa dibuat. Silakan coba beberapa saat lagi."
             ).dict()
         ))
-    
+
     except HTTPException as http_ex:
         db.rollback()  # Rollback jika terjadi error dari Firebase
         return build(error=http_ex)
@@ -68,6 +68,6 @@ def create_article(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Unexpected error: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

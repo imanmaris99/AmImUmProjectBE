@@ -16,7 +16,7 @@ from app.libs.redis_config import redis_client
 
 # Fungsi untuk Mengupdate Kuantitas Item
 def update_quantity_item(
-        db: Session, 
+        db: Session,
         cart: cart_dtos.UpdateByIdCartDto,
         quantity_update: cart_dtos.UpdateQuantityItemDto,
         user_id: str
@@ -44,7 +44,7 @@ def update_quantity_item(
             quantity_model.quantity = quantity_update.quantity
 
 
-        # Simpan perubahan ke dalam database   
+        # Simpan perubahan ke dalam database
         db.commit()
         db.refresh(quantity_model)
 
@@ -63,9 +63,9 @@ def update_quantity_item(
         return handle_db_error(db, e)
 
     except HTTPException as http_ex:
-        db.rollback()  
+        db.rollback()
         return build(error=http_ex)
-    
+
     except Exception as e:
         db.rollback()
         return build(error= HTTPException(
@@ -73,7 +73,7 @@ def update_quantity_item(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))
 

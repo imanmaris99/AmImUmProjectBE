@@ -19,8 +19,8 @@ from app.utils.result import build, Result
 
 
 def new_post(
-    request_data: shipment_dtos.RequestIdToUpdateDto, 
-    user_id: str, 
+    request_data: shipment_dtos.RequestIdToUpdateDto,
+    user_id: str,
     db: Session
 ) -> Result[shipment_dtos.ShipmentResponseDto, Exception]:
     try:
@@ -117,6 +117,6 @@ def new_post(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Unexpected error: {str(e)}"
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))

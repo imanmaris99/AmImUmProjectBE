@@ -102,7 +102,7 @@ def _upload_to_cloudinary(image_bytes: bytes, production_id: int, public_id_seed
 
     response = requests.post(upload_url, files=files, data=data, timeout=30)
     if response.status_code >= 300:
-        raise HTTPException(status_code=502, detail=f"Cloudinary upload gagal: {response.text}")
+        raise HTTPException(status_code=502, detail="Upload gambar belum bisa diproses. Silakan coba beberapa saat lagi.")
 
     payload = response.json()
     return payload.get("secure_url")
@@ -128,8 +128,8 @@ def _upload_to_supabase_bytes(image_bytes: bytes, production_id: int, public_id_
 
 async def post_logo(
         db: Session,
-        production_id: int, 
-        user_id: str, 
+        production_id: int,
+        user_id: str,
         file: UploadFile
     ) -> Result[ProductionModel, Exception]:
     try:
@@ -256,11 +256,11 @@ async def post_logo(
 
     except SQLAlchemyError as e:
         return handle_db_error(db, e)
-    
+
     except HTTPException as http_ex:
         db.rollback()  # Rollback jika terjadi error dari Firebase
         return build(error=http_ex)
-    
+
     except Exception as e:
         logger.exception("Unexpected error while updating production logo production_id=%s", production_id)
         return build(error= HTTPException(
@@ -268,7 +268,7 @@ async def post_logo(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))
 

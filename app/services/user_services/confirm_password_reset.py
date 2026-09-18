@@ -67,7 +67,7 @@ def confirm_password_reset(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_409_CONFLICT,
                 error="Conflict",
-                message=f"Database conflict: {str(e)}",
+                message="Data belum bisa disimpan karena konflik data. Silakan periksa kembali input.",
             ).dict(),
         ))
 
@@ -81,6 +81,6 @@ def confirm_password_reset(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Failed to reset password: {str(e)}",
+                message="Reset password belum bisa diproses. Silakan coba beberapa saat lagi.",
             ).dict(),
         ))

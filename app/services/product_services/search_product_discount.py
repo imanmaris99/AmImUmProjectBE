@@ -7,7 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from typing import List, Type
 
 from app.models.product_model import ProductModel
-from app.models.pack_type_model import PackTypeModel  
+from app.models.pack_type_model import PackTypeModel
 from app.dtos.product_dtos import AllProductInfoDTO, AllProductInfoResponseDto
 from app.dtos.error_response_dtos import ErrorResponseDto
 
@@ -16,9 +16,9 @@ from app.services.product_services.support_function import handle_db_error
 from app.utils.result import build, Result
 
 def search_product_discount(
-        db: Session, 
+        db: Session,
         product_name: str,
-        skip: int = 0, 
+        skip: int = 0,
         limit: int = 10
     ) -> Result[AllProductInfoResponseDto, Exception]:
     try:
@@ -30,7 +30,7 @@ def search_product_discount(
         )
 
         search_query = f"%{product_name}%"  # Pencarian menggunakan ilike
-        
+
         # Query untuk produk yang cocok dengan nama dan aktif serta memiliki diskon
         product_model = (
             db.execute(
@@ -59,11 +59,11 @@ def search_product_discount(
         # # Jika tidak ada produk ditemukan, kembalikan list kosong
         # if not product_model:
         #     return build(data=[])
-        
+
         # Konversi produk menjadi DTO
         product_discount_dto = [
             AllProductInfoDTO(
-                id=product.id, 
+                id=product.id,
                 name=product.name,
                 price=float(product.price),
                 min_variant_price=product.min_variant_price,
@@ -85,19 +85,19 @@ def search_product_discount(
 
     except SQLAlchemyError as e:
         return handle_db_error(db, e)
-    
+
     except HTTPException as http_ex:
-        db.rollback()  
+        db.rollback()
         return build(error=http_ex)
-    
+
     except Exception as e:
         return build(error= HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))
-    
+
 

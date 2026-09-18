@@ -13,6 +13,6 @@ def handle_db_error(db: Session, error: SQLAlchemyError) -> HTTPException:
         detail=ErrorResponseDto(
             status_code=status.HTTP_409_CONFLICT,
             error="Conflict",
-            message=f"Database error: {str(error)}"
+            message="Data belum bisa diproses. Silakan coba beberapa saat lagi."
         ).dict()
     )

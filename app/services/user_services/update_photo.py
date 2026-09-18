@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 
 
 async def update_my_photo(
-        db: Session, 
-        user_id: str, 
+        db: Session,
+        user_id: str,
         file: UploadFile
     ) -> Result[UserModel, Exception]:
     try:
@@ -58,7 +58,7 @@ async def update_my_photo(
                 )
 
             # Update photo_url pada user
-            user_model.photo_url = public_url           
+            user_model.photo_url = public_url
 
         # Simpan perubahan ke dalam database
         db.add(user_model)
@@ -89,10 +89,10 @@ async def update_my_photo(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_409_CONFLICT,
                 error="Conflict",
-                message=f"Database conflict: {str(e)}"
+                message="Data belum bisa disimpan karena konflik data. Silakan periksa kembali input."
             ).dict()
         ))
-    
+
     except HTTPException as e:
         # Menangani error yang dilempar oleh Firebase atau proses lainnya
         return build(error=e)
@@ -104,9 +104,9 @@ async def update_my_photo(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))
-   
+
 
 

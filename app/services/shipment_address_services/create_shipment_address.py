@@ -13,7 +13,7 @@ from app.utils.result import build, Result
 
 
 def create_shipment_address(
-        request_data: shipment_address_dtos.ShipmentAddressCreateDto, 
+        request_data: shipment_address_dtos.ShipmentAddressCreateDto,
         user_id: str,
         db: Session
     ) -> Result[shipment_address_dtos.ShipmentAddressResponseDto, Exception]:
@@ -56,7 +56,7 @@ def create_shipment_address(
 
     except SQLAlchemyError as e:
         return handle_db_error(db, e)
-    
+
     except HTTPException as http_ex:
         db.rollback()  # Rollback jika terjadi error dari Firebase
         return build(error=http_ex)
@@ -68,7 +68,7 @@ def create_shipment_address(
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Unexpected error: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))
 

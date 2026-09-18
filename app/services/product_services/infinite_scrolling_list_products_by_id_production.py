@@ -19,9 +19,9 @@ from app.libs.redis_config import custom_json_serializer, redis_client
 CACHE_TTL = 3600
 
 def infinite_scrolling_list_products_by_id_production(
-        db: Session, 
+        db: Session,
         production_id: int,
-        skip: int = 0, 
+        skip: int = 0,
         limit: int = 9
     ) -> Result[Dict[str, Any], Exception]:
     cache_key = f"products:{production_id}:{skip}:{limit}"
@@ -33,7 +33,7 @@ def infinite_scrolling_list_products_by_id_production(
             # Parse JSON dari Redis dan kirim sebagai response
             cached_response = json.loads(cached_data)
             return build(data=cached_response)
-        
+
         # Ambil data produk dengan lazy loading, ambil kolom yang relevan saja
         product_list = (
             db.execute(
@@ -65,7 +65,7 @@ def infinite_scrolling_list_products_by_id_production(
         # Konversi produk menjadi DTO
         products_dto = [
             product_dtos.AllProductInfoDTO(
-                id=product.id, 
+                id=product.id,
                 name=product.name,
                 price=float(product.price),
                 min_variant_price=product.min_variant_price,
@@ -87,21 +87,21 @@ def infinite_scrolling_list_products_by_id_production(
         redis_client.setex(cache_key, CACHE_TTL, json.dumps(response_data.model_dump(), default=custom_json_serializer))
 
         return build(data=response_data)
-    
+
     except SQLAlchemyError as e:
         return handle_db_error(db, e)
-    
+
     except HTTPException as http_ex:
-        db.rollback()  
+        db.rollback()
         return build(error=http_ex)
-    
+
     except Exception as e:
         return build(error= HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"An error occurred: {str(e)}"            
+                message="Permintaan belum bisa diproses. Silakan coba beberapa saat lagi."
             ).dict()
         ))
-    
+

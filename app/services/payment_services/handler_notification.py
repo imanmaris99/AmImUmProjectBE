@@ -168,7 +168,7 @@ def handler_notification(notification_data: dict, db: Session) -> Result[dict, E
         logger.error(f"Database error: {e}")
         return build(error=HTTPException(
             status_code=500,
-            detail=f"Kesalahan sistem database: {str(e)}"
+            detail="Callback pembayaran belum bisa diproses. Silakan coba beberapa saat lagi."
         ))
 
     except Exception as e:
@@ -176,7 +176,7 @@ def handler_notification(notification_data: dict, db: Session) -> Result[dict, E
         logger.critical(f"Unhandled error: {e}")
         return build(error=HTTPException(
             status_code=500,
-            detail=f"Kesalahan tak terduga: {str(e)}"
+            detail="Callback pembayaran belum bisa diproses. Silakan coba beberapa saat lagi."
         ))
 
 
@@ -237,13 +237,13 @@ def fetch_midtrans_transaction_status(order_id: str) -> Result[dict, Exception]:
             return build(error=HTTPException(status_code=401, detail="Autentikasi ke Midtrans gagal."))
         else:
             logger.error(f"Midtrans API error: {response.text}")
-            return build(error=HTTPException(status_code=500, detail=f"Midtrans API error: {response.text}"))
+            return build(error=HTTPException(status_code=502, detail="Layanan pembayaran belum bisa dikonfirmasi. Silakan coba beberapa saat lagi."))
 
     except requests.RequestException as e:
         logger.error(f"Request error: {e}")
         return build(error=HTTPException(
-            status_code=500, 
-            detail=f"Kesalahan jaringan ke Midtrans.{str(e)}"
+            status_code=500,
+            detail="Layanan pembayaran belum bisa dihubungi. Silakan coba beberapa saat lagi."
             )
         )
 

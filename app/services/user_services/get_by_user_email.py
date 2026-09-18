@@ -42,7 +42,7 @@ def get_user_by_email(db: Session, user_email: str) -> optional.Optional[Type[Us
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Database error occurred while fetching user. {str(e)}"
+                message="Data pengguna belum bisa dimuat. Silakan coba beberapa saat lagi."
             ).dict()
         ))
 
