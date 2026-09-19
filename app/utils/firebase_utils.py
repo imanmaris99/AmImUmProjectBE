@@ -12,16 +12,44 @@ import logging
 import os
 
 import requests
-from urllib.parse import urlencode
+from urllib.parse import urlencode, quote
 
 from dotenv import load_dotenv
 import json
+from html import escape
 
 from app.dtos.error_response_dtos import ErrorResponseDto
 
 # Load environment variables from .env file
 load_dotenv()
 logger = logging.getLogger(__name__)
+
+SHOP_NAME = "Toko Herbal AmImUm"
+CUSTOMER_FRONTEND_URL = os.getenv("CUSTOMER_FRONTEND_URL", "https://amimumherbalproject.vercel.app").rstrip("/")
+SHOPEE_MARKETPLACE_URL = os.getenv("SHOPEE_MARKETPLACE_URL", "https://shopee.co.id/tokoherbalamimum")
+ORDER_STATUS_LABELS = {
+    "pending": "Menunggu pembayaran",
+    "paid": "Pembayaran berhasil",
+    "capture": "Pembayaran berhasil",
+    "settlement": "Pembayaran berhasil",
+    "processing": "Pesanan sedang diproses",
+    "shipped": "Pesanan dikirim",
+    "completed": "Pesanan selesai",
+    "cancelled": "Pesanan dibatalkan",
+    "failed": "Pesanan gagal",
+    "refund": "Dana dikembalikan",
+}
+
+
+def _safe_text(value: object, fallback: str = "") -> str:
+    text = str(value or "").strip()
+    return escape(text or fallback)
+
+
+def _customer_order_url(order_id: object) -> str:
+    return f"{CUSTOMER_FRONTEND_URL}/transaction/{quote(str(order_id or '').strip())}"
+
+
 
 # Mengambil kredensial dari variabel lingkungan
 firebase_service_account_key = os.getenv('FIREBASE_SERVICE_ACCOUNT_KEY')
@@ -73,7 +101,7 @@ def create_firebase_user(email: str, password: str):
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Error creating user in Firebase: {str(e)}"
+                message="Akun belum bisa dibuat. Silakan coba beberapa saat lagi."
             ).dict()
         )
 
@@ -101,7 +129,7 @@ def delete_firebase_user(firebase_uid: str) -> None:
             detail={
                 "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
                 "error": "Firebase Error",
-                "message": f"Failed to delete Firebase user: {str(e)}"
+                "message": "Akun belum bisa dihapus dari layanan autentikasi. Silakan coba beberapa saat lagi."
             }
         )
 
@@ -112,7 +140,7 @@ def delete_firebase_user(firebase_uid: str) -> None:
             detail={
                 "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
                 "error": "Internal Server Error",
-                "message": f"Unexpected error while deleting Firebase user: {str(e)}"
+                "message": "Akun belum bisa dihapus. Silakan coba beberapa saat lagi."
             }
         )
     
@@ -161,7 +189,7 @@ def _send_email_via_brevo_api(to_email: str, subject: str, body: str, html: bool
             detail=ErrorResponseDto(
                 status_code=status.HTTP_504_GATEWAY_TIMEOUT,
                 error="Gateway Timeout",
-                message="Brevo API did not respond in time while sending email."
+                message="Layanan email sementara belum tersedia. Silakan coba beberapa saat lagi."
             ).dict()
         )
     except requests.HTTPError as exc:
@@ -218,7 +246,7 @@ def _send_email_via_smtp(to_email: str, subject: str, body: str, html: bool = Fa
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message="SMTP authentication failed. Periksa SMTP_USER, SMTP_PASSWORD, dan pastikan provider email mengizinkan login aplikasi atau app password yang digunakan masih valid."
+                message="Layanan email sementara belum tersedia. Silakan hubungi admin toko."
             ).dict()
         )
 
@@ -228,7 +256,7 @@ def _send_email_via_smtp(to_email: str, subject: str, body: str, html: bool = Fa
             detail=ErrorResponseDto(
                 status_code=status.HTTP_504_GATEWAY_TIMEOUT,
                 error="Gateway Timeout",
-                message="SMTP server did not respond in time while sending email verification."
+                message="Layanan email sementara belum tersedia. Silakan coba beberapa saat lagi."
             ).dict()
         )
 
@@ -238,7 +266,7 @@ def _send_email_via_smtp(to_email: str, subject: str, body: str, html: bool = Fa
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Error sending email: {str(e)}"
+                message="Layanan email sementara belum tersedia. Silakan coba beberapa saat lagi."
             ).dict()
         )
 
@@ -260,11 +288,10 @@ def send_email(to_email: str, subject: str, body: str, html: bool = False):
 
 def send_email_verification(to_email: str, verification_code: str, verification_link: str, firstname: str):
     """Mengirim email verifikasi dengan tautan berformat HTML, logo, dan alamat di footer."""
-    subject = "Email Verification"
+    subject = "Verifikasi Akun Toko Herbal Amimum"
     
     firstname = firstname.capitalize()
 
-    # url_verification = "https://yakuse.vercel.app/login"
 
     # URL logo toko (sesuaikan dengan URL gambar logo kamu)
     logo_url = "https://amimumprojectbe-production.up.railway.app/images/logo_toko_amimum.png"
@@ -390,8 +417,8 @@ def send_email_verification(to_email: str, verification_code: str, verification_
                 <h1>Verifikasi Email Anda</h1>
             </div>
             <div class="email-body">
-                <h2>Halo {firstname},</h2>
-                <p>Terima kasih telah mendaftar di AmImUm Herbal! Untuk mengaktifkan akun Anda, silakan salin kode verifikasi berikut di aplikasi kami:</p>
+                <h2>Halo {_safe_text(firstname, "Customer")},</h2>
+                <p>Terima kasih telah mendaftar di Toko Herbal Amimum. Untuk mengaktifkan akun, salin kode verifikasi berikut di website kami:</p>
 
                 <!-- Menampilkan kode verifikasi -->
                 <div class="code-container">
@@ -405,13 +432,14 @@ def send_email_verification(to_email: str, verification_code: str, verification_
                 <p>Jika tombol tidak berfungsi, Anda juga dapat mengklik tautan di bawah ini:</p>
                 <p><a href="{verification_link}">{verification_link}</a></p>
 
-                <p class="team-message">Dikirim oleh, <br> AmImUm Herbal Team</p>
+                <p class="team-message">Dikirim oleh,<br>Tim Toko Herbal Amimum</p>
             </div>
             <div class="email-footer">
                 <img src="{logo_url}" alt="Logo AmImUm Herbal"/>
                 <div class="footer-text">
-                    <p>Toko Herbal AmImUm</p>
-                    <p>Jl. Mangkudipuro, Pati, Jawa Tengah, Indonesia <br> Kode Pos: 59185</p>
+                    <p>Toko Herbal Amimum</p>
+                    <p>Jl. Mangkudipuro, Pati, Jawa Tengah, Indonesia<br>Kode Pos: 59185</p>
+                    <p>Shopee: <a href="{SHOPEE_MARKETPLACE_URL}">{SHOPEE_MARKETPLACE_URL}</a></p>
                 </div>
             </div>
         </div>
@@ -429,7 +457,7 @@ def send_email_verification(to_email: str, verification_code: str, verification_
                 detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Gagal mengirim email verifikasi ke {to_email}: {str(e)}"
+                message="Layanan email verifikasi sementara belum tersedia. Silakan coba beberapa saat lagi."
             ).dict()
         )
 
@@ -462,7 +490,7 @@ def send_verification_email(firebase_user, firstname, verification_code):
             detail=ErrorResponseDto(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
-                message=f"Error sending verification email: {str(e)}"
+                message="Layanan email verifikasi sementara belum tersedia. Silakan coba beberapa saat lagi."
             ).dict()
         )
 
@@ -470,12 +498,11 @@ def send_verification_email(firebase_user, firstname, verification_code):
 def send_email_reset_password(to_email: str, verification_code: str, reset_link: str):
     """Mengirim email reset password dengan tautan dalam format HTML."""
     
-    subject = "Reset Password"
+    subject = "Reset Password Toko Herbal Amimum"
 
     # URL logo toko (sesuaikan dengan URL gambar logo kamu)
     logo_url = "https://amimumprojectbe-production.up.railway.app/images/logo_toko_amimum.png"
 
-    url_reset = "https://yakuse.vercel.app/login"
 
     body = f"""
     <html>
@@ -588,9 +615,8 @@ def send_email_reset_password(to_email: str, verification_code: str, reset_link:
                 <h1>Permintaan Reset Password</h1>
             </div>
             <div class="email-body">
-                <h2>Halo {to_email},</h2>
-                <p>Anda telah meminta untuk mereset kata sandi Anda. 
-                silakan salin kode verifikasi berikut untuk mengatur ulang kata sandi Anda:</p>
+                <h2>Halo {_safe_text(to_email, "Customer")},</h2>
+                <p>Kami menerima permintaan reset password akun Toko Herbal Amimum. Salin kode verifikasi berikut untuk mengatur ulang password:</p>
 
                 <!-- Menampilkan kode verifikasi -->
                 <div class="code-container">
@@ -604,13 +630,14 @@ def send_email_reset_password(to_email: str, verification_code: str, reset_link:
                 <p>Jika tombol tidak berfungsi, Anda juga dapat mengklik tautan di bawah ini:</p>
                 <p><a href="{reset_link}">{reset_link}</a></p>
                 <p>Jika Anda tidak meminta pengaturan ulang kata sandi, abaikan email ini.</p>
-                <p class="team-message">Salam, <br> AmImUm Herbal Team</p>
+                <p class="team-message">Salam,<br>Tim Toko Herbal Amimum</p>
             </div>
             <div class="email-footer">
                 <img src="{logo_url}" alt="Logo AmImUm Herbal"/>
                 <div class="footer-text">
-                    <p>Toko Herbal AmImUm</p>
-                    <p>Jl. Mangkudipuro, Pati, Jawa Tengah, Indonesia <br> Kode Pos: 59185</p>
+                    <p>Toko Herbal Amimum</p>
+                    <p>Jl. Mangkudipuro, Pati, Jawa Tengah, Indonesia<br>Kode Pos: 59185</p>
+                    <p>Shopee: <a href="{SHOPEE_MARKETPLACE_URL}">{SHOPEE_MARKETPLACE_URL}</a></p>
                 </div>
             </div>
         </div>
@@ -634,3 +661,78 @@ def send_email_reset_password(to_email: str, verification_code: str, reset_link:
                 message="Layanan email sementara belum tersedia. Silakan coba beberapa saat lagi."
             ).dict()
         )
+
+
+def build_order_status_email_body(
+    order_id: object,
+    customer_name: str | None,
+    status_value: str,
+    code_tracking: str | None = None,
+) -> str:
+    """Build customer-safe order status email body.
+
+    This helper intentionally avoids provider/payment tokens and internal shipment IDs.
+    Resi is shown only when admin has entered an actual courier tracking code.
+    """
+    status_key = str(status_value or "").strip().lower()
+    status_label = ORDER_STATUS_LABELS.get(status_key, "Status pesanan diperbarui")
+    safe_name = _safe_text(customer_name, "Customer")
+    safe_order_id = _safe_text(order_id, "-")
+    tracking = str(code_tracking or "").strip()
+    safe_tracking = _safe_text(tracking, "Belum tersedia") if tracking and tracking.lower() not in {"in process", "processing", "none", "null"} else "Belum tersedia"
+    order_url = _customer_order_url(order_id)
+
+    tracking_note = (
+        f"<p><strong>No. Resi:</strong> {safe_tracking}</p>"
+        if safe_tracking != "Belum tersedia"
+        else "<p><strong>No. Resi:</strong> Belum tersedia. Resi akan muncul setelah admin memasukkan kode tracking resmi dari kurir.</p>"
+    )
+
+    return f"""
+    <html>
+    <body style="font-family: Arial, sans-serif; color: #1f2937; background: #f7faf8; padding: 24px;">
+      <div style="max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 14px; overflow: hidden; border: 1px solid #e5e7eb;">
+        <div style="background: #006A47; color: #ffffff; padding: 18px 22px;">
+          <h2 style="margin: 0; font-size: 20px;">Update Pesanan Toko Herbal Amimum</h2>
+        </div>
+        <div style="padding: 22px; line-height: 1.6;">
+          <p>Halo {safe_name},</p>
+          <p>Status pesanan Anda telah diperbarui.</p>
+          <p><strong>ID Pesanan:</strong> {safe_order_id}</p>
+          <p><strong>Status:</strong> {escape(status_label)}</p>
+          {tracking_note}
+          <p>Detail pesanan dapat dicek melalui halaman transaksi:</p>
+          <p><a href="{order_url}" style="display:inline-block;background:#006A47;color:#ffffff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:bold;">Lihat Pesanan</a></p>
+          <p style="font-size: 13px; color: #6b7280;">Jika tombol tidak bisa dibuka, salin tautan ini: <br><a href="{order_url}">{order_url}</a></p>
+        </div>
+        <div style="padding: 16px 22px; background: #f3f4f6; font-size: 12px; color: #4b5563;">
+          <p style="margin: 0 0 4px;"><strong>Toko Herbal Amimum</strong></p>
+          <p style="margin: 0 0 4px;">Shopee: <a href="{SHOPEE_MARKETPLACE_URL}">{SHOPEE_MARKETPLACE_URL}</a></p>
+          <p style="margin: 0;">Email ini hanya berisi ringkasan status pesanan dan tidak memuat data rahasia atau detail internal sistem.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+    """
+
+
+def send_order_status_email(
+    to_email: str | None,
+    order_id: object,
+    customer_name: str | None,
+    status_value: str,
+    code_tracking: str | None = None,
+) -> bool:
+    """Send a non-critical customer order status email.
+
+    Raises provider HTTPException only to callers that choose to handle it.
+    Admin fulfillment callers should catch/log and keep status updates successful.
+    """
+    if not to_email:
+        logger.info("Skip order status email for order %s because customer email is empty.", order_id)
+        return False
+
+    subject_label = ORDER_STATUS_LABELS.get(str(status_value or "").strip().lower(), "Status pesanan diperbarui")
+    body = build_order_status_email_body(order_id, customer_name, status_value, code_tracking)
+    send_email(str(to_email), f"Update Pesanan Amimum - {subject_label}", body, html=True)
+    return True

@@ -94,3 +94,34 @@ def test_reset_password_provider_error_rolls_back_and_preserves_safe_message(mon
     assert exc_info.value.detail["message"] == "Layanan email sementara belum tersedia. Silakan coba beberapa saat lagi."
     assert db.committed == 0
     assert db.rolled_back == 1
+
+
+def test_order_status_email_body_is_customer_safe_and_includes_marketplace():
+    body = firebase_utils.build_order_status_email_body(
+        order_id="order-123",
+        customer_name="Customer <Test>",
+        status_value="shipped",
+        code_tracking="JNE123456789",
+    )
+
+    assert "Pesanan dikirim" in body
+    assert "JNE123456789" in body
+    assert "https://shopee.co.id/tokoherbalamimum" in body
+    assert "https://amimumherbalproject.vercel.app/transaction/order-123" in body
+    assert "Customer &lt;Test&gt;" in body
+    assert "token" not in body.lower()
+    assert "midtrans" not in body.lower()
+    assert "shipment uuid" not in body.lower()
+
+
+def test_order_status_email_body_hides_placeholder_tracking():
+    body = firebase_utils.build_order_status_email_body(
+        order_id="order-124",
+        customer_name="Customer",
+        status_value="processing",
+        code_tracking="in process",
+    )
+
+    assert "Pesanan sedang diproses" in body
+    assert "No. Resi:</strong> Belum tersedia" in body
+    assert "in process" not in body

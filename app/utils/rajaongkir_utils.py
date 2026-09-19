@@ -25,7 +25,7 @@ def send_get_request(host: str, url: str, headers: dict):
                 result.get("rajaongkir", {}).get("status", {}).get("description")
                 or result.get("meta", {}).get("message")
                 or result.get("message")
-                or "Unknown error occurred."
+                or "Layanan ongkir sementara belum tersedia. Silakan coba beberapa saat lagi."
             )
             raise HTTPException(
                 status_code=response.status,
@@ -44,10 +44,10 @@ def send_get_request(host: str, url: str, headers: dict):
             detail=ErrorResponseDto(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     error="Invalid Response",
-                    message="Failed to decode JSON from RajaOngkir API."
+                    message="Layanan ongkir mengirim respons yang belum bisa diproses. Silakan coba beberapa saat lagi."
                 ).dict()
             # error="Invalid Response",
-            # message="Failed to decode JSON from RajaOngkir API."
+            # message="Layanan ongkir mengirim respons yang belum bisa diproses. Silakan coba beberapa saat lagi."
         )
 
     except HTTPException as e:
@@ -60,10 +60,10 @@ def send_get_request(host: str, url: str, headers: dict):
             detail=ErrorResponseDto(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     error="Internal Server",
-                    message=f"Error occurred during API request: {str(e)}"
+                    message="Layanan ongkir sementara belum tersedia. Silakan coba beberapa saat lagi."
                 ).dict()
             # error="Internal Server Error",
-            # message=f"Error occurred during API request: {str(e)}"
+            # message="Layanan ongkir sementara belum tersedia. Silakan coba beberapa saat lagi."
         )
 
 
@@ -85,13 +85,13 @@ def send_post_request(host: str, url: str, headers: dict, body, encode_json: boo
                 detail=ErrorResponseDto(
                     status_code=response.status,
                     error="API Error",
-                    message=result.get("rajaongkir", {}).get("status", {}).get("description", "Unknown error occurred.")
+                    message=result.get("rajaongkir", {}).get("status", {}).get("description", "Layanan ongkir sementara belum tersedia. Silakan coba beberapa saat lagi.")
                 ).dict()
             )
             # raise HTTPException(
             #     status_code=response.status,
             #     error="API Error",
-            #     message=result.get("rajaongkir", {}).get("status", {}).get("description", "Unknown error occurred.")
+            #     message=result.get("rajaongkir", {}).get("status", {}).get("description", "Layanan ongkir sementara belum tersedia. Silakan coba beberapa saat lagi.")
             # )
 
         return result
@@ -102,13 +102,13 @@ def send_post_request(host: str, url: str, headers: dict, body, encode_json: boo
             detail=ErrorResponseDto(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     error="Invalid Response",
-                    message="Failed to decode JSON from RajaOngkir API."
+                    message="Layanan ongkir mengirim respons yang belum bisa diproses. Silakan coba beberapa saat lagi."
                 ).dict()
         )
         # raise HTTPException(
         #     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         #     error="Invalid Response",
-        #     message="Failed to decode JSON from RajaOngkir API."
+        #     message="Layanan ongkir mengirim respons yang belum bisa diproses. Silakan coba beberapa saat lagi."
         # )
 
     except HTTPException as e:
@@ -121,11 +121,11 @@ def send_post_request(host: str, url: str, headers: dict, body, encode_json: boo
             detail=ErrorResponseDto(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     error="Internal Server",
-                    message=f"Error occurred during API request: {str(e)}"
+                    message="Layanan ongkir sementara belum tersedia. Silakan coba beberapa saat lagi."
                 ).dict()
         )
         # raise HTTPException(
         #     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         #     error="Internal Server Error",
-        #     message=f"Error occurred during API request: {str(e)}"
+        #     message="Layanan ongkir sementara belum tersedia. Silakan coba beberapa saat lagi."
         # )

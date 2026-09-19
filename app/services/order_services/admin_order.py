@@ -11,6 +11,10 @@ from app.services.admin_filter_utils import validate_allowed_filter
 from app.services.cart_services.support_function import handle_db_error
 from app.utils.result import build, Result
 from app.libs.redis_config import redis_client
+from app.utils.firebase_utils import send_order_status_email
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 ADMIN_ORDER_LIST_MESSAGE = "Admin order list accessed successfully"
@@ -213,10 +217,29 @@ def update_order_status_admin(
                 )
 
             shipment.code_tracking = normalized_code_tracking[:50]
+            if getattr(order, "my_shipping", None) is not None:
+                order.my_shipping.code_tracking = shipment.code_tracking
 
+        previous_status = str(order.status or "")
         order.status = normalized_status
         db.commit()
         db.refresh(order)
+
+        if previous_status != normalized_status:
+            try:
+                tracking_for_email = None
+                if order.my_shipping is not None:
+                    tracking_for_email = getattr(order.my_shipping, "code_tracking", None)
+                send_order_status_email(
+                    to_email=getattr(order, "customer_email", None),
+                    order_id=order.id,
+                    customer_name=getattr(order, "customer_name", None),
+                    status_value=normalized_status,
+                    code_tracking=tracking_for_email,
+                )
+            except Exception:
+                # Email delivery is best-effort and must not block a valid admin fulfillment update.
+                logger.warning("Order status email could not be sent for order %s", order.id, exc_info=True)
 
         if redis_client and order.customer_id:
             try:

@@ -2,7 +2,11 @@ import re
 from pathlib import Path
 
 
-SERVICE_ROOT = Path(__file__).resolve().parents[1] / "app" / "services"
+APP_ROOT = Path(__file__).resolve().parents[1] / "app"
+SCAN_ROOTS = [
+    APP_ROOT / "services",
+    APP_ROOT / "utils",
+]
 
 RAW_ERROR_MARKERS = [
     "message=str(e)",
@@ -12,6 +16,13 @@ RAW_ERROR_MARKERS = [
     "No shipping cost data found.",
     "No shipping cost details data found.",
     "Cloudinary upload gagal:",
+    "Error creating user in Firebase:",
+    "Failed to delete Firebase user:",
+    "Unexpected error while deleting Firebase user:",
+    "Brevo API did not respond",
+    "SMTP server did not respond",
+    "SMTP authentication failed",
+    "Error sending email:",
 ]
 
 RAW_ERROR_PATTERNS = [
@@ -46,15 +57,16 @@ def _without_comments(source: str) -> str:
     return "\n".join(lines)
 
 
-def test_service_errors_do_not_expose_raw_exception_messages():
+def test_public_errors_do_not_expose_raw_exception_messages():
     offenders: list[str] = []
-    for path in sorted(SERVICE_ROOT.rglob("*.py")):
-        source = _without_comments(path.read_text())
-        for marker in RAW_ERROR_MARKERS:
-            if marker in source:
-                offenders.append(f"{path.relative_to(SERVICE_ROOT)}: {marker}")
-        for pattern in RAW_ERROR_PATTERNS:
-            if pattern.search(source):
-                offenders.append(f"{path.relative_to(SERVICE_ROOT)}: {pattern.pattern}")
+    for root in SCAN_ROOTS:
+        for path in sorted(root.rglob("*.py")):
+            source = _without_comments(path.read_text())
+            for marker in RAW_ERROR_MARKERS:
+                if marker in source:
+                    offenders.append(f"{path.relative_to(APP_ROOT)}: {marker}")
+            for pattern in RAW_ERROR_PATTERNS:
+                if pattern.search(source):
+                    offenders.append(f"{path.relative_to(APP_ROOT)}: {pattern.pattern}")
 
     assert offenders == []
