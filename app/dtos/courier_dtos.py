@@ -4,7 +4,7 @@ from typing import List, Optional, Literal
 
 
 class CourierCreateDto(BaseModel):
-    courier_name: Literal['jne', 'pos', 'tiki'] = Field(..., description="Kurir jasa Kirim") 
+    courier_name: Literal['jne', 'pos', 'tiki', 'jnt'] = Field(..., description="Kurir jasa kirim")
     weight: Optional[int] 
     length: Optional[int] = None
     width: Optional[int] = None
@@ -45,7 +45,7 @@ class CourierIdToUpdateDto(BaseModel):
     courier_id:int
 
 class CourierDataWeightUpdateDTO(BaseModel):
-    courier_name: Literal['jne', 'pos', 'tiki'] = Field(..., description="Kurir jasa Kirim") 
+    courier_name: Literal['jne', 'pos', 'tiki', 'jnt'] = Field(..., description="Kurir jasa kirim")
     weight: int
 
 class CourierInfoUpdateWeightResponseDto(BaseModel):

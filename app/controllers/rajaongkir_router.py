@@ -221,7 +221,7 @@ def read_shipping_cost(request: ShippingCostRequest):
     - `origin`: ID atau nama kota/kabupaten asal pengiriman. Misal: id= 497 (untuk id kota Wonogiri).
     - `destination`: ID atau nama kota/kabupaten tujuan pengiriman. Misal: id= 455 (untuk id kota Tangerang).
     - `weight`: Berat barang dalam gram. Default 1000 gram (1 kg). Masukkan angka sesuai berat yang sebenarnya.
-    - `courier`: Nama kurir yang digunakan. Pilih dari salah satu: 'jne', 'pos', atau 'tiki'. Default: 'jne'.
+    - `courier`: Nama kurir yang digunakan. Pilih dari salah satu: 'jne', 'pos', 'tiki', atau 'jnt'. Default: 'jne'.
     
     Response yang diterima akan berisi estimasi ongkos kirim berdasarkan input yang diberikan.
         
