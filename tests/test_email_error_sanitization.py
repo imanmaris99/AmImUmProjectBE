@@ -107,6 +107,7 @@ def test_order_status_email_body_is_customer_safe_and_includes_marketplace():
     assert "Pesanan dikirim" in body
     assert "JNE123456789" in body
     assert "https://shopee.co.id/tokoherbalamimum" in body
+    assert "https://www.tokopedia.com/herbalamimum" in body
     assert "https://amimumherbalproject.vercel.app/transaction/order-123" in body
     assert "Customer &lt;Test&gt;" in body
     assert "token" not in body.lower()

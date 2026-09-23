@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 SHOP_NAME = "Toko Herbal AmImUm"
 CUSTOMER_FRONTEND_URL = os.getenv("CUSTOMER_FRONTEND_URL", "https://amimumherbalproject.vercel.app").rstrip("/")
 SHOPEE_MARKETPLACE_URL = os.getenv("SHOPEE_MARKETPLACE_URL", "https://shopee.co.id/tokoherbalamimum")
+TOKOPEDIA_MARKETPLACE_URL = os.getenv("TOKOPEDIA_MARKETPLACE_URL", "https://www.tokopedia.com/herbalamimum")
 ORDER_STATUS_LABELS = {
     "pending": "Menunggu pembayaran",
     "paid": "Pembayaran berhasil",
@@ -440,6 +441,7 @@ def send_email_verification(to_email: str, verification_code: str, verification_
                     <p>Toko Herbal Amimum</p>
                     <p>Jl. Mangkudipuro, Pati, Jawa Tengah, Indonesia<br>Kode Pos: 59185</p>
                     <p>Shopee: <a href="{SHOPEE_MARKETPLACE_URL}">{SHOPEE_MARKETPLACE_URL}</a></p>
+                    <p>Tokopedia: <a href="{TOKOPEDIA_MARKETPLACE_URL}">{TOKOPEDIA_MARKETPLACE_URL}</a></p>
                 </div>
             </div>
         </div>
@@ -638,6 +640,7 @@ def send_email_reset_password(to_email: str, verification_code: str, reset_link:
                     <p>Toko Herbal Amimum</p>
                     <p>Jl. Mangkudipuro, Pati, Jawa Tengah, Indonesia<br>Kode Pos: 59185</p>
                     <p>Shopee: <a href="{SHOPEE_MARKETPLACE_URL}">{SHOPEE_MARKETPLACE_URL}</a></p>
+                    <p>Tokopedia: <a href="{TOKOPEDIA_MARKETPLACE_URL}">{TOKOPEDIA_MARKETPLACE_URL}</a></p>
                 </div>
             </div>
         </div>
@@ -708,6 +711,7 @@ def build_order_status_email_body(
         <div style="padding: 16px 22px; background: #f3f4f6; font-size: 12px; color: #4b5563;">
           <p style="margin: 0 0 4px;"><strong>Toko Herbal Amimum</strong></p>
           <p style="margin: 0 0 4px;">Shopee: <a href="{SHOPEE_MARKETPLACE_URL}">{SHOPEE_MARKETPLACE_URL}</a></p>
+          <p style="margin: 0 0 4px;">Tokopedia: <a href="{TOKOPEDIA_MARKETPLACE_URL}">{TOKOPEDIA_MARKETPLACE_URL}</a></p>
           <p style="margin: 0;">Email ini hanya berisi ringkasan status pesanan dan tidak memuat data rahasia atau detail internal sistem.</p>
         </div>
       </div>
