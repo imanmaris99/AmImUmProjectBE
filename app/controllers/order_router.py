@@ -424,6 +424,35 @@ def get_order_detail(
     return result.data
 
 
+@router.post(
+    "/{order_id}/qris-payment-confirmation",
+    response_model=order_dtos.QrisPaymentConfirmationResponseDto,
+    status_code=status.HTTP_200_OK,
+    summary="Submit manual QRIS payment confirmation",
+)
+def submit_qris_payment_confirmation(
+    order_id: str,
+    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],
+    db: Session = Depends(get_db),
+):
+    """Customer-owned QRIS confirmation.
+
+    This endpoint does not mark an order as paid. It only validates ownership,
+    validates that the order uses the official manual QRIS method, and notifies
+    the admin to verify merchant QRIS settlement before fulfillment.
+    """
+    result = order_services.submit_qris_payment_confirmation(
+        db=db,
+        user_id=jwt_token.id,
+        order_id=order_id,
+    )
+
+    if result.error:
+        raise result.error
+
+    return result.data
+
+
 @router.put(
     "/complete-details/{order_id}", 
     response_model=order_dtos.OrderInfoResponseDto,

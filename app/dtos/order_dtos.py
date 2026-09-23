@@ -111,3 +111,15 @@ class GetOrderDetailResponseDto(BaseModel):
     status_code: int
     message: str
     data: GetOrderDetailDto
+
+
+class QrisPaymentConfirmationDataDto(BaseModel):
+    order_id: str
+    status: str
+    admin_notified: bool = False
+
+
+class QrisPaymentConfirmationResponseDto(BaseModel):
+    status_code: int = Field(default=200)
+    message: str = Field(default="QRIS payment confirmation submitted successfully")
+    data: QrisPaymentConfirmationDataDto
