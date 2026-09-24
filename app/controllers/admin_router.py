@@ -254,7 +254,7 @@ def admin_set_inventory_threshold(
     "/orders",
     response_model=order_dtos.GetOrderInfoResponseDto,
     summary="Admin get all orders",
-    description="Mengambil seluruh order untuk kebutuhan dashboard admin. Mendukung pagination dasar dan filter status. Allowed status: pending, paid, processing, shipped, completed, cancelled, failed, capture, refund.",
+    description="Mengambil seluruh order untuk kebutuhan dashboard admin. Mendukung pagination dasar dan filter status. Allowed status: pending, paid, processing, shipped, completed, cancelled, failed, capture, settlement, refund.",
 )
 def admin_get_all_orders(
     jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.admin_access_required)],
@@ -299,7 +299,7 @@ def admin_get_order_detail(
     "/orders/{order_id}/status",
     response_model=order_dtos.OrderInfoResponseDto,
     summary="Admin update order status",
-    description="Memperbarui status order oleh admin. Allowed status: pending, paid, processing, shipped, completed, cancelled, failed, capture, refund.",
+    description="Memperbarui status order oleh admin. Allowed status: pending, paid, processing, shipped, completed, cancelled, failed, capture, settlement, refund.",
     openapi_extra={
         "requestBody": {
             "content": {

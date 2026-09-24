@@ -29,6 +29,7 @@ ALLOWED_ADMIN_ORDER_STATUSES = {
     "cancelled",
     "failed",
     "capture",
+    "settlement",
     "refund",
 }
 

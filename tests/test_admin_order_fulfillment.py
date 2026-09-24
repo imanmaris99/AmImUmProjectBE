@@ -103,6 +103,36 @@ def test_admin_update_status_can_store_tracking_code_clear_cache_and_notify_cust
     ]
 
 
+def test_admin_update_status_accepts_settlement_for_payment_callback_compatibility(monkeypatch):
+    order = SimpleNamespace(
+        id="order-settlement",
+        status="pending",
+        total_price=18500,
+        shipment_id=None,
+        delivery_type="pickup",
+        notes=None,
+        created_at="2026-09-11T00:00:00",
+        customer_id="customer-settlement",
+        customer_email="customer@example.com",
+        customer_name="Customer Test",
+        my_shipping=None,
+    )
+    db = _DummyDB(order)
+    monkeypatch.setattr(admin_order, "redis_client", None)
+    monkeypatch.setattr(admin_order, "send_order_status_email", lambda **_kwargs: True)
+
+    result = admin_order.update_order_status_admin(
+        db=db,
+        order_id="order-settlement",
+        new_status="settlement",
+    )
+
+    assert result.error is None
+    assert order.status == "settlement"
+    assert db.committed == 1
+    assert db.rolled_back == 0
+
+
 def test_admin_update_status_does_not_fail_when_customer_email_fails(monkeypatch):
     order = SimpleNamespace(
         id="order-2",
