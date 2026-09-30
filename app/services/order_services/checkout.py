@@ -107,15 +107,8 @@ def checkout(
         pos_discount = payload_discount if payload_discount is not None else (float(discount_match.group(1)) if discount_match else 0.0)
         pos_total = payload_total if payload_total is not None else (float(total_match.group(1)) if total_match else None)
 
-        # Frontend sends final_total as the amount the customer must pay now.
-        # It already includes prepaid shipping when selected, and excludes
-        # shipping when the customer chooses "ongkir bayar saat tiba".
-        # Do not add shipping_cost again here; otherwise Midtrans can charge
-        # duplicate shipping or charge delivery-on-arrival shipping upfront.
-        if payload_total is not None and payload_total >= 0:
-            total_cost = payload_total
-        elif pos_subtotal is not None and pos_total is not None and 0 <= pos_total <= pos_subtotal:
-            total_cost = pos_total
+        if pos_subtotal is not None and pos_total is not None and 0 <= pos_total <= pos_subtotal:
+            total_cost = pos_total + shipping_cost
         else:
             total_cost = cart_total_items_response + shipping_cost
 
@@ -123,12 +116,6 @@ def checkout(
         payment_token = re.search(r'\[PAYMENT:\s*\w+\]', notes_input, re.IGNORECASE)
         if payment_token:
             compact_tokens.append(payment_token.group(0).upper())
-        shipping_fee_token = re.search(r'\[SHIPPING_FEE_PAYMENT:\s*\w+\]', notes_input, re.IGNORECASE)
-        if shipping_fee_token:
-            compact_tokens.append(shipping_fee_token.group(0).lower())
-        shipping_due_token = re.search(r'\[SHIPPING_DUE_ON_DELIVERY:\s*\d+\]', notes_input, re.IGNORECASE)
-        if shipping_due_token:
-            compact_tokens.append(shipping_due_token.group(0).upper())
         if pos_subtotal is not None:
             compact_tokens.append(f"[POS_SUBTOTAL: {int(pos_subtotal)}]")
         if pos_discount is not None:
