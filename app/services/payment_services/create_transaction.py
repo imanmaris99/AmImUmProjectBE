@@ -144,12 +144,10 @@ def create_transaction(
                 )
             )
 
-        order_items_total = sum(float(order_item.total_price or 0.0) for order_item in existing_order_items)
-
-        shipping_cost = float(order.shipping_cost or 0.0)
-        recalculated_gross_amount = order_items_total + shipping_cost
-        if recalculated_gross_amount > 0:
-            order.total_price = recalculated_gross_amount
+        # Keep order.total_price as the amount to be paid now. Checkout already
+        # decides whether shipping is prepaid or paid to the courier on arrival.
+        # Recalculating item_total + shipping_cost here would make Midtrans
+        # charge the wrong amount for shipping-fee-on-delivery orders.
 
         # Menghapus item aktif dari keranjang setelah order dibuat, best-effort
         db.query(CartProductModel).filter(
