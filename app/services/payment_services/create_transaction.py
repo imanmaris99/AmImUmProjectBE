@@ -1,4 +1,5 @@
 import logging
+import re
 from fastapi import HTTPException, status
 
 from sqlalchemy import select
@@ -23,6 +24,29 @@ from app.libs.redis_config import redis_client
 
 # Logger untuk Midtrans
 logger = logging.getLogger("midtrans")
+
+
+def _extract_shipping_fee_payment(notes: str | None) -> str:
+    match = re.search(r'\[SHIPPING_FEE_PAYMENT:\s*([^\]]+)\]', notes or '', re.IGNORECASE)
+    mode = (match.group(1).strip().lower() if match else 'prepaid')
+    return mode if mode in {'prepaid', 'cod_shipping'} else 'prepaid'
+
+
+def _extract_shipping_due_on_delivery(notes: str | None, shipping_cost: float) -> float:
+    if _extract_shipping_fee_payment(notes) != 'cod_shipping':
+        return 0.0
+
+    match = re.search(r'\[SHIPPING_DUE_ON_DELIVERY:\s*(\d+(?:\.\d+)?)\]', notes or '', re.IGNORECASE)
+    requested_due = float(match.group(1)) if match else shipping_cost
+    return max(0.0, min(float(shipping_cost or 0.0), requested_due))
+
+
+def _calculate_midtrans_payable_amount(order: OrderModel, order_items: list[OrderItemModel]) -> float:
+    order_items_total = sum(float(order_item.total_price or 0.0) for order_item in order_items)
+    shipping_cost = float(order.shipping_cost or 0.0)
+    shipping_due_on_delivery = _extract_shipping_due_on_delivery(order.notes, shipping_cost)
+    payable_shipping_cost = max(shipping_cost - shipping_due_on_delivery, 0.0)
+    return order_items_total + payable_shipping_cost
 
 def create_transaction(
         payment_data: PaymentOrderByIdDto,
@@ -65,9 +89,6 @@ def create_transaction(
                 )
             )
 
-        # Buat payload untuk transaksi Midtrans
-        transaction_payload = generate_midtrans_payload(order)
-
         if snap is None:
             return build(
                 error=HTTPException(
@@ -79,6 +100,32 @@ def create_transaction(
                     ).dict()
                 )
             )
+
+        existing_order_items = db.execute(
+            select(OrderItemModel).where(OrderItemModel.order_id == order.id)
+        ).scalars().all()
+
+        if not existing_order_items:
+            return build(
+                error=HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Order belum memiliki item yang valid untuk pembayaran."
+                )
+            )
+
+        payable_amount = _calculate_midtrans_payable_amount(order, existing_order_items)
+        if payable_amount <= 0:
+            return build(
+                error=HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Nominal pembayaran tidak valid."
+                )
+            )
+
+        order.total_price = payable_amount
+
+        # Buat payload untuk transaksi Midtrans setelah nominal payable final dihitung.
+        transaction_payload = generate_midtrans_payload(order)
 
         # Buat transaksi di Midtrans
         try:
@@ -118,7 +165,7 @@ def create_transaction(
 
         if existing_payment:
             existing_payment.transaction_id = payment_reference
-            existing_payment.gross_amount = order.total_price
+            existing_payment.gross_amount = payable_amount
             existing_payment.transaction_status = "pending"
             existing_payment.payment_response = transaction_response
             payment = existing_payment
@@ -126,30 +173,11 @@ def create_transaction(
             payment = PaymentModel(
                 order_id=order.id,
                 transaction_id=payment_reference,
-                gross_amount=order.total_price,
+                gross_amount=payable_amount,
                 transaction_status="pending",
                 payment_response=transaction_response,
             )
             db.add(payment)
-
-        existing_order_items = db.execute(
-            select(OrderItemModel).where(OrderItemModel.order_id == order.id)
-        ).scalars().all()
-
-        if not existing_order_items:
-            return build(
-                error=HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Order belum memiliki item yang valid untuk pembayaran."
-                )
-            )
-
-        order_items_total = sum(float(order_item.total_price or 0.0) for order_item in existing_order_items)
-
-        shipping_cost = float(order.shipping_cost or 0.0)
-        recalculated_gross_amount = order_items_total + shipping_cost
-        if recalculated_gross_amount > 0:
-            order.total_price = recalculated_gross_amount
 
         # Menghapus item aktif dari keranjang setelah order dibuat, best-effort
         db.query(CartProductModel).filter(

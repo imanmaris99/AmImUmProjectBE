@@ -34,6 +34,22 @@ def _invalid_shipment_city_error() -> HTTPException:
     )
 
 
+def _extract_shipping_fee_payment(notes: str) -> str:
+    match = re.search(r'\[SHIPPING_FEE_PAYMENT:\s*([^\]]+)\]', notes, re.IGNORECASE)
+    mode = (match.group(1).strip().lower() if match else 'prepaid')
+    return mode if mode in {'prepaid', 'cod_shipping'} else 'prepaid'
+
+
+def _extract_shipping_due_on_delivery(notes: str, shipping_cost: float) -> float:
+    mode = _extract_shipping_fee_payment(notes)
+    if mode != 'cod_shipping':
+        return 0.0
+
+    match = re.search(r'\[SHIPPING_DUE_ON_DELIVERY:\s*(\d+(?:\.\d+)?)\]', notes, re.IGNORECASE)
+    requested_due = float(match.group(1)) if match else shipping_cost
+    return max(0.0, min(float(shipping_cost or 0.0), requested_due))
+
+
 def _fetch_variants_for_update(db: Session, variant_ids: list[int]):
     if not variant_ids:
         return [], True
@@ -107,15 +123,23 @@ def checkout(
         pos_discount = payload_discount if payload_discount is not None else (float(discount_match.group(1)) if discount_match else 0.0)
         pos_total = payload_total if payload_total is not None else (float(total_match.group(1)) if total_match else None)
 
-        if pos_subtotal is not None and pos_total is not None and 0 <= pos_total <= pos_subtotal:
-            total_cost = pos_total + shipping_cost
+        shipping_fee_payment_mode = _extract_shipping_fee_payment(notes_input)
+        shipping_due_on_delivery = _extract_shipping_due_on_delivery(notes_input, shipping_cost)
+        payable_shipping_cost = max(shipping_cost - shipping_due_on_delivery, 0.0)
+
+        if pos_subtotal is not None and pos_total is not None and 0 <= pos_total <= (pos_subtotal + payable_shipping_cost):
+            total_cost = pos_total
         else:
-            total_cost = cart_total_items_response + shipping_cost
+            total_cost = cart_total_items_response + payable_shipping_cost
 
         compact_tokens = []
         payment_token = re.search(r'\[PAYMENT:\s*\w+\]', notes_input, re.IGNORECASE)
         if payment_token:
             compact_tokens.append(payment_token.group(0).upper())
+        if active_delivery_shipment:
+            compact_tokens.append(f"[SHIPPING_FEE_PAYMENT: {shipping_fee_payment_mode}]")
+            if shipping_due_on_delivery > 0:
+                compact_tokens.append(f"[SHIPPING_DUE_ON_DELIVERY: {int(round(shipping_due_on_delivery))}]")
         if pos_subtotal is not None:
             compact_tokens.append(f"[POS_SUBTOTAL: {int(pos_subtotal)}]")
         if pos_discount is not None:
