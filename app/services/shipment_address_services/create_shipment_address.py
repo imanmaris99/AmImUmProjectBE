@@ -9,6 +9,7 @@ from app.dtos import shipment_address_dtos
 from app.dtos.error_response_dtos import ErrorResponseDto
 
 from app.services.cart_services.support_function import handle_db_error
+from app.services.shipment_address_services.cache_utils import invalidate_user_address_cache
 from app.utils.result import build, Result
 
 
@@ -33,6 +34,7 @@ def create_shipment_address(
         db.add(shipment_address)
         db.commit()
         db.refresh(shipment_address)
+        invalidate_user_address_cache(user_id)
 
         # Buat DTO response
         address_response = shipment_address_dtos.ShipmentAddressInfoDto(

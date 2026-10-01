@@ -11,6 +11,7 @@ from app.models.shipment_address_model import ShipmentAddressModel
 from app.dtos import shipment_address_dtos
 from app.dtos.error_response_dtos import ErrorResponseDto
 
+from app.services.shipment_address_services.cache_utils import invalidate_user_address_cache
 from app.utils.error_parser import find_errr_from_args
 from app.utils.result import build, Result
 
@@ -45,6 +46,7 @@ def update_shipment_address(
         # Simpan perubahan ke dalam database
         db.commit()
         db.refresh(address_model)
+        invalidate_user_address_cache(user_id)
 
         return build(data=shipment_address_dtos.ShipmentAddressResponseDto(
             status_code=status.HTTP_200_OK,

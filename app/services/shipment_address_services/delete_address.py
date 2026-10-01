@@ -8,6 +8,7 @@ from app.models.shipment_address_model import ShipmentAddressModel
 from app.dtos import shipment_address_dtos
 from app.dtos.error_response_dtos import ErrorResponseDto
 
+from app.services.shipment_address_services.cache_utils import invalidate_user_address_cache
 from app.utils.error_parser import find_errr_from_args
 from app.utils.result import build, Result
 
@@ -46,6 +47,7 @@ def delete_address(
 
         db.delete(address_model)
         db.commit()
+        invalidate_user_address_cache(user_id)
 
         return build(data=shipment_address_dtos.DeleteAddressResponseDto(
             status_code=status.HTTP_200_OK,

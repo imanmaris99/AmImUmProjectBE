@@ -29,7 +29,7 @@ def my_shipping_address(
     ) -> Result[shipment_address_dtos.AllAddressListResponseDto, Exception]:
     try:
         # Redis key for caching
-        redis_key = f"origin_address:{user_id}:{skip}:{limit}"
+        redis_key = f"origin_address:v2:{user_id}:{skip}:{limit}"
 
         # Check if address data exists in Redis
         cached_address = None
