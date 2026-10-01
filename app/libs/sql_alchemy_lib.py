@@ -15,6 +15,16 @@ SQLALCHEMY_DATABASE_URL = os.getenv('DATABASE_URL')
 if not SQLALCHEMY_DATABASE_URL:
     raise ValueError("DATABASE_URL environment variable is not set")
 
+# Railway/Supabase PostgreSQL URLs may be provided with the psycopg3 dialect
+# (postgresql+psycopg://...), while this project currently ships psycopg2.
+# Normalize the dialect at startup so production does not crash on import.
+if SQLALCHEMY_DATABASE_URL.startswith('postgresql+psycopg://'):
+    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace(
+        'postgresql+psycopg://',
+        'postgresql+psycopg2://',
+        1,
+    )
+
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
     pool_pre_ping=True,
