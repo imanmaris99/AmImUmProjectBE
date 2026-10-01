@@ -28,6 +28,7 @@ pillow = "^11.0.0"
 apscheduler = "^3.10.4"
 redis = "^5.2.0"
 requests = "^2.32.3"
+psycopg = {version = "^3.2.3", extras = ["binary"]}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"
