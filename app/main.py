@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from datetime import datetime, timezone
 import os
 
 # Import scheduler untuk penghapusan user yang belum diverifikasi
@@ -77,3 +78,28 @@ app.include_router(controllers.shipment_router.router)
 app.include_router(controllers.order_router.router)
 app.include_router(controllers.payment_router.router)
 app.include_router(controllers.rajaongkir_router.router)
+
+
+@app.get("/system/runtime-fingerprint", include_in_schema=False)
+def runtime_fingerprint():
+    """Safe public runtime fingerprint for deployment verification.
+
+    This intentionally exposes only non-secret deployment metadata and route
+    registration booleans so production can be checked without dashboard access.
+    """
+    registered_paths = {route.path for route in app.routes}
+    commit_sha = (
+        os.getenv("RAILWAY_GIT_COMMIT_SHA")
+        or os.getenv("VERCEL_GIT_COMMIT_SHA")
+        or os.getenv("GIT_COMMIT_SHA")
+        or "unknown"
+    )
+
+    return {
+        "service": "amimum-backend",
+        "app_version": app.version,
+        "commit": commit_sha[:12] if commit_sha != "unknown" else commit_sha,
+        "direct_checkout_registered": "/orders/checkout/direct" in registered_paths,
+        "checkout_paths": sorted(path for path in registered_paths if "checkout" in path),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+    }
