@@ -1,6 +1,6 @@
 import re
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, DataError, IntegrityError
 
@@ -53,6 +53,10 @@ def _extract_shipping_due_on_delivery(notes: str, shipping_cost: float) -> float
 def _fetch_variants_for_update(db: Session, variant_ids: list[int]):
     if not variant_ids:
         return [], True
+    if not hasattr(db, "bind"):
+        # Some lightweight service tests use narrow DB doubles that only model cart rows.
+        # Real SQLAlchemy sessions/proxies should support this lookup and get row locks.
+        return [], False
     try:
         rows = db.execute(
             select(PackTypeModel)
@@ -61,11 +65,7 @@ def _fetch_variants_for_update(db: Session, variant_ids: list[int]):
         ).scalars().all()
         return rows, True
     except Exception:
-        if hasattr(db, "bind"):
-            raise
-        # Some lightweight service tests use narrow DB doubles that only model cart rows.
-        # Real SQLAlchemy sessions/proxies should support this lookup and get row locks.
-        return [], False
+        raise
 
 
 def checkout(
@@ -168,6 +168,7 @@ def checkout(
         variant_rows, variant_lookup_supported = _fetch_variants_for_update(db, variant_ids)
         variant_map = {int(v.id): v for v in variant_rows}
 
+        purchased_pairs = set()
         for item in cart_items:
             variant = variant_map.get(int(item.variant_id)) if item.variant_id is not None else None
             if not variant and variant_lookup_supported:
@@ -213,9 +214,32 @@ def checkout(
                 total_price=line_total,
             )
             db.add(order_item)
+            purchased_pairs.add((item.product_id, item.variant_id))
 
-            # Prevent the same cart rows from being re-checked out on next transaction
-            item.is_active = False
+            # Cart rows that have been converted into an order must be removed,
+            # not merely deactivated, so purchased products disappear from cart.
+            db.delete(item)
+
+        # Direct-buy historically could create/reuse duplicate cart rows for the
+        # same product+variant. Once a product+variant is converted into this
+        # order, remove any remaining duplicate cart rows for the same user so
+        # paid products do not stay visible in /cart.
+        if purchased_pairs:
+            duplicate_filters = [
+                and_(
+                    CartProductModel.product_id == product_id,
+                    CartProductModel.variant_id == variant_id,
+                )
+                for product_id, variant_id in purchased_pairs
+            ]
+            duplicate_cart_rows = db.execute(
+                select(CartProductModel).where(
+                    CartProductModel.customer_id == user_id,
+                    or_(*duplicate_filters),
+                )
+            ).scalars().all()
+            for duplicate_row in duplicate_cart_rows:
+                db.delete(duplicate_row)
 
         db.commit()
         db.refresh(order)
@@ -277,6 +301,170 @@ def checkout(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 error="Internal Server Error",
                 message="Unable to process checkout"
+            ).model_dump()
+        ))
+
+
+def direct_checkout(
+        db: Session,
+        user_id: str,
+        payload: order_dtos.DirectCheckoutRequestDTO
+    ) -> Result[order_dtos.OrderInfoResponseDto, Exception]:
+    """
+    Membuat order Beli Langsung tanpa menyentuh cart_products.
+    """
+    try:
+        variant = db.execute(
+            select(PackTypeModel)
+            .filter(PackTypeModel.id == payload.variant_id)
+            .with_for_update()
+        ).scalars().first()
+
+        if not variant or str(variant.product_id) != str(payload.product_id):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=ErrorResponseDto(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    error="Not Found",
+                    message="Produk atau varian tidak ditemukan."
+                ).model_dump()
+            )
+
+        qty = int(payload.quantity or 1)
+        if qty <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=ErrorResponseDto(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    error="Bad Request",
+                    message="Jumlah produk tidak valid."
+                ).model_dump()
+            )
+
+        stock_before = int(variant.stock or 0)
+        if stock_before < qty:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=ErrorResponseDto(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    error="Bad Request",
+                    message="Stok produk belum mencukupi untuk checkout."
+                ).model_dump()
+            )
+
+        shipment = db.query(ShipmentModel).filter(
+            ShipmentModel.customer_id == user_id,
+            ShipmentModel.is_active == True
+        ).first()
+        active_delivery_shipment = shipment if getattr(shipment, "id", None) else None
+        if active_delivery_shipment:
+            shipment_address = getattr(active_delivery_shipment, "shipment_address", None)
+            if not _has_valid_city_id(getattr(shipment_address, "city_id", None)):
+                raise _invalid_shipment_city_error()
+
+        shipping_cost = float(active_delivery_shipment.shipping_cost or 0.0) if active_delivery_shipment else 0.0
+        notes_input = (payload.notes or '').strip()
+        shipping_fee_payment_mode = _extract_shipping_fee_payment(notes_input)
+        shipping_due_on_delivery = _extract_shipping_due_on_delivery(notes_input, shipping_cost)
+        payable_shipping_cost = max(shipping_cost - shipping_due_on_delivery, 0.0)
+
+        unit_price = float(getattr(variant, "discounted_price", None) or variant.price or 0.0)
+        item_total = unit_price * qty
+        payload_total = float(payload.final_total) if payload.final_total is not None else None
+        total_cost = payload_total if payload_total is not None and payload_total >= item_total else item_total + payable_shipping_cost
+
+        compact_tokens = []
+        payment_token = re.search(r'\[PAYMENT:\s*\w+\]', notes_input, re.IGNORECASE)
+        if payment_token:
+            compact_tokens.append(payment_token.group(0).upper())
+        compact_tokens.append("[DIRECT_BUY: true]")
+        if active_delivery_shipment:
+            compact_tokens.append(f"[SHIPPING_FEE_PAYMENT: {shipping_fee_payment_mode}]")
+            if shipping_due_on_delivery > 0:
+                compact_tokens.append(f"[SHIPPING_DUE_ON_DELIVERY: {int(round(shipping_due_on_delivery))}]")
+
+        safe_notes = (' | '.join(compact_tokens).strip() or notes_input or '')[:100] or None
+        payment_method = (payload.payment_method or "").lower()
+        order_status = "processing" if payment_method in {"cod", "pay_at_store", "cash"} else "pending"
+
+        order = OrderModel(
+            customer_id=user_id,
+            total_price=total_cost,
+            status=order_status,
+            shipment_id=active_delivery_shipment.id if active_delivery_shipment else None,
+            delivery_type=DeliveryTypeEnum.delivery if active_delivery_shipment else DeliveryTypeEnum.pickup,
+            notes=safe_notes,
+        )
+        db.add(order)
+        db.flush()
+
+        variant.stock = stock_before - qty
+        db.add(OrderItemModel(
+            order_id=order.id,
+            product_id=payload.product_id,
+            variant_id=payload.variant_id,
+            quantity=qty,
+            price_per_item=unit_price,
+            total_price=item_total,
+        ))
+
+        db.commit()
+        db.refresh(order)
+
+        if redis_client:
+            redis_keys = [
+                f"orders:{user_id}:*",
+                f"order:{user_id}:*",
+                f"cart:{user_id}:*",
+                f"carts:{user_id}",
+            ]
+            for pattern in redis_keys:
+                for key in redis_client.scan_iter(pattern):
+                    redis_client.delete(key)
+
+        return build(data={
+            "status_code": 201,
+            "message": "Direct checkout success",
+            "data": {
+                "id": str(order.id),
+                "status": str(order.status),
+                "total_price": float(order.total_price or 0.0),
+                "shipment_id": str(order.shipment_id) if order.shipment_id else None,
+                "delivery_type": getattr(order.delivery_type, "value", order.delivery_type),
+                "notes": order.notes,
+                "created_at": order.created_at.isoformat() if order.created_at else None,
+            }
+        })
+
+    except (IntegrityError, DataError) as db_error:
+        db.rollback()
+        handled = handle_db_error(db, db_error)
+        if isinstance(handled, Exception):
+            return build(error=handled)
+        return build(error=HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=handled
+        ))
+    except SQLAlchemyError as e:
+        db.rollback()
+        handled = handle_db_error(db, e)
+        if isinstance(handled, Exception):
+            return build(error=handled)
+        return build(error=HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=handled
+        ))
+    except HTTPException as http_ex:
+        db.rollback()
+        return build(error=http_ex)
+    except Exception:
+        db.rollback()
+        return build(error=HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=ErrorResponseDto(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                error="Internal Server Error",
+                message="Unable to process direct checkout"
             ).model_dump()
         ))
 

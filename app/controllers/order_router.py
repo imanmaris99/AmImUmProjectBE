@@ -198,6 +198,32 @@ def initiate_checkout(
     return JSONResponse(status_code=200, content=payload)
 
 
+@router.post(
+    "/checkout/direct",
+    response_model=order_dtos.OrderInfoResponseDto,
+    status_code=status.HTTP_201_CREATED,
+    summary="Initiate direct checkout without cart"
+)
+def initiate_direct_checkout(
+    payload: order_dtos.DirectCheckoutRequestDTO,
+    jwt_token: Annotated[jwt_dto.TokenPayLoad, Depends(jwt_service.get_jwt_pyload)],
+    db: Session = Depends(get_db)
+):
+    result = order_services.direct_checkout(db, jwt_token.id, payload)
+
+    if result.error:
+        raise result.error
+
+    response_payload = result.data
+    if isinstance(response_payload, dict):
+        return JSONResponse(
+            status_code=response_payload.get("status_code", 200),
+            content=response_payload,
+        )
+
+    return JSONResponse(status_code=200, content=response_payload)
+
+
 @router.get(
     "/my-orders",
     response_model=order_dtos.GetOrderInfoResponseDto,

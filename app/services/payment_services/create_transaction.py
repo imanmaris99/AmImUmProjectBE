@@ -1,15 +1,18 @@
 import logging
 import re
+import random
+import string
+import time
 from fastapi import HTTPException, status
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from sqlalchemy.exc import SQLAlchemyError, DataError, IntegrityError
 
 from app.models.payment_model import PaymentModel
 from app.models.order_model import OrderModel
 from app.models.order_item_model import OrderItemModel
-from app.models.cart_product_model import CartProductModel
+from app.models.shipment_model import ShipmentModel
 
 from app.dtos.payment_dtos import PaymentOrderByIdDto, PaymentCreateDto, PaymentMidtransResponseDTO, PaymentInfoResponseDto
 from app.dtos.error_response_dtos import ErrorResponseDto
@@ -20,10 +23,78 @@ from app.libs.midtrans_config import snap
 from app.services.payment_services.support_function import generate_midtrans_payload, validate_midtrans_response
 from app.utils.result import build, Result
 
-from app.libs.redis_config import redis_client
-
 # Logger untuk Midtrans
 logger = logging.getLogger("midtrans")
+
+NON_RETRYABLE_PAYMENT_ORDER_STATUSES = {
+    "paid",
+    "settlement",
+    "capture",
+    "processing",
+    "shipped",
+    "delivered",
+    "completed",
+    "refund",
+    "refunded",
+}
+
+
+def _status_value(value) -> str:
+    return str(value or "").split(".")[-1].lower()
+
+
+def _base36(value: int) -> str:
+    alphabet = string.digits + string.ascii_lowercase
+    if value <= 0:
+        return "0"
+    digits = []
+    while value:
+        value, remainder = divmod(value, 36)
+        digits.append(alphabet[remainder])
+    return "".join(reversed(digits))
+
+
+def _build_midtrans_order_id(order_id: str, existing_payment: PaymentModel | None) -> str:
+    if not existing_payment:
+        return str(order_id)
+
+    suffix = f"r{_base36(int(time.time()))}{random.randint(100, 999)}"
+    # Keep below Midtrans' practical 50-char order_id limit: UUID36 + '-' + 9-10 chars.
+    return f"{order_id}-{suffix}"[:50]
+
+
+def _payment_status_value(payment: PaymentModel) -> str:
+    return _status_value(getattr(payment, "transaction_status", ""))
+
+
+def _existing_pending_payment_response(payment: PaymentModel) -> PaymentInfoResponseDto | None:
+    """
+    Reuse an unfinished Midtrans Snap transaction.
+
+    Midtrans rejects creating a new transaction with the same order_id while the
+    old one is still pending. Customers who close GoPay/Snap and press
+    "Lanjutkan Pembayaran" must be sent back to the stored redirect URL instead
+    of creating another Midtrans transaction.
+    """
+    if _payment_status_value(payment) != "pending":
+        return None
+
+    response_payload = payment.payment_response or {}
+    redirect_url = response_payload.get("redirect_url")
+    token = response_payload.get("token") or payment.transaction_id
+    if not redirect_url or not token:
+        return None
+
+    return PaymentInfoResponseDto(
+        status_code=200,
+        message="Existing pending payment reused",
+        data=PaymentMidtransResponseDTO(
+            transaction_id=payment.transaction_id,
+            redirect_url=redirect_url,
+            token=token,
+            transaction_status="pending",
+        ),
+    )
 
 
 def _extract_shipping_fee_payment(notes: str | None) -> str:
@@ -67,6 +138,12 @@ def create_transaction(
         # Ambil detail order dari database
         order = db.execute(
             select(OrderModel)
+            .options(
+                selectinload(OrderModel.user),
+                selectinload(OrderModel.shipments).selectinload(ShipmentModel.shipment_address),
+                selectinload(OrderModel.order_items).selectinload(OrderItemModel.products),
+                selectinload(OrderModel.order_items).selectinload(OrderItemModel.pack_type),
+            )
             .filter(
                 OrderModel.id == payment_data.order_id,
                 OrderModel.customer_id == user_id,
@@ -81,7 +158,8 @@ def create_transaction(
                 )
             )
 
-        if order.status != "pending":
+        order_status = _status_value(order.status)
+        if order_status in NON_RETRYABLE_PAYMENT_ORDER_STATUSES:
             return build(
                 error=HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -101,8 +179,22 @@ def create_transaction(
                 )
             )
 
+        existing_payment = db.execute(
+            select(PaymentModel).where(PaymentModel.order_id == order.id)
+        ).scalars().first()
+
+        if existing_payment:
+            reusable_payment = _existing_pending_payment_response(existing_payment)
+            if reusable_payment:
+                return build(data=reusable_payment)
+
         existing_order_items = db.execute(
-            select(OrderItemModel).where(OrderItemModel.order_id == order.id)
+            select(OrderItemModel)
+            .options(
+                selectinload(OrderItemModel.products),
+                selectinload(OrderItemModel.pack_type),
+            )
+            .where(OrderItemModel.order_id == order.id)
         ).scalars().all()
 
         if not existing_order_items:
@@ -124,8 +216,14 @@ def create_transaction(
 
         order.total_price = payable_amount
 
+        midtrans_order_id = _build_midtrans_order_id(str(order.id), existing_payment)
+
         # Buat payload untuk transaksi Midtrans setelah nominal payable final dihitung.
-        transaction_payload = generate_midtrans_payload(order)
+        transaction_payload = generate_midtrans_payload(
+            order,
+            order_items=existing_order_items,
+            midtrans_order_id=midtrans_order_id,
+        )
 
         # Buat transaksi di Midtrans
         try:
@@ -159,15 +257,17 @@ def create_transaction(
             )
 
         payment_reference = transaction_response.get("token")
-        existing_payment = db.execute(
-            select(PaymentModel).where(PaymentModel.order_id == order.id)
-        ).scalars().first()
-
+        stored_payment_response = {
+            **transaction_response,
+            "_amimum_request_payload": transaction_payload,
+            "_amimum_order_id": str(order.id),
+            "_amimum_midtrans_order_id": midtrans_order_id,
+        }
         if existing_payment:
             existing_payment.transaction_id = payment_reference
             existing_payment.gross_amount = payable_amount
             existing_payment.transaction_status = "pending"
-            existing_payment.payment_response = transaction_response
+            existing_payment.payment_response = stored_payment_response
             payment = existing_payment
         else:
             payment = PaymentModel(
@@ -175,28 +275,14 @@ def create_transaction(
                 transaction_id=payment_reference,
                 gross_amount=payable_amount,
                 transaction_status="pending",
-                payment_response=transaction_response,
+                payment_response=stored_payment_response,
             )
             db.add(payment)
 
-        # Menghapus item aktif dari keranjang setelah order dibuat, best-effort
-        db.query(CartProductModel).filter(
-            CartProductModel.customer_id == user_id,
-            CartProductModel.is_active == True
-        ).delete()
+        order.status = "pending"
 
         db.commit()
         db.refresh(payment)
-
-        # Invalidasi cache dengan pendekatan best-effort
-        if redis_client:
-            try:
-                redis_keys = [f"cart:{user_id}:*", f"carts:{user_id}"]
-                for pattern in redis_keys:
-                    for key in redis_client.scan_iter(pattern):
-                        redis_client.delete(key)
-            except Exception as cache_error:
-                logger.warning("Failed to invalidate cart cache for user %s: %s", user_id, cache_error)
 
         # Buat DTO response
         payment_callback = PaymentMidtransResponseDTO(

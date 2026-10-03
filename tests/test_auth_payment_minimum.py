@@ -216,7 +216,7 @@ def test_handler_notification_updates_payment_and_order(monkeypatch, handler_not
     assert "matched:order:user-1:order-1" in deleted_keys
 
 
-def test_handler_notification_returns_404_when_payment_missing(monkeypatch, handler_notification_module):
+def test_handler_notification_returns_200_ignored_when_payment_missing(monkeypatch, handler_notification_module):
     monkeypatch.setattr(handler_notification_module, "MIDTRANS_SERVER_KEY", "server-key")
     monkeypatch.setattr(
         handler_notification_module,
@@ -247,11 +247,12 @@ def test_handler_notification_returns_404_when_payment_missing(monkeypatch, hand
         DummyDB(),
     )
 
-    assert isinstance(result.error, HTTPException)
-    assert result.error.status_code == 404
+    assert result.error is None
+    assert result.data.status_code == 200
+    assert "diabaikan" in result.data.message
 
 
-def test_handler_notification_returns_404_when_order_missing(monkeypatch, handler_notification_module):
+def test_handler_notification_returns_200_ignored_when_order_missing(monkeypatch, handler_notification_module):
     db = DummyDB()
     payment = SimpleNamespace(
         order_id="order-1",
@@ -293,8 +294,9 @@ def test_handler_notification_returns_404_when_order_missing(monkeypatch, handle
         db,
     )
 
-    assert isinstance(result.error, HTTPException)
-    assert result.error.status_code == 404
+    assert result.error is None
+    assert result.data.status_code == 200
+    assert "diabaikan" in result.data.message
     assert db.rolled_back is False
 
 

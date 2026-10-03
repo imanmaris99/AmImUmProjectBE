@@ -39,13 +39,14 @@ class DummyDB:
         self.execute_results = list(execute_results or [])
         self.query_result = query_result
         self.added = []
+        self.deleted = []
         self.committed = 0
         self.rolled_back = 0
         self.refreshed = []
 
     def execute(self, stmt):
         if not self.execute_results:
-            raise AssertionError("Unexpected execute call")
+            return DummyExecuteResult([])
         return DummyExecuteResult(self.execute_results.pop(0))
 
     def query(self, model):
@@ -55,6 +56,9 @@ class DummyDB:
         if getattr(obj, "id", None) is None and obj.__class__.__name__ == "OrderModel":
             obj.id = "generated-order-id"
         self.added.append(obj)
+
+    def delete(self, obj):
+        self.deleted.append(obj)
 
     def commit(self):
         self.committed += 1
@@ -109,6 +113,41 @@ def fake_cart_item():
     )
 
 
+def test_direct_checkout_creates_order_without_touching_cart(monkeypatch, checkout_module):
+    variant = SimpleNamespace(
+        id=40,
+        product_id="product-1",
+        stock=5,
+        price=1500,
+        discounted_price=1500,
+    )
+    db = DummyDB(execute_results=[variant], query_result=SimpleNamespace(id=None, shipping_cost=0))
+    payload = checkout_module.order_dtos.DirectCheckoutRequestDTO(
+        product_id="product-1",
+        variant_id=40,
+        quantity=1,
+        notes="[PAYMENT: online_payment]",
+        payment_method="online_payment",
+        subtotal=1500,
+        discount_total=0,
+        final_total=1500,
+    )
+    monkeypatch.setattr(checkout_module, "redis_client", None)
+
+    result = checkout_module.direct_checkout(db, "user-1", payload)
+
+    assert result.error is None
+    assert result.data["status_code"] == 201
+    assert result.data["data"]["id"] == "generated-order-id"
+    assert variant.stock == 4
+    assert db.deleted == []
+    assert db.committed == 1
+    order_items = [obj for obj in db.added if obj.__class__.__name__ == "OrderItemModel"]
+    assert len(order_items) == 1
+    assert order_items[0].product_id == "product-1"
+    assert order_items[0].variant_id == 40
+
+
 def test_checkout_creates_order_and_items(monkeypatch, checkout_module, fake_cart_item):
     shipment = SimpleNamespace(
         id="ship-1",
@@ -131,6 +170,34 @@ def test_checkout_creates_order_and_items(monkeypatch, checkout_module, fake_car
     assert result.data["data"]["total_price"] == 11000.0
     assert db.committed == 1
     assert len(db.added) == 2
+    assert db.deleted == [fake_cart_item]
+    assert fake_cart_item.is_active is True
+
+
+def test_checkout_deletes_duplicate_cart_rows_for_purchased_product_variant(monkeypatch, checkout_module, fake_cart_item):
+    shipment = SimpleNamespace(id=None, shipping_cost=0)
+    duplicate_cart_row = SimpleNamespace(
+        product_id="product-1",
+        variant_id=10,
+        quantity=1,
+        is_active=False,
+        product_price=5000,
+        total_price=5000,
+    )
+    db = DummyDB(execute_results=[[fake_cart_item], [duplicate_cart_row]], query_result=shipment)
+
+    monkeypatch.setattr(
+        checkout_module,
+        "get_cart_total",
+        lambda items: SimpleNamespace(total_all_active_prices=9000),
+    )
+    monkeypatch.setattr(checkout_module, "redis_client", None)
+
+    result = checkout_module.checkout(db, "user-1")
+
+    assert result.error is None
+    assert fake_cart_item in db.deleted
+    assert duplicate_cart_row in db.deleted
 
 
 def test_checkout_invalidates_cart_and_order_caches(monkeypatch, checkout_module, fake_cart_item):

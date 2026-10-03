@@ -46,7 +46,14 @@ def handle_notification(
             detail="Forbidden"
         ))
 
-    midtrans_result = fetch_midtrans_transaction_status(notification_data.order_id)
+    payment_response = payment.payment_response or {}
+    midtrans_order_id = (
+        payment_response.get("_amimum_midtrans_order_id")
+        or payment_response.get("order_id")
+        or notification_data.order_id
+    )
+
+    midtrans_result = fetch_midtrans_transaction_status(midtrans_order_id)
     if midtrans_result.error:
         return build(error=midtrans_result.error)
 

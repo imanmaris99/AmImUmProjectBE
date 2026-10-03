@@ -68,16 +68,34 @@ def post_item(
                 ).model_dump()
             )
 
-        # Buat instance baru dari CartProductModel
-        cart_instance = CartProductModel(
-            product_id=cart.product_id,
-            variant_id=cart.variant_id,
-            quantity=1,
-            customer_id=user_id
-        )
+        existing_cart_rows = db.execute(
+            select(CartProductModel)
+            .where(
+                CartProductModel.customer_id == user_id,
+                CartProductModel.product_id == cart.product_id,
+                CartProductModel.variant_id == cart.variant_id,
+            )
+            .order_by(CartProductModel.created_at.asc(), CartProductModel.id.asc())
+        ).scalars().all()
 
-        # Tambahkan dan commit instance ke database
-        db.add(cart_instance)
+        if existing_cart_rows:
+            cart_instance = existing_cart_rows[0]
+            cart_instance.quantity = 1
+            cart_instance.is_active = True
+            for duplicate_row in existing_cart_rows[1:]:
+                db.delete(duplicate_row)
+        else:
+            # Buat instance baru dari CartProductModel
+            cart_instance = CartProductModel(
+                product_id=cart.product_id,
+                variant_id=cart.variant_id,
+                quantity=1,
+                customer_id=user_id,
+                is_active=True,
+            )
+            db.add(cart_instance)
+
+        # Tambahkan/perbarui dan commit instance ke database
         db.commit()
         db.refresh(cart_instance)
 

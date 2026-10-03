@@ -10,6 +10,20 @@ from app.dtos.error_response_dtos import ErrorResponseDto
 from app.utils import optional, find_errr_from_args
 from app.libs.redis_config import redis_client
 
+
+def invalidate_user_profile_cache(user_id: str) -> None:
+    if not redis_client:
+        return
+
+    try:
+        redis_client.delete(f"user:{user_id}")
+        for key in redis_client.scan_iter(f"user:{user_id}:*"):
+            redis_client.delete(key)
+    except Exception:
+        # Cache invalidation should not block a successfully saved profile update.
+        pass
+
+
 def user_edit(
         user_id: str,
         user: user_dtos.UserEditProfileDto,
@@ -24,10 +38,8 @@ def user_edit(
             db.commit()
             db.refresh(user_model)
 
-            # Invalidate the cached wishlist for this user
-            keys_to_invalidate = redis_client.scan_iter(f"user:{user_id}:*")
-            for key in keys_to_invalidate:
-                redis_client.delete(key)
+            # Invalidate profile cache so /user/profile immediately returns fresh data.
+            invalidate_user_profile_cache(user_id)
 
             # return optional.build(data=user_model)
             return optional.build(data=user_dtos.UserEditResponseDto(

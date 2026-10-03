@@ -29,6 +29,11 @@ class CheckoutRequestDTO(BaseModel):
     discount_total: Optional[float] = None
     final_total: Optional[float] = None
 
+class DirectCheckoutRequestDTO(CheckoutRequestDTO):
+    product_id: str
+    variant_id: int
+    quantity: int = Field(default=1, gt=0)
+
 class PosCheckoutItemDTO(BaseModel):
     variant_id: int
     product_id: Optional[str] = None

@@ -5,6 +5,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, DataError, IntegrityError
 
 from app.models.cart_product_model import CartProductModel
+from app.models.order_item_model import OrderItemModel
+from app.models.order_model import OrderModel
 from app.dtos import cart_dtos
 
 import json
@@ -23,6 +25,63 @@ logger = logging.getLogger(__name__)
 CACHE_TTL = 300
 RESPONSE_MESSAGE = "All products in cart accessed successfully"
 
+
+def _invalidate_cart_cache(user_id: str):
+    if not redis_client:
+        return
+
+    for pattern in [f"cart:{user_id}:*", f"carts:{user_id}"]:
+        try:
+            for key in redis_client.scan_iter(pattern):
+                redis_client.delete(key)
+        except Exception as cache_error:
+            logger.warning("Failed to invalidate cart cache for pattern %s: %s", pattern, cache_error)
+
+
+def _delete_stale_checked_out_cart_rows(db: Session, user_id: str) -> int:
+    """
+    Clean up legacy cart rows from older checkout behavior.
+
+    Historically checkout marked purchased cart rows is_active=False instead of
+    deleting them. Some direct-buy retries/duplicates may also leave a stale row
+    active.
+
+    Safe cleanup rules:
+    - inactive rows are stale if the same user already has a matching order item;
+      inactive cart rows are not purchase intent and should not remain visible
+      after checkout/payment.
+    - active rows are only removed when an order was created after the cart row;
+      this preserves products the customer intentionally re-adds after buying.
+    """
+    stale_rows = db.execute(
+        select(CartProductModel)
+        .join(
+            OrderItemModel,
+            (OrderItemModel.product_id == CartProductModel.product_id)
+            & (OrderItemModel.variant_id == CartProductModel.variant_id),
+        )
+        .join(OrderModel, OrderModel.id == OrderItemModel.order_id)
+        .where(
+            CartProductModel.customer_id == user_id,
+            OrderModel.customer_id == user_id,
+            (
+                (CartProductModel.is_active == False)
+                | (OrderModel.created_at >= CartProductModel.created_at)
+            ),
+        )
+    ).scalars().all()
+
+    unique_rows = {row.id: row for row in stale_rows}.values()
+    for row in unique_rows:
+        db.delete(row)
+
+    deleted_count = len(list(unique_rows))
+    if deleted_count:
+        db.commit()
+        _invalidate_cart_cache(user_id)
+
+    return deleted_count
+
 def my_cart(
         db: Session,
         user_id: str,
@@ -30,6 +89,8 @@ def my_cart(
         limit: int = 100
     ) -> Result[cart_dtos.AllCartResponseCreateDto, Exception]:
     try:
+        _delete_stale_checked_out_cart_rows(db, user_id)
+
         # Redis key for caching
         redis_key = f"cart:{user_id}:{skip}:{limit}"
 
