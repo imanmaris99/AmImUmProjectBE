@@ -6,6 +6,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.models.product_model import ProductModel
+from app.models.order_model import OrderModel
+from app.models.order_item_model import OrderItemModel
 from app.models.rating_model import RatingModel
 from app.dtos.rating_dtos import RatingCreateOfIdProductDto, RatingCreateDto, RatingInfoCreateDto, RatingResponseCreateDto
 from app.dtos.error_response_dtos import ErrorResponseDto
@@ -32,6 +34,44 @@ def create_rating(
                     error="Not Found",
                     message=f"Information about product with ID {str(rate.product_id)} not found."
                 ).dict()
+            )
+
+        purchase = (
+            db.query(OrderItemModel)
+            .join(OrderModel, OrderItemModel.order_id == OrderModel.id)
+            .filter(
+                OrderItemModel.product_id == str(rate.product_id),
+                OrderModel.customer_id == user_id,
+                OrderModel.status == "completed",
+            )
+            .first()
+        )
+        if not purchase:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=ErrorResponseDto(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    error="Purchase Required",
+                    message="Rating hanya dapat diberikan setelah pesanan produk berstatus selesai.",
+                ).model_dump(),
+            )
+
+        existing_rating = (
+            db.query(RatingModel)
+            .filter(
+                RatingModel.product_id == str(rate.product_id),
+                RatingModel.user_id == user_id,
+            )
+            .first()
+        )
+        if existing_rating:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=ErrorResponseDto(
+                    status_code=status.HTTP_409_CONFLICT,
+                    error="Rating Already Exists",
+                    message="Anda sudah memberi rating untuk produk ini. Silakan perbarui rating yang sudah ada.",
+                ).model_dump(),
             )
 
         rate_instance = RatingModel(

@@ -40,13 +40,13 @@ router = APIRouter(
             }
         },
         status.HTTP_403_FORBIDDEN: {
-            "description": "Token tidak valid atau pengguna tidak terautentikasi",
+            "description": "Token tidak valid atau pengguna belum memiliki pesanan produk berstatus selesai",
             "content": {
                 "application/json": {
                     "example": {
                         "status_code": 403,
                         "error": "Forbidden",
-                        "message": "Not Authenticated."
+                        "message": "Pengguna tidak terautentikasi atau pesanan produk belum berstatus selesai."
                     }
                 }
             }
